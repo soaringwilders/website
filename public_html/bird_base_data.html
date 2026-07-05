@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="base_res/img/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Browse the Dataset — Soaring Wild</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Public+Sans:wght@400&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="base_res/style.css" />
+        <link rel="stylesheet" href="base_res/explorer.css" />
+        <style>
+            .site-header {
+                position: sticky;
+                top: 0;
+                background: var(--dark);
+            }
+        </style>
+    </head>
+    <body>
+        <header class="site-header">
+            <a href="/" class="logo-box"
+                ><img src="base_res/img/SoWi_title_light.png"
+            /></a>
+            <ul class="site-nav">
+                <li><a href="/#about">About Us</a></li>
+                <li><a href="/#projects">Our Projects</a></li>
+                <li><a href="resources.html">Resources</a></li>
+            </ul>
+        </header>
+
+        <main class="bbd-main">
+            <div class="bbd-header">
+                <div>
+                    <a href="data_explorer.html" class="page-back">&larr; Avian Data Explorer</a>
+                    <h1>Browse the Dataset</h1>
+                </div>
+                <div class="bbd-header-actions">
+                    <button class="btn btn--ghost" id="bbd-legend-btn">Legend</button>
+                    <button class="btn" id="bbd-load-btn">Load Data</button>
+                </div>
+            </div>
+            <p id="bbd-status"></p>
+
+            <div class="bbd-table-wrap">
+                <table id="bbd-table"></table>
+            </div>
+        </main>
+
+        <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
+            <li><a href="/#about">About Us</a></li>
+            <li><a href="/#projects">Our Projects</a></li>
+            <li><a href="resources.html">Resources</a></li>
+        </ul>
+
+        <!-- Legend Modal -->
+        <div id="legend-modal" class="lm-overlay" role="dialog" aria-modal="true" aria-labelledby="lm-title" hidden>
+            <div class="lm-backdrop"></div>
+            <div class="lm-panel">
+                <div class="lm-head">
+                    <h2 id="lm-title">Bird Base Data — Legend</h2>
+                    <button class="lm-close" aria-label="Close legend">&times;</button>
+                </div>
+                <div class="lm-body">
+
+                    <section class="lm-section">
+                        <h3>IUCN Red List Status</h3>
+                        <dl>
+                            <dt>EX</dt><dd>Extinct</dd>
+                            <dt>EW</dt><dd>Extinct in the Wild</dd>
+                            <dt>CR (PE)</dt><dd>Possibly Extinct</dd>
+                            <dt>CR (PEW)</dt><dd>Possibly Extinct in the Wild</dd>
+                            <dt>CR</dt><dd>Critically Endangered</dd>
+                            <dt>EN</dt><dd>Endangered</dd>
+                            <dt>VU</dt><dd>Vulnerable</dd>
+                            <dt>NT</dt><dd>Near-threatened</dd>
+                            <dt>LC</dt><dd>Least Concern</dd>
+                            <dt>DD</dt><dd>Data Deficient</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Restricted Range</h3>
+                        <p>Species with a global range size &lt;50,000 km² receive a value of <strong>1</strong>.</p>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Realm</h3>
+                        <p>If a species is found in two or more realms, realm is a combination (e.g. <strong>LN</strong> = Neotropical + Nearctic).</p>
+                        <dl>
+                            <dt>A</dt><dd>Australian</dd>
+                            <dt>C</dt><dd>Cosmopolitan</dd>
+                            <dt>E</dt><dd>Eastern Hemisphere</dd>
+                            <dt>F</dt><dd>Afrotropical</dd>
+                            <dt>I</dt><dd>Indomalayan</dd>
+                            <dt>L</dt><dd>Neotropical</dd>
+                            <dt>M</dt><dd>Madagascar &amp; islands</dd>
+                            <dt>N</dt><dd>Nearctic</dd>
+                            <dt>O</dt><dd>Oceania</dd>
+                            <dt>P</dt><dd>Palearctic</dd>
+                            <dt>S</dt><dd>South Polar</dd>
+                            <dt>W</dt><dd>Wallacea</dd>
+                            <dt>Z</dt><dd>New Zealand &amp; islands</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Latitudinal Range (LAT_RANGE)</h3>
+                        <p>Latitudinal range based on tropics and polar circles.</p>
+                        <dl>
+                            <dt>1</dt><dd>Tropical</dd>
+                            <dt>2</dt><dd>Tropical–Temperate</dd>
+                            <dt>3</dt><dd>Temperate</dd>
+                            <dt>4</dt><dd>Temperate–Polar</dd>
+                            <dt>5</dt><dd>Tropical–Polar</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Body Mass</h3>
+                        <dl>
+                            <dt>Male MinMass</dt><dd>Minimum mass value listed for males</dd>
+                            <dt>Male MaxMass</dt><dd>Maximum mass value listed for males</dd>
+                            <dt>Female MinMass</dt><dd>Minimum mass value listed for females</dd>
+                            <dt>Female MaxMass</dt><dd>Maximum mass value listed for females</dd>
+                            <dt>Unsexed MinMass</dt><dd>Minimum mass value listed for unsexed individuals</dd>
+                            <dt>Unsexed MaxMass</dt><dd>Maximum mass value listed for unsexed individuals</dd>
+                            <dt>Average Mass</dt><dd>Average value across males, females, and unsexed individuals</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Habitat</h3>
+                        <p>Habitats are numbered in order of preference.</p>
+                        <dl>
+                            <dt>F</dt><dd>Forest, secondary forest, swamp forest, tree-fall gaps, taiga, igapo, varzea</dd>
+                            <dt>BM</dt><dd>Bamboo</dd>
+                            <dt>WD</dt><dd>Acacia woodland, tropical deciduous/dry forest, savanna woodland, palm groves, miombo woodland, thorn forest, Polylepis woodland, pine-oak woodland</dd>
+                            <dt>SH</dt><dd>Shrubland, scrub, secondary growth (with few trees), cerrado, campo, karoo, thickets, roadside growth, heaths, copses, hedgerow, vine tangle, caatinga, chaco</dd>
+                            <dt>SV</dt><dd>Savanna, arid plains, wooded grassland, pampas, campos</dd>
+                            <dt>G</dt><dd>Grasslands, high altitude flats, puna, altiplano, tundra, tussock, pastures, steppe, paramo, moorland, plateaus, open vegetation</dd>
+                            <dt>PL</dt><dd>Plains, dry &amp; open areas, semi-desert, steppe, tundra, arid and semi-arid grassland</dd>
+                            <dt>R</dt><dd>Rocky areas, cliffs, outcrop, inselberg, koppi, escarpment</dd>
+                            <dt>D</dt><dd>Desert, sand dune (not coastal)</dd>
+                            <dt>A</dt><dd>Artificial, agricultural, farms, plantations, suburban, quarry, mine, excavation, dams and man-made lakes</dd>
+                            <dt>C</dt><dd>Sea coast, mangrove, estuary, bays, shores, fjords (only sea coast), coastal dune</dd>
+                            <dt>RV</dt><dd>Riparian, riverine, gallery forest, stream, running water, wooded ravines</dd>
+                            <dt>W</dt><dd>Wetlands, lakes, salt lakes, marsh, reedbed</dd>
+                            <dt>SE</dt><dd>Open sea, pelagic</dd>
+                            <dt>O</dt><dd>Other</dd>
+                            <dt>Primary Habitat</dt><dd>The main habitat type utilized by a species</dd>
+                            <dt>HB</dt><dd>Habitat breadth — number of major habitats used</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Diet</h3>
+                        <p>Infrequent feeding (described as "rarely" or a few times) = <strong>T</strong> (trace). "Occasionally" consumed = weight of <strong>1</strong>. "Also" consumed = weight of <strong>2</strong>.</p>
+                        <dl>
+                            <dt>Primary Diet</dt><dd>If any diet column ≥ 6, that column is the primary diet. Otherwise: Carnivore (primarily animal matter), Herbivore (primarily plant matter), or Omnivore (combination).</dd>
+                            <dt>IN-Wt</dt><dd>Invertebrates: arthropods, insects, aquatic invertebrates, molluscs, krill, shrimp, cephalopods, squid, crustaceans, polychaetes, gastropods, orthoptera</dd>
+                            <dt>FR-Wt</dt><dd>Fruit, drupes</dd>
+                            <dt>NE-Wt</dt><dd>Nectar</dd>
+                            <dt>SE-Wt</dt><dd>Seed, maize, nuts, spores, grain</dd>
+                            <dt>VE-Wt</dt><dd>Land vertebrates (non-sea): reptiles, snakes, amphibians, salamanders, mammals, birds</dd>
+                            <dt>FI-Wt</dt><dd>Fish</dd>
+                            <dt>SC-Wt</dt><dd>Scavenger: carcasses, garbage, offal, refuse, trawlers</dd>
+                            <dt>PL-Wt</dt><dd>Non-reproductive plant material: vegetation, algae, grass, roots, tubers, flowers</dd>
+                            <dt>MS-Wt</dt><dd>Miscellaneous (e.g. eggs = ovivores; beeswax)</dd>
+                            <dt>SUM-Wt</dt><dd>Sum of weighted diets — equals 10, or 0 if diet is unknown</dd>
+                            <dt>Desc</dt><dd>Description of miscellaneous food items</dd>
+                            <dt>DB</dt><dd>Diet breadth — number of major food types consumed</dd>
+                            <dt>Diet_Lit</dt><dd>0 = interpolated diet; 1 = diet from published source</dd>
+                            <dt>ESI</dt><dd>Ecological Specialization Index: log₁₀(100 ÷ [dietary breadth × habitat breadth]); maximum 2 for the most specialized species</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Social Behavior</h3>
+                        <p>0 = behavior not described for the species.</p>
+                        <dl>
+                            <dt>Social_1</dt><dd>1 = colonial</dd>
+                            <dt>Social_2</dt><dd>1 = social (large numbers, mixed-species flocks, seasonal flocks)</dd>
+                            <dt>Social_3</dt><dd>1 = pairs and family groups</dd>
+                            <dt>Social_4</dt><dd>1 = singly and pairs</dd>
+                            <dt>Social_5</dt><dd>1 = solitary</dd>
+                            <dt>Social_6</dt><dd>1 = lekking</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Monogamy</h3>
+                        <dl>
+                            <dt>Mono</dt><dd>1 = monogamous, 0 = not monogamous</dd>
+                            <dt>Poly</dt><dd>1 = polygynous, 0 = not polygynous</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Cooperative Breeding</h3>
+                        <dl>
+                            <dt>0</dt><dd>Does not breed cooperatively; solitary breeder</dd>
+                            <dt>1</dt><dd>Cooperative breeder</dd>
+                            <dt>2</dt><dd>Family member helper</dd>
+                            <dt>3</dt><dd>Occasional help</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Nest Type</h3>
+                        <dl>
+                            <dt>BU</dt><dd>Burrow (in ground; also ground cavities)</dd>
+                            <dt>CP</dt><dd>Cup, bowl</dd>
+                            <dt>CR</dt><dd>Crevice</dd>
+                            <dt>CV</dt><dd>Cavity (tree)</dd>
+                            <dt>DM</dt><dd>Dome (also oven)</dd>
+                            <dt>HC</dt><dd>Half cup, shallow</dd>
+                            <dt>NO</dt><dd>No nest</dd>
+                            <dt>O</dt><dd>Other bird's nest</dd>
+                            <dt>PL</dt><dd>Platform</dd>
+                            <dt>PN</dt><dd>Pendant, bag, purse</dd>
+                            <dt>SA</dt><dd>Saucer</dd>
+                            <dt>SC</dt><dd>Scrape</dd>
+                            <dt>SP</dt><dd>Sphere, globular</dd>
+                            <dt>M</dt><dd>Mound</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Nest Substrate (Nest_SBS)</h3>
+                        <p>The substrate refers to what the nest is placed on or in.</p>
+                        <dl>
+                            <dt>A</dt><dd>Bamboo</dd>
+                            <dt>B</dt><dd>Building</dd>
+                            <dt>C</dt><dd>Stump</dd>
+                            <dt>G</dt><dd>Ground</dd>
+                            <dt>K</dt><dd>Cactus</dd>
+                            <dt>N</dt><dd>Nest (of invertebrates, other birds, mammals, etc.)</dd>
+                            <dt>P</dt><dd>Pole</dd>
+                            <dt>R</dt><dd>Rock</dd>
+                            <dt>S</dt><dd>Shrub, bush, vine</dd>
+                            <dt>T</dt><dd>Tree</dd>
+                            <dt>W</dt><dd>Water</dd>
+                            <dt>Z</dt><dd>Grass</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Broods &amp; Breeding</h3>
+                        <dl>
+                            <dt>Brd1, Brd2</dt><dd>Minimum and maximum number of broods (does not include failed nesting attempts)</dd>
+                            <dt>Clutch_Min, Max</dt><dd>Lower and upper number of eggs laid (excluding rare clutch sizes)</dd>
+                            <dt>Incu_Sex</dt><dd>Sex incubating: F = female, M = male, B = both</dd>
+                            <dt>Incu1, Incu2</dt><dd>Lower and upper limits of incubation (days)</dd>
+                            <dt>Fldg1, Fldg2</dt><dd>Lower and upper limits of fledging (days)</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Nest Parasitism</h3>
+                        <p>0 = no known parasitism. Note: intra-specific parasitism receives a 1 in both columns.</p>
+                        <dl>
+                            <dt>Para.1</dt><dd>1 = nest parasite</dd>
+                            <dt>Para.2</dt><dd>1 = victim of nest parasitism</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Breeding Success &amp; Productivity</h3>
+                        <dl>
+                            <dt>BrS1, BrS2</dt><dd>Lower and upper limits of breeding success (% nests fledging young)</dd>
+                            <dt>Prod1, Prod2</dt><dd>Yearly productivity per pair (number of young raised to fledging)</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Movement</h3>
+                        <p>1 = species undertakes that type of movement.</p>
+                        <dl>
+                            <dt>Mig</dt><dd>Migration: yearly, regular, seasonal, and/or long-distance movement. 2 = partial migrant.</dd>
+                            <dt>Alt</dt><dd>Altitudinal/elevational migration: regular movements between high and low altitudes seasonally or post-breeding.</dd>
+                            <dt>Irreg</dt><dd>Nomadic, erratic, irruptive, or irregular movements due to weather, food availability, etc. Also unclear or poorly-known seasonal movements.</dd>
+                            <dt>Disp</dt><dd>Long-distance dispersal: usually once in a lifetime, post-fledging. Requires clear evidence of longer-distance movement.</dd>
+                            <dt>Sed</dt><dd>Sedentary: largely does not migrate; typically a resident species with at most local/seasonal movements.</dd>
+                        </dl>
+                    </section>
+
+                </div>
+            </div>
+        </div>
+
+        <script src="base_res/bird_data.js"></script>
+        <script>
+            // ── Load Data ───────────────────────────────────────────────────
+            const statusEl = document.getElementById("bbd-status");
+            let rows = [];
+            let tableRendered = false;
+
+            async function loadData() {
+                statusEl.textContent = "Loading…";
+                try {
+                    rows = await BirdData.load();
+                    statusEl.textContent = `${rows.length} row${rows.length !== 1 ? "s" : ""} loaded.`;
+                    renderTable();
+                } catch (err) {
+                    statusEl.textContent = `Error: ${err.message}`;
+                }
+            }
+
+            document.getElementById("bbd-load-btn").addEventListener("click", loadData);
+
+            // ── Data Table ──────────────────────────────────────────────────
+            function renderTable() {
+                if (tableRendered) return;            // data is immutable once loaded
+                const table = document.getElementById("bbd-table");
+                table.innerHTML = "";
+                if (!rows.length) return;
+
+                const cols = Object.keys(rows[0]);
+                const thead = document.createElement("thead");
+                const hr = document.createElement("tr");
+                cols.forEach(c => {
+                    const th = document.createElement("th");
+                    th.textContent = c;
+                    hr.appendChild(th);
+                });
+                thead.appendChild(hr);
+                table.appendChild(thead);
+
+                const tbody = document.createElement("tbody");
+                rows.forEach(row => {
+                    const tr = document.createElement("tr");
+                    cols.forEach(c => {
+                        const td = document.createElement("td");
+                        td.textContent = row[c] ?? "";
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+                table.appendChild(tbody);
+                tableRendered = true;
+            }
+
+            // ── Legend modal ────────────────────────────────────────────────
+            (function () {
+                const modal = document.getElementById("legend-modal");
+                const btn = document.getElementById("bbd-legend-btn");
+                const closeBtn = modal.querySelector(".lm-close");
+                const backdrop = modal.querySelector(".lm-backdrop");
+
+                function openLegend() {
+                    modal.hidden = false;
+                    document.body.style.overflow = "hidden";
+                }
+
+                function closeLegend() {
+                    modal.hidden = true;
+                    document.body.style.overflow = "";
+                }
+
+                btn.addEventListener("click", openLegend);
+                closeBtn.addEventListener("click", closeLegend);
+                backdrop.addEventListener("click", closeLegend);
+                document.addEventListener("keydown", function (e) {
+                    if (e.key === "Escape" && !modal.hidden) closeLegend();
+                });
+            })();
+        </script>
+    </body>
+</html>

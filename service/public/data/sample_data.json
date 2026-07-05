@@ -1,0 +1,32 @@
+[
+  {
+    "title": "The Hidden Life of Owls",
+    "author": "Leigh Calvez",
+    "ISBN": "978-1632170255",
+    "publication_year": 2016
+  },
+  {
+    "title": "The Genius of Birds",
+    "author": "Jennifer Ackerman",
+    "ISBN": "978-0399563126",
+    "publication_year": 2016
+  },
+  {
+    "title": "Birding Without Borders",
+    "author": "Noah Strycker",
+    "ISBN": "978-0544558144",
+    "publication_year": 2017
+  },
+  {
+    "title": "Vulture: The Private Life of an Unloved Bird",
+    "author": "Katie Fallon",
+    "ISBN": "978-1611689884",
+    "publication_year": 2017
+  },
+  {
+    "title": "The Sibley Guide to Birds",
+    "author": "David Allen Sibley",
+    "ISBN": "978-0307264305",
+    "publication_year": 2014
+  }
+]

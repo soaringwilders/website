@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="base_res/img/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Weights of Birds — Soaring Wild</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Public+Sans:wght@400&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="base_res/style.css" />
+        <link rel="stylesheet" href="base_res/explorer.css" />
+        <style>
+            .site-header {
+                position: sticky;
+                top: 0;
+                background: var(--dark);
+            }
+        </style>
+    </head>
+    <body>
+        <header class="site-header">
+            <a href="/" class="logo-box"
+                ><img src="base_res/img/SoWi_title_light.png"
+            /></a>
+            <ul class="site-nav">
+                <li><a href="/#about">About Us</a></li>
+                <li><a href="/#projects">Our Projects</a></li>
+                <li><a href="resources.html">Resources</a></li>
+            </ul>
+        </header>
+
+        <main class="bbd-main">
+            <div class="bbd-header">
+                <div>
+                    <a href="data_explorer.html" class="page-back">&larr; Avian Data Explorer</a>
+                    <h1>Weights of Birds</h1>
+                </div>
+                <div class="bbd-header-actions">
+                    <button class="btn" id="bbd-load-btn">Load Data</button>
+                </div>
+            </div>
+            <p id="bbd-status"></p>
+
+            <div class="wb-tabs" role="tablist">
+                <button type="button" class="wb-tab is-active" id="wb-tab-ranges" role="tab" aria-selected="true">Weight Ranges</button>
+                <button type="button" class="wb-tab" id="wb-tab-dimorphism" role="tab" aria-selected="false">Sexual Dimorphism</button>
+            </div>
+
+            <div class="tc-controls">
+                <div class="tc-field">
+                    <label for="wb-group">Group by</label>
+                    <select id="wb-group">
+                        <option value="FAMILY">Family</option>
+                        <option value="ORDER">Order</option>
+                        <option value="" selected>None</option>
+                    </select>
+                </div>
+                <div class="tc-field">
+                    <label for="wb-sort">Sort by</label>
+                    <select id="wb-sort">
+                        <option value="COMMON_NAME">Name</option>
+                        <option value="MASS_AVG" selected>Average weight</option>
+                    </select>
+                </div>
+                <div class="tc-field">
+                    <label for="wb-search">Find</label>
+                    <input type="search" id="wb-search" placeholder="common name…" />
+                </div>
+                <span id="wb-count"></span>
+            </div>
+
+            <p class="lh-coverage" id="wb-dim-coverage" hidden></p>
+            <p class="lh-insight" id="wb-dim-insight" hidden></p>
+
+            <div class="tc-legend" id="wb-legend-ranges">
+                <div class="tc-legend-title">Weight range by sex</div>
+                <span class="tc-legend-item"><span class="tc-swatch" style="background:#d65a9a"></span>Female</span>
+                <span class="tc-legend-item"><span class="tc-swatch" style="background:#3d7bc0"></span>Male</span>
+                <span class="tc-legend-item"><span class="tc-swatch" style="background:#b8bcc4"></span>Unsexed (used when sex-specific data isn't available)</span>
+                <span class="tc-legend-item"><span class="tc-swatch" style="background:#1a1a1a"></span>Average mass</span>
+                <div class="tc-legend-note">
+                    Bars use a logarithmic scale, fixed to the full dataset (species span roughly 2&nbsp;g to 14.5&nbsp;kg), so relative
+                    size is comparable across every row — even while filtering or grouping.
+                </div>
+            </div>
+
+            <div class="tc-legend" id="wb-legend-dimorphism" style="display:none">
+                <div class="tc-legend-title">Male vs. female mass</div>
+                <span class="tc-legend-item"><span class="tc-swatch" style="background:#d65a9a;border-radius:50%"></span>Female</span>
+                <span class="tc-legend-item"><span class="tc-swatch" style="background:#3d7bc0;border-radius:50%"></span>Male</span>
+                <div class="tc-legend-note">
+                    Each row plots average female and male mass on the same log scale as Weight Ranges; the badge shows the
+                    ratio and which sex is larger. Grouped by taxonomic order by default — orders are sorted from the most
+                    female-larger to the most male-larger, and species within each order follow the same spectrum.
+                </div>
+            </div>
+
+            <div class="wb-canvas" id="wb-canvas">
+                <p class="tc-empty">Load the data to compare the flock by weight.</p>
+            </div>
+        </main>
+
+        <div id="wb-tooltip" hidden></div>
+
+        <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
+            <li><a href="/#about">About Us</a></li>
+            <li><a href="/#projects">Our Projects</a></li>
+            <li><a href="resources.html">Resources</a></li>
+        </ul>
+
+        <script src="base_res/bird_data.js"></script>
+        <script src="base_res/bird_detail.js"></script>
+        <script>
+            // ── Load Data ───────────────────────────────────────────────────
+            const statusEl = document.getElementById("bbd-status");
+            let rows = [];
+            let rowByKey = new Map();
+            let dimorphismRecords = [];
+            let dimorphismByKey = new Map();
+
+            async function loadData() {
+                statusEl.textContent = "Loading…";
+                try {
+                    rows = await BirdData.load();
+                    rowByKey = new Map(rows.map(r => [rowKey(r), r]));
+                    dimorphismRecords = computeDimorphismRecords(rows);
+                    dimorphismByKey = new Map(dimorphismRecords.map(r => [r.key, r]));
+                    statusEl.textContent = `${rows.length} row${rows.length !== 1 ? "s" : ""} loaded.`;
+                    buildDomain(rows);
+                    tickValues = niceLogTicks();
+                    const pct2 = Math.round((dimorphismRecords.length / rows.length) * 100);
+                    document.getElementById("wb-dim-coverage").textContent =
+                        `Comparing male and female mass for ${dimorphismRecords.length} of ${rows.length} species ` +
+                        `(${pct2}%) that have separate records for both sexes.`;
+                    document.getElementById("wb-dim-insight").textContent =
+                        "Most species land close to size parity. Birds of prey — hawks, falcons, and owls — are a " +
+                        "reliable exception, running female-larger regardless of mating system. Game birds (grouse, " +
+                        "pheasants, turkeys) swing the other way, and the handful of lekking species swing hardest of " +
+                        "all toward bigger males. Polygyny alone is a weaker predictor here than the classic theory " +
+                        "suggests — lekking is the sharper signal, but only a few species in this dataset lek.";
+                    renderList();
+                } catch (err) {
+                    statusEl.textContent = `Error: ${err.message}`;
+                }
+            }
+
+            document.getElementById("bbd-load-btn").addEventListener("click", loadData);
+
+            // ── Helpers ─────────────────────────────────────────────────────
+            const num = v => (v === null || v === undefined || v === "" || isNaN(+v)) ? null : +v;
+            function esc(s) {
+                return String(s ?? "").replace(/[&<>"]/g, c =>
+                    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+            }
+            function rowKey(row) {
+                return (row.GENUS && row.SPECIES) ? `${row.GENUS}_${row.SPECIES}` : `name_${row.COMMON_NAME}`;
+            }
+
+            const FEMALE_COLOR = "#d65a9a";
+            const MALE_COLOR = "#3d7bc0";
+            const UNSEXED_COLOR = "#b8bcc4";
+
+            // ── Sexual dimorphism (idea 3.2) ──────────────────────────────────
+            function mid(minV, maxV) {
+                const a = num(minV), b = num(maxV);
+                if (a === null && b === null) return null;
+                if (a === null) return b;
+                if (b === null) return a;
+                return (a + b) / 2;
+            }
+            function computeDimorphismRecords(allRows) {
+                const out = [];
+                allRows.forEach(row => {
+                    const fMid = mid(row.MASS_MIN_F, row.MASS_MAX_F);
+                    const mMid = mid(row.MASS_MIN_M, row.MASS_MAX_M);
+                    if (fMid !== null && mMid !== null && fMid > 0 && mMid > 0) {
+                        out.push({ row, key: rowKey(row), fMid, mMid, ratio: mMid / fMid });
+                    }
+                });
+                return out;
+            }
+            function dimColor(ratio) {
+                if (ratio > 1.03) return MALE_COLOR;
+                if (ratio < 0.97) return FEMALE_COLOR;
+                return "#888";
+            }
+            function formatRatio(ratio) {
+                if (ratio > 1.03) return `${ratio.toFixed(2)}× ♂`;
+                if (ratio < 0.97) return `${(1 / ratio).toFixed(2)}× ♀`;
+                return "≈ equal";
+            }
+            function groupGeoMeanRatio(items) {
+                const logs = items.map(r => Math.log(r.ratio));
+                return Math.exp(logs.reduce((a, b) => a + b, 0) / logs.length);
+            }
+            function matingLabel(row) {
+                if (num(row.SOCIAL_6) === 1) return "Lekking";
+                if (num(row.POLYGYNOUS) === 1) return "Polygynous";
+                if (num(row.MONOGAMOUS) === 1) return "Monogamous";
+                return "Unknown";
+            }
+
+            // ── Log scale, fixed to the full (unfiltered) dataset ─────────────
+            let domain = { lo: 1, hi: 10, llo: 0, lhi: 1 };
+            function buildDomain(allRows) {
+                const fields = ["MASS_MIN_F", "MASS_MAX_F", "MASS_MIN_M", "MASS_MAX_M", "MASS_MIN", "MASS_MAX", "MASS_AVG"];
+                let lo = Infinity, hi = -Infinity;
+                allRows.forEach(r => {
+                    fields.forEach(k => {
+                        const v = num(r[k]);
+                        if (v !== null && v > 0) {
+                            if (v < lo) lo = v;
+                            if (v > hi) hi = v;
+                        }
+                    });
+                });
+                if (!isFinite(lo) || !isFinite(hi) || lo === hi) { lo = 1; hi = 10; }
+                domain = { lo, hi, llo: Math.log10(lo), lhi: Math.log10(hi) };
+            }
+            function pct(v) {
+                if (v === null || v === undefined || v <= 0) return 0;
+                const span = domain.lhi - domain.llo || 1;
+                const t = (Math.log10(v) - domain.llo) / span;
+                return Math.min(100, Math.max(0, t * 100));
+            }
+            function niceLogTicks() {
+                const ticks = [];
+                const startExp = Math.floor(domain.llo);
+                const endExp = Math.ceil(domain.lhi);
+                for (let e = startExp; e <= endExp; e++) {
+                    [1, 2, 5].forEach(m => {
+                        const v = m * Math.pow(10, e);
+                        if (v >= domain.lo * 0.999 && v <= domain.hi * 1.001) ticks.push(v);
+                    });
+                }
+                return [...new Set(ticks)].sort((a, b) => a - b);
+            }
+            function tickLabel(v) {
+                return v >= 1000
+                    ? (v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + "kg"
+                    : v.toLocaleString() + "g";
+            }
+            let tickValues = [];
+
+            // ── Bar track ───────────────────────────────────────────────────
+            function rangeFor(minV, maxV) {
+                const a = num(minV), b = num(maxV);
+                if (a === null && b === null) return null;
+                return { min: a ?? b, max: b ?? a };
+            }
+            function barDivHTML(range, color, top, heightPct) {
+                const p0 = pct(range.min), p1 = pct(range.max);
+                const left = Math.min(p0, p1);
+                const width = Math.max(Math.abs(p1 - p0), 0.6);
+                return `<div class="wb-bar" style="left:${left.toFixed(3)}%;width:${width.toFixed(3)}%;top:${top}%;height:${heightPct}%;background:${color}"></div>`;
+            }
+            function buildBarTrackHTML(row) {
+                const ticksHTML = tickValues.map(v =>
+                    `<div class="wb-tick-line" style="left:${pct(v).toFixed(3)}%"></div>`).join("");
+
+                const fRange = rangeFor(row.MASS_MIN_F, row.MASS_MAX_F);
+                const mRange = rangeFor(row.MASS_MIN_M, row.MASS_MAX_M);
+                const uRange = rangeFor(row.MASS_MIN, row.MASS_MAX);
+                const avg = num(row.MASS_AVG);
+
+                let barsHTML = "";
+                if (fRange && mRange) {
+                    barsHTML += barDivHTML(fRange, FEMALE_COLOR, 0, 50);
+                    barsHTML += barDivHTML(mRange, MALE_COLOR, 50, 50);
+                } else if (fRange) {
+                    barsHTML += barDivHTML(fRange, FEMALE_COLOR, 0, 100);
+                } else if (mRange) {
+                    barsHTML += barDivHTML(mRange, MALE_COLOR, 0, 100);
+                } else if (uRange) {
+                    barsHTML += barDivHTML(uRange, UNSEXED_COLOR, 0, 100);
+                }
+
+                const avgHTML = avg !== null
+                    ? `<div class="wb-avg-tick" style="left:${pct(avg).toFixed(3)}%"></div>`
+                    : "";
+
+                const noDataHTML = (!fRange && !mRange && !uRange && avg === null)
+                    ? `<div class="wb-no-data">No mass data</div>` : "";
+
+                return ticksHTML + barsHTML + avgHTML + noDataHTML;
+            }
+
+            function buildDumbbellTrackHTML(rec) {
+                const ticksHTML = tickValues.map(v =>
+                    `<div class="wb-tick-line" style="left:${pct(v).toFixed(3)}%"></div>`).join("");
+                const fp = pct(rec.fMid), mp = pct(rec.mMid);
+                const left = Math.min(fp, mp);
+                const width = Math.max(Math.abs(mp - fp), 0.3);
+                const lineHTML = `<div class="wb-dumbbell-line" style="left:${left.toFixed(3)}%;width:${width.toFixed(3)}%"></div>`;
+                const fDot = `<div class="wb-dot wb-dot--f" style="left:${fp.toFixed(3)}%"></div>`;
+                const mDot = `<div class="wb-dot wb-dot--m" style="left:${mp.toFixed(3)}%"></div>`;
+                return ticksHTML + lineHTML + fDot + mDot;
+            }
+
+            // ── Tooltip ─────────────────────────────────────────────────────
+            const tooltip = document.getElementById("wb-tooltip");
+            function massLine(label, minV, maxV) {
+                const a = num(minV), b = num(maxV);
+                if (a === null && b === null) return "";
+                const val = (a !== null && b !== null && a !== b)
+                    ? `${a.toLocaleString()}–${b.toLocaleString()} g`
+                    : `${(a ?? b).toLocaleString()} g`;
+                return `<dt>${esc(label)}</dt><dd>${val}</dd>`;
+            }
+            function showTooltip(row, evt) {
+                const sci = [row.GENUS, row.SPECIES].filter(Boolean).join(" ");
+                const imgSrc = (row.GENUS && row.SPECIES)
+                    ? `base_res/img/birds/${row.GENUS}_${row.SPECIES}.jpg`
+                    : "base_res/img/birds/_generic.jpg";
+                const avg = num(row.MASS_AVG);
+
+                tooltip.innerHTML =
+                    `<div class="wb-tt-head">
+                        <img class="wb-tt-img" src="${esc(imgSrc)}"
+                             onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'" alt="">
+                        <div>
+                            <h4>${esc(row.COMMON_NAME || "—")}</h4>
+                            ${sci ? `<div class="tt-sci">${esc(sci)}</div>` : ""}
+                        </div>
+                     </div>
+                     <dl>
+                        ${massLine("Female", row.MASS_MIN_F, row.MASS_MAX_F)}
+                        ${massLine("Male", row.MASS_MIN_M, row.MASS_MAX_M)}
+                        ${massLine("Unsexed", row.MASS_MIN, row.MASS_MAX)}
+                        <dt>Average</dt><dd>${avg !== null ? avg.toLocaleString() + " g" : "—"}</dd>
+                     </dl>`;
+                tooltip.hidden = false;
+                moveTooltip(evt);
+            }
+            function showDimTooltip(rec, evt) {
+                const row = rec.row;
+                const sci = [row.GENUS, row.SPECIES].filter(Boolean).join(" ");
+                const imgSrc = (row.GENUS && row.SPECIES)
+                    ? `base_res/img/birds/${row.GENUS}_${row.SPECIES}.jpg`
+                    : "base_res/img/birds/_generic.jpg";
+
+                tooltip.innerHTML =
+                    `<div class="wb-tt-head">
+                        <img class="wb-tt-img" src="${esc(imgSrc)}"
+                             onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'" alt="">
+                        <div>
+                            <h4>${esc(row.COMMON_NAME || "—")}</h4>
+                            ${sci ? `<div class="tt-sci">${esc(sci)}</div>` : ""}
+                        </div>
+                     </div>
+                     <dl>
+                        ${massLine("Female", row.MASS_MIN_F, row.MASS_MAX_F)}
+                        ${massLine("Male", row.MASS_MIN_M, row.MASS_MAX_M)}
+                        <dt>Ratio</dt><dd>${formatRatio(rec.ratio)} ${rec.ratio >= 1 ? "(male heavier)" : "(female heavier)"}</dd>
+                        <dt>Order</dt><dd>${esc(row.ORDER || "—")}</dd>
+                        <dt>Mating system</dt><dd>${esc(matingLabel(row))}</dd>
+                     </dl>`;
+                tooltip.hidden = false;
+                moveTooltip(evt);
+            }
+            function moveTooltip(evt) {
+                const pad = 14, w = tooltip.offsetWidth, h = tooltip.offsetHeight;
+                let x = evt.clientX + pad, y = evt.clientY + pad;
+                if (x + w > window.innerWidth) x = evt.clientX - w - pad;
+                if (y + h > window.innerHeight) y = evt.clientY - h - pad;
+                tooltip.style.left = x + "px";
+                tooltip.style.top = y + "px";
+            }
+            function hideTooltip() { tooltip.hidden = true; }
+
+            // ── Sort / group / render ───────────────────────────────────────
+            function compare(a, b, sortKey) {
+                if (sortKey === "COMMON_NAME") {
+                    return String(a.COMMON_NAME || "").localeCompare(String(b.COMMON_NAME || ""));
+                }
+                const av = num(a.MASS_AVG), bv = num(b.MASS_AVG);
+                if (av === null && bv === null) return 0;
+                if (av === null) return 1;
+                if (bv === null) return -1;
+                return av - bv;
+            }
+
+            function tickLabelHTML(v) {
+                const p = pct(v);
+                let transform = "translateX(-50%)";
+                if (p < 4) transform = "translateX(0)";
+                else if (p > 96) transform = "translateX(-100%)";
+                return `<div class="wb-tick-label" style="left:${p.toFixed(3)}%;transform:${transform}">${tickLabel(v)}</div>`;
+            }
+
+            function rowHTML(row) {
+                return `<div class="wb-row" data-key="${esc(rowKey(row))}">
+                    <a href="#" class="wb-name">${esc(row.COMMON_NAME || "—")}</a>
+                    <div class="wb-bar-track">${buildBarTrackHTML(row)}</div>
+                </div>`;
+            }
+
+            function dimRowHTML(rec) {
+                return `<div class="wb-row" data-key="${esc(rec.key)}">
+                    <a href="#" class="wb-name">${esc(rec.row.COMMON_NAME || "—")}</a>
+                    <div class="wb-bar-track">${buildDumbbellTrackHTML(rec)}</div>
+                    <div class="wb-ratio-badge" style="color:${dimColor(rec.ratio)}">${formatRatio(rec.ratio)}</div>
+                </div>`;
+            }
+
+            const canvas = document.getElementById("wb-canvas");
+
+            function renderList() {
+                if (activeTab === "dimorphism") renderDimList();
+                else renderRangeList();
+            }
+
+            function renderRangeList() {
+                const groupKey = document.getElementById("wb-group").value;
+                const sortKey = document.getElementById("wb-sort").value;
+                const q = document.getElementById("wb-search").value.trim().toLowerCase();
+
+                let filtered = rows;
+                if (q) filtered = filtered.filter(r => String(r.COMMON_NAME || "").toLowerCase().includes(q));
+
+                document.getElementById("wb-count").textContent = `${filtered.length} of ${rows.length} species`;
+
+                if (!filtered.length) {
+                    canvas.innerHTML = `<p class="tc-empty">No species match “${esc(q)}”.</p>`;
+                    return;
+                }
+
+                const groups = new Map();
+                if (groupKey) {
+                    filtered.forEach(r => {
+                        const g = r[groupKey] || "—";
+                        if (!groups.has(g)) groups.set(g, []);
+                        groups.get(g).push(r);
+                    });
+                } else {
+                    groups.set("", filtered.slice());
+                }
+                const groupNames = [...groups.keys()].sort((a, b) => String(a).localeCompare(String(b)));
+
+                let html = `<div class="wb-axis">
+                    <div class="wb-axis-spacer"></div>
+                    <div class="wb-axis-ticks">${tickValues.map(tickLabelHTML).join("")}</div>
+                </div><div class="wb-list">`;
+
+                groupNames.forEach(gName => {
+                    const items = groups.get(gName).slice().sort((a, b) => compare(a, b, sortKey));
+                    html += `<div class="tc-group">`;
+                    if (groupKey) html += `<div class="tc-group-head">${esc(gName)}<span>${items.length}</span></div>`;
+                    html += `<div class="wb-rows">${items.map(rowHTML).join("")}</div></div>`;
+                });
+
+                html += `</div>`;
+                canvas.innerHTML = html;
+            }
+
+            function dimCompare(a, b, sortKey) {
+                if (sortKey === "COMMON_NAME") {
+                    return String(a.row.COMMON_NAME || "").localeCompare(String(b.row.COMMON_NAME || ""));
+                }
+                return a.ratio - b.ratio;
+            }
+
+            function renderDimList() {
+                const groupKey = document.getElementById("wb-group").value;
+                const sortKey = document.getElementById("wb-sort").value;
+                const q = document.getElementById("wb-search").value.trim().toLowerCase();
+
+                let filtered = dimorphismRecords;
+                if (q) filtered = filtered.filter(r => String(r.row.COMMON_NAME || "").toLowerCase().includes(q));
+
+                document.getElementById("wb-count").textContent = `${filtered.length} of ${dimorphismRecords.length} species`;
+
+                if (!filtered.length) {
+                    canvas.innerHTML = `<p class="tc-empty">No species match “${esc(q)}”.</p>`;
+                    return;
+                }
+
+                const groups = new Map();
+                if (groupKey) {
+                    filtered.forEach(r => {
+                        const g = r.row[groupKey] || "—";
+                        if (!groups.has(g)) groups.set(g, []);
+                        groups.get(g).push(r);
+                    });
+                } else {
+                    groups.set("", filtered.slice());
+                }
+                let groupNames = [...groups.keys()];
+                if (groupKey) {
+                    groupNames.sort((a, b) => groupGeoMeanRatio(groups.get(a)) - groupGeoMeanRatio(groups.get(b)));
+                }
+
+                let html = `<div class="wb-axis">
+                    <div class="wb-axis-spacer"></div>
+                    <div class="wb-axis-ticks">${tickValues.map(tickLabelHTML).join("")}</div>
+                </div><div class="wb-list">`;
+
+                groupNames.forEach(gName => {
+                    const items = groups.get(gName).slice().sort((a, b) => dimCompare(a, b, sortKey));
+                    html += `<div class="tc-group">`;
+                    if (groupKey) {
+                        const gm = groupGeoMeanRatio(groups.get(gName));
+                        html += `<div class="tc-group-head">${esc(gName)}<span>${items.length} · ${formatRatio(gm)} avg</span></div>`;
+                    }
+                    html += `<div class="wb-rows">${items.map(dimRowHTML).join("")}</div></div>`;
+                });
+
+                html += `</div>`;
+                canvas.innerHTML = html;
+            }
+
+            // ── Event delegation (hover for tooltip, click name for modal) ───
+            canvas.addEventListener("mouseover", e => {
+                const rowEl = e.target.closest(".wb-row");
+                if (!rowEl) return;
+                if (activeTab === "dimorphism") {
+                    const rec = dimorphismByKey.get(rowEl.dataset.key);
+                    if (rec) showDimTooltip(rec, e);
+                } else {
+                    const row = rowByKey.get(rowEl.dataset.key);
+                    if (row) showTooltip(row, e);
+                }
+            });
+            canvas.addEventListener("mousemove", e => {
+                if (e.target.closest(".wb-row")) moveTooltip(e);
+            });
+            canvas.addEventListener("mouseout", e => {
+                const rowEl = e.target.closest(".wb-row");
+                if (rowEl && !rowEl.contains(e.relatedTarget)) hideTooltip();
+            });
+            canvas.addEventListener("click", e => {
+                const nameEl = e.target.closest(".wb-name");
+                if (!nameEl) return;
+                e.preventDefault();
+                const rowEl = nameEl.closest(".wb-row");
+                const row = rowByKey.get(rowEl.dataset.key);
+                if (row) { hideTooltip(); BirdDetail.open(row); }
+            });
+
+            // ── Tabs (Weight Ranges ⇄ Sexual Dimorphism) ──────────────────────
+            let activeTab = "ranges";
+            const TAB_STATE = {
+                ranges: { group: "", sort: "MASS_AVG" },
+                dimorphism: { group: "ORDER", sort: "RATIO" },
+            };
+            const SORT_OPTIONS = {
+                ranges: [
+                    { value: "COMMON_NAME", label: "Name" },
+                    { value: "MASS_AVG", label: "Average weight" },
+                ],
+                dimorphism: [
+                    { value: "RATIO", label: "Dimorphism" },
+                    { value: "COMMON_NAME", label: "Name" },
+                ],
+            };
+            function populateSortOptions(tab) {
+                const sel = document.getElementById("wb-sort");
+                sel.innerHTML = SORT_OPTIONS[tab].map(o => `<option value="${o.value}">${o.label}</option>`).join("");
+                sel.value = TAB_STATE[tab].sort;
+            }
+            function switchTab(tab) {
+                if (tab === activeTab) return;
+                activeTab = tab;
+                document.getElementById("wb-tab-ranges").classList.toggle("is-active", tab === "ranges");
+                document.getElementById("wb-tab-dimorphism").classList.toggle("is-active", tab === "dimorphism");
+                document.getElementById("wb-tab-ranges").setAttribute("aria-selected", tab === "ranges");
+                document.getElementById("wb-tab-dimorphism").setAttribute("aria-selected", tab === "dimorphism");
+                document.getElementById("wb-legend-ranges").style.display = tab === "ranges" ? "" : "none";
+                document.getElementById("wb-legend-dimorphism").style.display = tab === "dimorphism" ? "" : "none";
+                document.getElementById("wb-dim-coverage").hidden = tab !== "dimorphism";
+                document.getElementById("wb-dim-insight").hidden = tab !== "dimorphism";
+                document.getElementById("wb-group").value = TAB_STATE[tab].group;
+                populateSortOptions(tab);
+                if (rows.length) renderList();
+            }
+            document.getElementById("wb-tab-ranges").addEventListener("click", () => switchTab("ranges"));
+            document.getElementById("wb-tab-dimorphism").addEventListener("click", () => switchTab("dimorphism"));
+            populateSortOptions("ranges");
+
+            // control wiring — re-render on change (debounced search)
+            document.getElementById("wb-group").addEventListener("change", e => {
+                TAB_STATE[activeTab].group = e.target.value;
+                if (rows.length) renderList();
+            });
+            document.getElementById("wb-sort").addEventListener("change", e => {
+                TAB_STATE[activeTab].sort = e.target.value;
+                if (rows.length) renderList();
+            });
+            let searchTimer;
+            document.getElementById("wb-search").addEventListener("input", () => {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(() => { if (rows.length) renderList(); }, 180);
+            });
+        </script>
+    </body>
+</html>

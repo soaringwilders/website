@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="base_res/img/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Size &amp; Life-History Scaling — Soaring Wild</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Public+Sans:wght@400&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="base_res/style.css" />
+        <link rel="stylesheet" href="base_res/explorer.css" />
+        <style>
+            .site-header {
+                position: sticky;
+                top: 0;
+                background: var(--dark);
+            }
+        </style>
+    </head>
+    <body>
+        <header class="site-header">
+            <a href="/" class="logo-box"
+                ><img src="base_res/img/SoWi_title_light.png"
+            /></a>
+            <ul class="site-nav">
+                <li><a href="/#about">About Us</a></li>
+                <li><a href="/#projects">Our Projects</a></li>
+                <li><a href="resources.html">Resources</a></li>
+            </ul>
+        </header>
+
+        <main class="bbd-main">
+            <div class="bbd-header">
+                <div>
+                    <a href="data_explorer.html" class="page-back">&larr; Avian Data Explorer</a>
+                    <h1>Size &amp; Life-History Scaling</h1>
+                </div>
+                <div class="bbd-header-actions">
+                    <button class="btn" id="bbd-load-btn">Load Data</button>
+                </div>
+            </div>
+            <p id="bbd-status"></p>
+
+            <div class="tc-controls">
+                <div class="tc-field">
+                    <label for="lh-metric">Compare body mass against</label>
+                    <select id="lh-metric" disabled>
+                        <option>Load data to choose…</option>
+                    </select>
+                </div>
+                <div class="tc-field">
+                    <label for="lh-color">Color by</label>
+                    <select id="lh-color" disabled>
+                        <option value="status" selected>Conservation status</option>
+                        <option value="none">None</option>
+                    </select>
+                </div>
+                <span id="lh-count"></span>
+            </div>
+
+            <p class="lh-coverage" id="lh-coverage"></p>
+            <p class="lh-insight" id="lh-insight"></p>
+
+            <div class="tc-legend" id="lh-legend" style="display:none"></div>
+
+            <div class="lh-chart-wrap" id="lh-chart-wrap">
+                <p class="tc-empty" id="lh-empty">Load the data to explore how body size shapes a bird's breeding life.</p>
+                <svg id="lh-svg" class="lh-svg" viewBox="0 0 960 620" preserveAspectRatio="xMidYMid meet" hidden></svg>
+            </div>
+
+            <div class="lh-brush-panel" id="lh-brush-panel" hidden>
+                <div class="lh-brush-head">
+                    <span id="lh-brush-summary"></span>
+                    <button class="btn btn--ghost" id="lh-brush-clear">Clear selection</button>
+                </div>
+                <div class="lh-brush-list" id="lh-brush-list"></div>
+            </div>
+        </main>
+
+        <div id="lh-tooltip" hidden></div>
+
+        <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
+            <li><a href="/#about">About Us</a></li>
+            <li><a href="/#projects">Our Projects</a></li>
+            <li><a href="resources.html">Resources</a></li>
+        </ul>
+
+        <script src="base_res/bird_data.js"></script>
+        <script src="base_res/bird_detail.js"></script>
+        <script>
+            // ── Load Data ───────────────────────────────────────────────────
+            const statusEl = document.getElementById("bbd-status");
+            let rows = [];
+            let rowByKey = new Map();
+
+            async function loadData() {
+                statusEl.textContent = "Loading…";
+                try {
+                    rows = await BirdData.load();
+                    rowByKey = new Map(rows.map(r => [rowKey(r), r]));
+                    statusEl.textContent = `${rows.length} row${rows.length !== 1 ? "s" : ""} loaded.`;
+                    init();
+                } catch (err) {
+                    statusEl.textContent = `Error: ${err.message}`;
+                }
+            }
+            document.getElementById("bbd-load-btn").addEventListener("click", loadData);
+
+            // ── Helpers ─────────────────────────────────────────────────────
+            const num = v => (v === null || v === undefined || v === "" || isNaN(+v)) ? null : +v;
+            function esc(s) {
+                return String(s ?? "").replace(/[&<>"]/g, c =>
+                    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+            }
+            function rowKey(row) {
+                return (row.GENUS && row.SPECIES) ? `${row.GENUS}_${row.SPECIES}` : `name_${row.COMMON_NAME}`;
+            }
+            function fmtNum(v) {
+                const r = Math.round(v * 10) / 10;
+                return Number.isInteger(r) ? String(r) : r.toFixed(1);
+            }
+            function fmtMass(v) {
+                return v >= 1000
+                    ? (v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + "kg"
+                    : Math.round(v).toLocaleString() + "g";
+            }
+
+            // IUCN Red List → color (shared convention with Traits Constellation / bird detail).
+            const STATUS_COLORS = {
+                "EX": "#111111", "EW": "#3a2a2a",
+                "CR (PE)": "#7a0d0d", "CR (PEW)": "#7a0d0d", "CR": "#9b1b1b",
+                "EN": "#d1582b", "VU": "#e0a52e", "NT": "#b8c24a",
+                "LC": "#5aa45a", "DD": "#b8bcc4",
+            };
+            const STATUS_LABELS = {
+                "EX": "Extinct", "EW": "Extinct in the Wild",
+                "CR (PE)": "Critically Endangered (Possibly Extinct)",
+                "CR (PEW)": "Critically Endangered (Possibly Extinct in Wild)",
+                "CR": "Critically Endangered", "EN": "Endangered", "VU": "Vulnerable",
+                "NT": "Near-threatened", "LC": "Least Concern", "DD": "Data Deficient",
+            };
+            const STATUS_ORDER = ["EX", "EW", "CR (PE)", "CR (PEW)", "CR", "EN", "VU", "NT", "LC", "DD"];
+            const NEUTRAL_COLOR = "#5b7a9e";
+            function statusColor(s) { return STATUS_COLORS[s] || "#c9cdd4"; }
+
+            // ── Life-history metrics (idea 3.1) ──────────────────────────────
+            const METRICS = [
+                {
+                    key: "CLUTCH", label: "Clutch size", unit: "eggs",
+                    minF: "CLUTCH_MIN", maxF: "CLUTCH_MAX",
+                    insight: "Clutch size peaks in small-to-mid-sized birds. Tiny hummingbirds are constrained to just one or two eggs, mid-sized species often lay the most, and the largest birds — investing heavily in each chick — usually settle for only a few.",
+                },
+                {
+                    key: "INCUBATION", label: "Incubation period", unit: "days",
+                    minF: "INCUBATION_MIN", maxF: "INCUBATION_MAX",
+                    insight: "Bigger bodies generally take longer to incubate — there's simply more of the bird left to grow before hatching.",
+                },
+                {
+                    key: "FLEDGLING", label: "Fledging period", unit: "days",
+                    minF: "FLEDGLING_MIN", maxF: "FLEDGLING_MAX",
+                    insight: "Larger young need more time in the nest before they're ready to fly and fend for themselves.",
+                },
+                {
+                    key: "BROODS", label: "Broods per year", unit: "broods/yr",
+                    minF: "BROODS_MIN", maxF: "BROODS_MAX",
+                    insight: "Small, fast-living species often squeeze in several broods a year; large-bodied birds typically manage only one.",
+                },
+                {
+                    key: "PRODUCTIVITY", label: "Productivity", unit: "young/pair/yr",
+                    minF: "PRODUCTIVITY_MIN", maxF: "PRODUCTIVITY_MAX",
+                    insight: "Yearly output per breeding pair — but this field is only recorded for a fraction of species, so read the pattern as a hint, not a rule.",
+                },
+            ];
+
+            function metricValue(row, m) {
+                const a = num(row[m.minF]), b = num(row[m.maxF]);
+                if (a === null && b === null) return null;
+                if (a === null) return b;
+                if (b === null) return a;
+                return (a + b) / 2;
+            }
+
+            // ── State ─────────────────────────────────────────────────────
+            let massDomain = { lo: 1, hi: 10, llo: 0, lhi: 1 };
+            let currentMetricIdx = 0;
+            let currentPoints = [];   // [{row, mass, val, key}]
+            let colorMode = "status";
+            let brush = { active: false, lo: 0, hi: 0 };
+            const circleEls = new Map(); // rowKey -> <circle>
+
+            // ── Geometry ──────────────────────────────────────────────────
+            const VB_W = 960, VB_H = 620;
+            const MARGIN = { left: 64, right: 118, top: 92, bottom: 54 };
+            const plot = {
+                x0: MARGIN.left, x1: VB_W - MARGIN.right,
+                y0: MARGIN.top, y1: VB_H - MARGIN.bottom,
+            };
+
+            function buildMassDomain(allRows) {
+                let lo = Infinity, hi = -Infinity;
+                allRows.forEach(r => {
+                    const v = num(r.MASS_AVG);
+                    if (v !== null && v > 0) { if (v < lo) lo = v; if (v > hi) hi = v; }
+                });
+                if (!isFinite(lo) || !isFinite(hi) || lo === hi) { lo = 1; hi = 10; }
+                lo *= 0.92; hi *= 1.08;
+                massDomain = { lo, hi, llo: Math.log10(lo), lhi: Math.log10(hi) };
+            }
+            function xToPx(mass) {
+                const span = massDomain.lhi - massDomain.llo || 1;
+                const t = (Math.log10(mass) - massDomain.llo) / span;
+                return plot.x0 + t * (plot.x1 - plot.x0);
+            }
+            function pxToMass(px) {
+                const span = massDomain.lhi - massDomain.llo || 1;
+                const t = (px - plot.x0) / (plot.x1 - plot.x0);
+                return Math.pow(10, massDomain.llo + t * span);
+            }
+            function niceMassTicks() {
+                const ticks = [];
+                const startExp = Math.floor(massDomain.llo);
+                const endExp = Math.ceil(massDomain.lhi);
+                for (let e = startExp; e <= endExp; e++) {
+                    [1, 2, 5].forEach(m => {
+                        const v = m * Math.pow(10, e);
+                        if (v >= massDomain.lo * 0.999 && v <= massDomain.hi * 1.001) ticks.push(v);
+                    });
+                }
+                return [...new Set(ticks)].sort((a, b) => a - b);
+            }
+
+            function niceNum(range, round) {
+                const exponent = Math.floor(Math.log10(range || 1));
+                const fraction = range / Math.pow(10, exponent);
+                let nf;
+                if (round) {
+                    nf = fraction < 1.5 ? 1 : fraction < 3 ? 2 : fraction < 7 ? 5 : 10;
+                } else {
+                    nf = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
+                }
+                return nf * Math.pow(10, exponent);
+            }
+            function niceTicks(lo, hi, count) {
+                const range = niceNum(hi - lo, false);
+                const step = niceNum(range / (count - 1), true);
+                const niceLo = Math.floor(lo / step) * step;
+                const niceHi = Math.ceil(hi / step) * step;
+                const ticks = [];
+                for (let v = niceLo; v <= niceHi + step * 1e-6; v += step) ticks.push(+v.toFixed(6));
+                return ticks;
+            }
+
+            let yTicks = [];
+            let yLo = 0, yHi = 1;
+            function buildYScale(vals) {
+                let lo = Infinity, hi = -Infinity;
+                vals.forEach(v => { if (v < lo) lo = v; if (v > hi) hi = v; });
+                if (!isFinite(lo) || !isFinite(hi) || lo === hi) { lo = 0; hi = 1; }
+                const pad = (hi - lo) * 0.08 || Math.max(hi * 0.1, 1);
+                yTicks = niceTicks(Math.max(0, lo - pad), hi + pad, 6);
+                yLo = yTicks[0];
+                yHi = yTicks[yTicks.length - 1];
+            }
+            function yToPx(v) {
+                const span = (yHi - yLo) || 1;
+                return plot.y1 - ((v - yLo) / span) * (plot.y1 - plot.y0);
+            }
+
+            // ── Data prep ─────────────────────────────────────────────────
+            function computeMetricPoints(mIdx) {
+                const m = METRICS[mIdx];
+                const pts = [];
+                rows.forEach(row => {
+                    const mass = num(row.MASS_AVG);
+                    const val = metricValue(row, m);
+                    if (mass !== null && mass > 0 && val !== null) {
+                        pts.push({ row, mass, val, key: rowKey(row) });
+                    }
+                });
+                return pts;
+            }
+
+            function computeTrendBins(pts, binCount) {
+                const bins = Array.from({ length: binCount }, () => []);
+                const span = massDomain.lhi - massDomain.llo || 1;
+                pts.forEach(p => {
+                    const t = (Math.log10(p.mass) - massDomain.llo) / span;
+                    let bi = Math.floor(t * binCount);
+                    if (bi < 0) bi = 0; if (bi >= binCount) bi = binCount - 1;
+                    bins[bi].push(p.val);
+                });
+                const out = [];
+                bins.forEach((vals, i) => {
+                    if (vals.length < 4) return;
+                    vals.sort((a, b) => a - b);
+                    const q = p => {
+                        const idx = (vals.length - 1) * p;
+                        const lo = Math.floor(idx), hi = Math.ceil(idx);
+                        return lo === hi ? vals[lo] : vals[lo] + (vals[hi] - vals[lo]) * (idx - lo);
+                    };
+                    const xLog = massDomain.llo + ((i + 0.5) / binCount) * span;
+                    out.push({ mass: Math.pow(10, xLog), median: q(0.5), q1: q(0.25), q3: q(0.75), n: vals.length });
+                });
+                return out;
+            }
+
+            function pointColor(row) {
+                return colorMode === "status" ? statusColor(row.RED_LIST) : NEUTRAL_COLOR;
+            }
+            function effectiveOpacity(mass) {
+                if (!brush.active) return 0.85;
+                return (mass >= brush.lo && mass <= brush.hi) ? 0.9 : 0.15;
+            }
+
+            // ── SVG scaffolding ───────────────────────────────────────────
+            const SVG_NS = "http://www.w3.org/2000/svg";
+            const svg = document.getElementById("lh-svg");
+            function el(tag, attrs) {
+                const e = document.createElementNS(SVG_NS, tag);
+                for (const k in attrs) e.setAttribute(k, attrs[k]);
+                return e;
+            }
+            function group(id) {
+                const g = el("g", { id });
+                svg.appendChild(g);
+                return g;
+            }
+            function buildScaffold() {
+                svg.innerHTML = "";
+                group("lh-g-hist-top");
+                group("lh-g-hist-right");
+                group("lh-g-trend");
+                group("lh-g-axis-x");
+                group("lh-g-axis-y");
+                group("lh-g-points");
+                svg.appendChild(el("rect", {
+                    id: "lh-brush-rect", x: 0, y: plot.y0, width: 0, height: plot.y1 - plot.y0,
+                    fill: "rgba(215,184,100,0.18)", stroke: "#d7b864", "stroke-dasharray": "3 2", visibility: "hidden",
+                }));
+                const capture = el("rect", {
+                    id: "lh-brush-capture", x: plot.x0, y: plot.y0,
+                    width: plot.x1 - plot.x0, height: plot.y1 - plot.y0,
+                    fill: "transparent", style: "cursor:crosshair",
+                });
+                svg.appendChild(capture);
+                wireBrush(capture);
+            }
+
+            // ── Axes ──────────────────────────────────────────────────────
+            function renderAxisX() {
+                const g = document.getElementById("lh-g-axis-x");
+                g.innerHTML = "";
+                g.appendChild(el("line", {
+                    x1: plot.x0, x2: plot.x1, y1: plot.y1, y2: plot.y1, stroke: "#c9cdd4",
+                }));
+                niceMassTicks().forEach(v => {
+                    const x = xToPx(v);
+                    g.appendChild(el("line", { x1: x, x2: x, y1: plot.y1, y2: plot.y1 + 6, stroke: "#c9cdd4" }));
+                    const t = el("text", {
+                        x, y: plot.y1 + 20, "text-anchor": "middle",
+                        "font-size": 11, fill: "#8a8f99", "font-family": "Inter, sans-serif",
+                    });
+                    t.textContent = fmtMass(v);
+                    g.appendChild(t);
+                });
+                const title = el("text", {
+                    x: (plot.x0 + plot.x1) / 2, y: plot.y1 + 44, "text-anchor": "middle",
+                    "font-size": 12, "font-weight": 700, fill: "#555", "font-family": "Inter, sans-serif",
+                });
+                title.textContent = "Average body mass (log scale)";
+                g.appendChild(title);
+            }
+            function renderAxisY(m) {
+                const g = document.getElementById("lh-g-axis-y");
+                g.innerHTML = "";
+                g.appendChild(el("line", {
+                    x1: plot.x0, x2: plot.x0, y1: plot.y0, y2: plot.y1, stroke: "#c9cdd4",
+                }));
+                yTicks.forEach(v => {
+                    const y = yToPx(v);
+                    g.appendChild(el("line", { x1: plot.x0 - 6, x2: plot.x0, y1: y, y2: y, stroke: "#c9cdd4" }));
+                    g.appendChild(el("line", {
+                        x1: plot.x0, x2: plot.x1, y1: y, y2: y, stroke: "#f0f2f6",
+                    }));
+                    const t = el("text", {
+                        x: plot.x0 - 10, y: y + 4, "text-anchor": "end",
+                        "font-size": 11, fill: "#8a8f99", "font-family": "Inter, sans-serif",
+                    });
+                    t.textContent = fmtNum(v);
+                    g.appendChild(t);
+                });
+                const title = el("text", {
+                    x: 18, y: (plot.y0 + plot.y1) / 2, "text-anchor": "middle",
+                    "font-size": 12, "font-weight": 700, fill: "#555", "font-family": "Inter, sans-serif",
+                    transform: `rotate(-90 18 ${(plot.y0 + plot.y1) / 2})`,
+                });
+                title.textContent = `${m.label} (${m.unit})`;
+                g.appendChild(title);
+            }
+
+            // ── Marginal histograms ───────────────────────────────────────
+            function renderHistTop(pts) {
+                const g = document.getElementById("lh-g-hist-top");
+                g.innerHTML = "";
+                const binCount = 24;
+                const counts = new Array(binCount).fill(0);
+                const span = massDomain.lhi - massDomain.llo || 1;
+                pts.forEach(p => {
+                    let bi = Math.floor(((Math.log10(p.mass) - massDomain.llo) / span) * binCount);
+                    if (bi < 0) bi = 0; if (bi >= binCount) bi = binCount - 1;
+                    counts[bi]++;
+                });
+                const max = Math.max(1, ...counts);
+                const areaTop = 14, areaBottom = plot.y0 - 10;
+                const h = areaBottom - areaTop;
+                const barW = (plot.x1 - plot.x0) / binCount;
+                counts.forEach((c, i) => {
+                    if (!c) return;
+                    const bh = (c / max) * h;
+                    g.appendChild(el("rect", {
+                        x: plot.x0 + i * barW + 0.5, y: areaBottom - bh,
+                        width: Math.max(barW - 1, 0.5), height: bh,
+                        fill: "#d7b864", opacity: 0.55,
+                    }));
+                });
+            }
+            function renderHistRight(pts) {
+                const g = document.getElementById("lh-g-hist-right");
+                g.innerHTML = "";
+                const binCount = 16;
+                const counts = new Array(binCount).fill(0);
+                const span = (yHi - yLo) || 1;
+                pts.forEach(p => {
+                    let bi = Math.floor(((p.val - yLo) / span) * binCount);
+                    if (bi < 0) bi = 0; if (bi >= binCount) bi = binCount - 1;
+                    counts[bi]++;
+                });
+                const max = Math.max(1, ...counts);
+                const areaLeft = plot.x1 + 14, areaRight = VB_W - 14;
+                const w = areaRight - areaLeft;
+                const barH = (plot.y1 - plot.y0) / binCount;
+                counts.forEach((c, i) => {
+                    if (!c) return;
+                    const bw = (c / max) * w;
+                    const yTop = plot.y1 - (i + 1) * barH;
+                    g.appendChild(el("rect", {
+                        x: areaLeft, y: yTop + 0.5,
+                        width: bw, height: Math.max(barH - 1, 0.5),
+                        fill: "#5b7a9e", opacity: 0.45,
+                    }));
+                });
+            }
+
+            // ── Trend envelope (binned median + IQR) ─────────────────────
+            function renderTrend(pts) {
+                const g = document.getElementById("lh-g-trend");
+                g.innerHTML = "";
+                const bins = computeTrendBins(pts, 12);
+                if (bins.length < 2) return;
+                const upper = bins.map(b => `${xToPx(b.mass).toFixed(1)},${yToPx(b.q3).toFixed(1)}`);
+                const lower = bins.slice().reverse().map(b => `${xToPx(b.mass).toFixed(1)},${yToPx(b.q1).toFixed(1)}`);
+                g.appendChild(el("polygon", {
+                    points: upper.concat(lower).join(" "),
+                    fill: "#d7b864", opacity: 0.16, stroke: "none",
+                }));
+                const medianPts = bins.map(b => `${xToPx(b.mass).toFixed(1)},${yToPx(b.median).toFixed(1)}`).join(" ");
+                g.appendChild(el("polyline", {
+                    points: medianPts, fill: "none", stroke: "#a08a4a", "stroke-width": 2.25, opacity: 0.9,
+                }));
+            }
+
+            // ── Points (persisted + CSS-transitioned across metric switches) ─
+            function createPointCircle(p) {
+                const c = el("circle", {
+                    class: "lh-point", r: 3.4,
+                    cx: xToPx(p.mass), cy: yToPx(p.val),
+                    fill: pointColor(p.row), opacity: 0,
+                });
+                c.dataset.key = p.key;
+                c.addEventListener("mouseenter", e => showTooltip(p, e));
+                c.addEventListener("mousemove", moveTooltip);
+                c.addEventListener("mouseleave", hideTooltip);
+                c.addEventListener("click", () => { hideTooltip(); BirdDetail.open(p.row); });
+                return c;
+            }
+
+            function renderPoints(pts, animate) {
+                const gPoints = document.getElementById("lh-g-points");
+                const newByKey = new Map(pts.map(p => [p.key, p]));
+
+                // Exiting: present before, absent now.
+                circleEls.forEach((elx, key) => {
+                    if (!newByKey.has(key)) {
+                        elx.setAttribute("opacity", 0);
+                        const toRemove = elx;
+                        circleEls.delete(key);
+                        setTimeout(() => toRemove.remove(), animate ? 420 : 0);
+                    }
+                });
+
+                // Entering / updating.
+                newByKey.forEach((p, key) => {
+                    const targetCy = yToPx(p.val);
+                    const targetOpacity = effectiveOpacity(p.mass);
+                    const targetFill = pointColor(p.row);
+                    let c = circleEls.get(key);
+                    if (!c) {
+                        c = createPointCircle(p);
+                        gPoints.appendChild(c);
+                        circleEls.set(key, c);
+                        if (!animate) {
+                            c.setAttribute("opacity", targetOpacity);
+                        } else {
+                            requestAnimationFrame(() => c.setAttribute("opacity", targetOpacity));
+                        }
+                    } else {
+                        c.setAttribute("cy", targetCy);
+                        c.setAttribute("opacity", targetOpacity);
+                        c.setAttribute("fill", targetFill);
+                    }
+                });
+            }
+
+            // ── Tooltip ───────────────────────────────────────────────────
+            const tooltip = document.getElementById("lh-tooltip");
+            function showTooltip(p, evt) {
+                const row = p.row;
+                const sci = [row.GENUS, row.SPECIES].filter(Boolean).join(" ");
+                const imgSrc = (row.GENUS && row.SPECIES)
+                    ? `base_res/img/birds/${row.GENUS}_${row.SPECIES}.jpg`
+                    : "base_res/img/birds/_generic.jpg";
+                const m = METRICS[currentMetricIdx];
+                const statusLabel = STATUS_LABELS[row.RED_LIST] || row.RED_LIST || "—";
+                tooltip.innerHTML =
+                    `<div class="wb-tt-head">
+                        <img class="wb-tt-img" src="${esc(imgSrc)}"
+                             onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'" alt="">
+                        <div>
+                            <h4>${esc(row.COMMON_NAME || "—")}</h4>
+                            ${sci ? `<div class="tt-sci">${esc(sci)}</div>` : ""}
+                        </div>
+                     </div>
+                     <dl>
+                        <dt>Mass</dt><dd>${fmtMass(p.mass)}</dd>
+                        <dt>${esc(m.label)}</dt><dd>${fmtNum(p.val)} ${esc(m.unit)}</dd>
+                        <dt>Status</dt><dd>${esc(statusLabel)}</dd>
+                     </dl>`;
+                tooltip.hidden = false;
+                moveTooltip(evt);
+            }
+            function moveTooltip(evt) {
+                const pad = 14, w = tooltip.offsetWidth, h = tooltip.offsetHeight;
+                let x = evt.clientX + pad, y = evt.clientY + pad;
+                if (x + w > window.innerWidth) x = evt.clientX - w - pad;
+                if (y + h > window.innerHeight) y = evt.clientY - h - pad;
+                tooltip.style.left = x + "px";
+                tooltip.style.top = y + "px";
+            }
+            function hideTooltip() { tooltip.hidden = true; }
+
+            // ── Brush (drag a mass range) ─────────────────────────────────
+            function svgPoint(evt) {
+                const rect = svg.getBoundingClientRect();
+                return { x: (evt.clientX - rect.left) * (VB_W / rect.width) };
+            }
+            function wireBrush(capture) {
+                const rectEl = document.getElementById("lh-brush-rect");
+                let dragging = false, startPx = 0;
+
+                capture.addEventListener("pointerdown", e => {
+                    dragging = true;
+                    startPx = svgPoint(e).x;
+                    capture.setPointerCapture(e.pointerId);
+                    rectEl.setAttribute("visibility", "visible");
+                    rectEl.setAttribute("x", startPx);
+                    rectEl.setAttribute("width", 0);
+                });
+                capture.addEventListener("pointermove", e => {
+                    if (!dragging) return;
+                    const cur = svgPoint(e).x;
+                    const x0 = Math.max(plot.x0, Math.min(startPx, cur));
+                    const x1 = Math.min(plot.x1, Math.max(startPx, cur));
+                    rectEl.setAttribute("x", x0);
+                    rectEl.setAttribute("width", Math.max(0, x1 - x0));
+                });
+                capture.addEventListener("pointerup", e => {
+                    if (!dragging) return;
+                    dragging = false;
+                    const cur = svgPoint(e).x;
+                    const x0 = Math.max(plot.x0, Math.min(startPx, cur));
+                    const x1 = Math.min(plot.x1, Math.max(startPx, cur));
+                    if (x1 - x0 < 4) {
+                        clearBrush();
+                        return;
+                    }
+                    brush = { active: true, lo: pxToMass(x0), hi: pxToMass(x1) };
+                    rectEl.setAttribute("x", x0);
+                    rectEl.setAttribute("width", x1 - x0);
+                    applyBrush();
+                });
+            }
+            function applyBrush() {
+                currentPoints.forEach(p => {
+                    const c = circleEls.get(p.key);
+                    if (c) c.setAttribute("opacity", effectiveOpacity(p.mass));
+                });
+                renderBrushPanel();
+            }
+            function clearBrush() {
+                brush = { active: false, lo: 0, hi: 0 };
+                document.getElementById("lh-brush-rect").setAttribute("visibility", "hidden");
+                currentPoints.forEach(p => {
+                    const c = circleEls.get(p.key);
+                    if (c) c.setAttribute("opacity", effectiveOpacity(p.mass));
+                });
+                document.getElementById("lh-brush-panel").hidden = true;
+            }
+            document.getElementById("lh-brush-clear").addEventListener("click", clearBrush);
+
+            function renderBrushPanel() {
+                const panel = document.getElementById("lh-brush-panel");
+                if (!brush.active) { panel.hidden = true; return; }
+                panel.hidden = false;
+                const inRange = currentPoints
+                    .filter(p => p.mass >= brush.lo && p.mass <= brush.hi)
+                    .sort((a, b) => a.mass - b.mass);
+                const m = METRICS[currentMetricIdx];
+                document.getElementById("lh-brush-summary").textContent =
+                    `${inRange.length} species between ${fmtMass(brush.lo)} and ${fmtMass(brush.hi)}`;
+                const listEl = document.getElementById("lh-brush-list");
+                listEl.innerHTML = inRange.length
+                    ? inRange.map(p => `<div class="lh-brush-item" data-key="${esc(p.key)}">
+                            <span class="lh-brush-name">${esc(p.row.COMMON_NAME || "—")}</span>
+                            <span class="lh-brush-meta">${fmtMass(p.mass)} · ${fmtNum(p.val)} ${esc(m.unit)}</span>
+                        </div>`).join("")
+                    : `<p class="lh-brush-empty">No species with ${esc(m.label.toLowerCase())} data in this mass range.</p>`;
+            }
+            document.getElementById("lh-brush-list").addEventListener("click", e => {
+                const item = e.target.closest(".lh-brush-item");
+                if (!item) return;
+                const row = rowByKey.get(item.dataset.key);
+                if (row) BirdDetail.open(row);
+            });
+
+            // ── Coverage caption & legend ─────────────────────────────────
+            function renderCoverage(m, pts) {
+                const el2 = document.getElementById("lh-coverage");
+                const pct = (pts.length / rows.length) * 100;
+                el2.textContent = `Showing ${pts.length} of ${rows.length} species with recorded ${m.label.toLowerCase()} data (${pct.toFixed(0)}%).` +
+                    (pct < 30 ? " Sparse sample — read the pattern as a hint, not a rule." : "");
+                el2.classList.toggle("lh-coverage--sparse", pct < 30);
+                document.getElementById("lh-insight").textContent = m.insight;
+                document.getElementById("lh-count").textContent = `${pts.length} species plotted`;
+            }
+            function renderLegend() {
+                const legendEl = document.getElementById("lh-legend");
+                if (colorMode !== "status") { legendEl.style.display = "none"; return; }
+                const present = new Set(rows.map(r => r.RED_LIST).filter(Boolean));
+                const sorted = STATUS_ORDER.filter(s => present.has(s));
+                legendEl.innerHTML = `<div class="tc-legend-title">Conservation status (IUCN Red List)</div>` +
+                    sorted.map(s => `<span class="tc-legend-item"><span class="tc-swatch" style="background:${statusColor(s)}"></span>${esc(STATUS_LABELS[s] || s)}</span>`).join("");
+                legendEl.style.display = "";
+            }
+
+            // ── Metric select population ──────────────────────────────────
+            function populateMetricSelect() {
+                const sel = document.getElementById("lh-metric");
+                sel.disabled = false;
+                sel.innerHTML = METRICS.map((m, i) => {
+                    const n = computeMetricPoints(i).length;
+                    const pct = Math.round((n / rows.length) * 100);
+                    const sparse = pct < 30 ? " — sparse" : "";
+                    return `<option value="${i}">${esc(m.label)} (n=${n}, ${pct}%${sparse})</option>`;
+                }).join("");
+                sel.value = currentMetricIdx;
+                document.getElementById("lh-color").disabled = false;
+            }
+
+            // ── Main render for a metric ──────────────────────────────────
+            function renderMetric(mIdx, animate) {
+                currentMetricIdx = mIdx;
+                const m = METRICS[mIdx];
+                currentPoints = computeMetricPoints(mIdx);
+                buildYScale(currentPoints.map(p => p.val));
+
+                renderAxisX();
+                renderAxisY(m);
+                renderHistTop(currentPoints);
+                renderHistRight(currentPoints);
+                renderTrend(currentPoints);
+                renderPoints(currentPoints, animate);
+                renderCoverage(m, currentPoints);
+                if (brush.active) renderBrushPanel();
+            }
+
+            // ── Init ──────────────────────────────────────────────────────
+            function init() {
+                document.getElementById("lh-empty").hidden = true;
+                svg.removeAttribute("hidden");
+                buildMassDomain(rows);
+                buildScaffold();
+                populateMetricSelect();
+                renderLegend();
+                renderMetric(currentMetricIdx, false);
+            }
+
+            document.getElementById("lh-metric").addEventListener("change", e => {
+                renderMetric(+e.target.value, true);
+            });
+            document.getElementById("lh-color").addEventListener("change", e => {
+                colorMode = e.target.value;
+                renderLegend();
+                currentPoints.forEach(p => {
+                    const c = circleEls.get(p.key);
+                    if (c) c.setAttribute("fill", pointColor(p.row));
+                });
+            });
+        </script>
+    </body>
+</html>

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Avibase",
+    "desc": "an extensive database information system about all birds of the world, containing over 54 million records about 10,000 species and 22,000 subspecies of birds, including distribution information for 20,000 regions, taxonomy, synonyms in several languages and more.",
+    "uri": "https://avibase.bsc-eoc.org/avibase.jsp",
+    "notes": ""
+  },
+  {
+    "name": "Birdbase",
+    "desc": "A comprehensive avian trait dataset (morphometrics, breeding data, habitat, and conservation status). Developed by Dr. Çağan Şekercioğlu at the University of Utah, it is free to use on Figshare. ",
+    "uri": "https://springernature.figshare.com/articles/dataset/BIRDBASE_A_Global_Database_of_Avian_Biogeography_Conservation_Ecology_and_Life_History_Traits/27051040?file=55634729",
+    "notes": ""
+  }
+]

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="base_res/img/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Resources — Soaring Wild</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Public+Sans:wght@400&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="base_res/style.css" />
+        <style>
+            .site-header {
+                position: sticky;
+                top: 0;
+                background: var(--dark);
+            }
+        </style>
+    </head>
+    <body>
+        <header class="site-header">
+            <a href="/" class="logo-box"
+                ><img src="base_res/img/SoWi_title_light.png"
+            /></a>
+            <ul class="site-nav">
+                <li><a href="/#about">About Us</a></li>
+                <li><a href="/#projects">Our Projects</a></li>
+                <li><a href="resources.html">Resources</a></li>
+            </ul>
+        </header>
+
+        <main class="res-main">
+            <section class="data-section res-section" data-source="bird_databases.json">
+                <div class="res-section-header">
+                    <h2>Bird Databases</h2>
+                    <button class="res-toggle-btn" aria-label="Toggle section">
+                        <img src="base_res/img/expand_less.svg" alt="" />
+                    </button>
+                </div>
+                <div class="res-body">
+                    <p class="res-loading">Loading…</p>
+                </div>
+            </section>
+
+            <section class="data-section res-section" data-source="sample_data.json">
+                <div class="res-section-header">
+                    <h2>Sample Data</h2>
+                    <button class="res-toggle-btn" aria-label="Toggle section">
+                        <img src="base_res/img/expand_less.svg" alt="" />
+                    </button>
+                </div>
+                <div class="res-body">
+                    <p class="res-loading">Loading…</p>
+                </div>
+            </section>
+
+            <section class="res-section">
+                <div class="res-section-header">
+                    <h2>Database Queries</h2>
+                </div>
+                <div class="res-body">
+                    <div class="res-cards">
+                        <div class="res-card">
+                            <div class="res-card-name">Avian Data Explorer</div>
+                            <div class="res-card-field">Browse and visualize the BIRDS_BASE_DATA table.</div>
+                            <div class="res-card-field" style="margin-top:0.5rem;">
+                                <a href="data_explorer.html">Open &rarr;</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
+            <li><a href="/#about">About Us</a></li>
+            <li><a href="/#projects">Our Projects</a></li>
+            <li><a href="resources.html">Resources</a></li>
+        </ul>
+
+        <script src="base_res/resources.js"></script>
+    </body>
+</html>

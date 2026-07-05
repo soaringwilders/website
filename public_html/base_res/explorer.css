@@ -1,0 +1,1197 @@
+/* ── Shared styles for Avian Data Explorer pages ─────────────────────── */
+
+/* ── Landing page ─────────────────────────────────────────────────────── */
+.de-main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 4rem;
+}
+
+.de-intro {
+    margin-bottom: 2rem;
+}
+
+.de-intro h1 {
+    font-family: "Inter", sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+}
+
+.de-intro p {
+    color: #555;
+    font-size: 0.95rem;
+    max-width: 640px;
+}
+
+/* ── Back link (used on data pages to return to the explorer) ───────────── */
+.page-back {
+    display: inline-block;
+    font-family: "Inter", sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    text-decoration: none;
+    margin-bottom: 0.35rem;
+}
+
+.page-back:hover {
+    color: var(--dark);
+}
+
+/* ── Shared page layout ───────────────────────────────────────────────── */
+.bbd-main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 4rem;
+}
+
+.bbd-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0 1.25rem;
+    border-bottom: 2px solid var(--amber);
+    margin-bottom: 1.5rem;
+}
+
+.bbd-header h1 {
+    font-family: "Inter", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+#bbd-status {
+    font-size: 0.85rem;
+    color: #888;
+    min-height: 1.4em;
+}
+
+/* ── Data table ───────────────────────────────────────────────────────── */
+.bbd-table-wrap {
+    overflow: scroll;
+    max-height: calc(100vh - 240px);
+    border: 1px solid #e0e5ed;
+    border-radius: 4px;
+}
+
+#bbd-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+#bbd-table th {
+    font-family: "Inter", sans-serif;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.72rem;
+    color: #888;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #e0e5ed;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 2;
+    box-shadow: 0 1px 0 #e0e5ed;
+}
+
+#bbd-table td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+    vertical-align: top;
+}
+
+#bbd-table tr:last-child td {
+    border-bottom: none;
+}
+
+#bbd-table tbody tr:hover td {
+    background: #fafafa;
+}
+
+/* ── Header action group ─────────────────────────── */
+.bbd-header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.btn--ghost {
+    background: transparent;
+    border: 1.5px solid var(--amber);
+    color: var(--dark);
+}
+
+.btn--ghost:hover {
+    background: var(--amber);
+    opacity: 1;
+}
+
+/* ── Legend modal ────────────────────────────────── */
+.lm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 3rem 1rem;
+}
+
+.lm-overlay[hidden] {
+    display: none;
+}
+
+.lm-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.lm-panel {
+    position: relative;
+    background: #fff;
+    border-radius: 6px;
+    width: 100%;
+    max-width: 700px;
+    max-height: calc(100vh - 6rem);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+}
+
+.lm-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 2px solid var(--amber);
+    flex-shrink: 0;
+}
+
+.lm-head h2 {
+    font-family: "Inter", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 0;
+}
+
+.lm-close {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #888;
+    padding: 0.25rem 0.5rem;
+}
+
+.lm-close:hover {
+    color: var(--dark);
+}
+
+.lm-body {
+    overflow-y: auto;
+    padding: 1.5rem;
+    flex: 1;
+}
+
+.lm-section {
+    margin-bottom: 2rem;
+}
+
+.lm-section:last-child {
+    margin-bottom: 0;
+}
+
+.lm-section h3 {
+    font-family: "Inter", sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #888;
+    margin: 0 0 0.75rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid #e8eaf0;
+}
+
+.lm-section p {
+    font-size: 0.84rem;
+    color: #555;
+    margin: 0 0 0.6rem;
+    line-height: 1.5;
+}
+
+.lm-section dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.25rem 1.25rem;
+    margin: 0;
+}
+
+.lm-section dt {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--dark);
+    padding: 0.15rem 0;
+    white-space: nowrap;
+}
+
+.lm-section dd {
+    font-size: 0.82rem;
+    color: #444;
+    margin: 0;
+    padding: 0.15rem 0;
+    line-height: 1.5;
+}
+
+/* ── Trait Constellation ──────────────────────────────────────────────── */
+.tc-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.tc-field {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.tc-field label {
+    font-family: "Inter", sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+}
+
+.tc-field select,
+.tc-field input {
+    font-family: "Public Sans", sans-serif;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #d6dbe4;
+    border-radius: 4px;
+    background: #fff;
+    color: var(--dark);
+}
+
+.tc-field input {
+    width: 180px;
+}
+
+#tc-count {
+    font-size: 0.8rem;
+    color: #888;
+    margin-left: auto;
+}
+
+/* Diet color legend */
+.tc-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    padding: 0.75rem 0.9rem;
+    background: #fbfaf6;
+    border: 1px solid #ece6d4;
+    border-radius: 6px;
+    margin-bottom: 1.25rem;
+}
+
+.tc-legend-title {
+    font-family: "Inter", sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #a08a4a;
+    width: 100%;
+    margin-bottom: 0.1rem;
+}
+
+.tc-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    color: #555;
+}
+
+.tc-swatch {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.tc-legend-note {
+    width: 100%;
+    font-size: 0.74rem;
+    color: #998b66;
+    margin-top: 0.2rem;
+}
+
+/* Grid of glyphs, grouped by taxon */
+.tc-canvas {
+    max-height: calc(100vh - 320px);
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.tc-group {
+    margin-bottom: 1.75rem;
+}
+
+.tc-group-head {
+    font-family: "Inter", sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--dark);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #eceff4;
+    margin-bottom: 0.75rem;
+    position: sticky;
+    top: 0;
+    background: var(--light);
+    z-index: 1;
+}
+
+.tc-group-head span {
+    color: #aaa;
+    font-weight: 500;
+    margin-left: 0.4rem;
+}
+
+.tc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 84px);
+    gap: 0.5rem;
+    justify-content: start;
+}
+
+.tc-glyph {
+    width: 84px;
+    height: 96px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    border-radius: 6px;
+    padding-top: 2px;
+    transition: background 0.12s, transform 0.12s;
+}
+
+.tc-glyph:hover {
+    background: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+.tc-glyph svg {
+    display: block;
+}
+
+.tc-glyph-name {
+    font-size: 0.62rem;
+    line-height: 1.15;
+    text-align: center;
+    color: #555;
+    margin-top: 2px;
+    width: 100%;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.tc-glyph.is-dim {
+    opacity: 0.12;
+    pointer-events: none;
+}
+
+/* Tooltip */
+#tc-tooltip {
+    position: fixed;
+    z-index: 1200;
+    pointer-events: none;
+    background: var(--dark);
+    color: #fff;
+    border-radius: 6px;
+    padding: 0.7rem 0.85rem;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    max-width: 250px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+#tc-tooltip[hidden] {
+    display: none;
+}
+
+#tc-tooltip h4 {
+    font-family: "Inter", sans-serif;
+    font-size: 0.86rem;
+    margin: 0 0 0.1rem;
+    color: var(--amber);
+}
+
+#tc-tooltip .tt-sci {
+    font-style: italic;
+    color: #bbb;
+    font-size: 0.74rem;
+    margin-bottom: 0.4rem;
+}
+
+#tc-tooltip dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.05rem 0.6rem;
+    margin: 0;
+}
+
+#tc-tooltip dt {
+    color: #999;
+}
+
+#tc-tooltip dd {
+    margin: 0;
+    color: #fff;
+}
+
+.tc-empty {
+    color: #888;
+    font-size: 0.9rem;
+    padding: 2rem 0;
+    text-align: center;
+}
+
+/* ── Bird Detail Modal & Page ─────────────────────────────────────────────── */
+
+.bd-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+    overflow-y: auto;
+}
+.bd-overlay[hidden] { display: none; }
+
+.bd-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.62);
+}
+
+.bd-panel {
+    position: relative;
+    background: #fff;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 780px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 14px 54px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    flex-shrink: 0;
+    margin: auto;
+}
+
+.bd-panel-body {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.bd-close {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(4px);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+}
+.bd-close:hover { background: rgba(255, 255, 255, 0.3); }
+
+/* Hero — image + identity */
+.bd-hero {
+    display: flex;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: var(--dark);
+    align-items: flex-end;
+}
+
+.bd-img-wrap {
+    flex-shrink: 0;
+    width: 150px;
+    height: 150px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #3a3a3a;
+    border: 2px solid rgba(215, 184, 100, 0.3);
+}
+
+.bd-img {
+    width: 100%;
+    height: 100%;
+    object-fit: none;
+    display: block;
+}
+
+.bd-ident {
+    flex: 1;
+    min-width: 0;
+    padding-bottom: 0.1rem;
+}
+
+.bd-common-name {
+    font-family: "Inter", sans-serif;
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--light);
+    line-height: 1.15;
+    margin-bottom: 0.25rem;
+}
+
+.bd-sci-name {
+    font-style: italic;
+    color: #bbb;
+    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+}
+
+.bd-taxon-line {
+    font-family: "Inter", sans-serif;
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #777;
+    margin-bottom: 0.6rem;
+}
+
+.bd-status-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.4rem;
+}
+
+.bd-status-badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 3px;
+    font-family: "Inter", sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.04em;
+}
+
+.bd-status-label {
+    font-size: 0.78rem;
+    color: #bbb;
+}
+
+.bd-band-code {
+    font-size: 0.76rem;
+    color: #666;
+    margin-top: 0.15rem;
+}
+
+/* Sections */
+.bd-sections {
+    padding: 0 1.5rem 2rem;
+}
+
+.bd-section {
+    padding: 0.9rem 0;
+    border-bottom: 1px solid #eef0f4;
+}
+.bd-section:last-child { border-bottom: none; }
+
+.bd-section-title {
+    font-family: "Inter", sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: #a08a4a;
+    margin-bottom: 0.6rem;
+}
+
+.bd-dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.18rem 1rem;
+    margin: 0;
+}
+
+.bd-dl--mt {
+    margin-top: 0.65rem;
+}
+
+.bd-dl dt {
+    font-family: "Inter", sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #888;
+    padding: 0.08rem 0;
+    white-space: nowrap;
+}
+
+.bd-dl dd {
+    font-size: 0.82rem;
+    color: #333;
+    margin: 0;
+    padding: 0.08rem 0;
+}
+
+/* Habitat pills */
+.bd-hab-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.65rem;
+}
+
+.bd-hab-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: #f2f5fa;
+    border: 1px solid #dce2ec;
+    border-radius: 20px;
+    padding: 0.15rem 0.6rem 0.15rem 0.3rem;
+    font-size: 0.76rem;
+    color: #444;
+}
+
+.bd-hab-rank {
+    width: 18px;
+    height: 18px;
+    background: var(--amber);
+    border-radius: 50%;
+    font-family: "Inter", sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--dark);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Diet bars */
+.bd-diet-bars {
+    margin-top: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.28rem;
+}
+
+.bd-diet-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.bd-diet-label {
+    font-size: 0.76rem;
+    color: #555;
+    width: 100px;
+    flex-shrink: 0;
+}
+
+.bd-diet-bar-wrap {
+    flex: 1;
+    height: 9px;
+    background: #f0f0f0;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.bd-diet-bar {
+    height: 100%;
+    border-radius: 5px;
+}
+
+.bd-diet-val {
+    font-family: "Inter", sans-serif;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #888;
+    width: 1.5rem;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.bd-misc-desc {
+    font-size: 0.8rem;
+    color: #555;
+    margin-top: 0.5rem;
+    line-height: 1.5;
+}
+
+.bd-field-key {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    color: #888;
+    font-size: 0.76rem;
+}
+
+/* Tags (social / movement) */
+.bd-tag-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.bd-tag {
+    background: #f0f3f8;
+    border: 1px solid #d6dde8;
+    border-radius: 4px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.76rem;
+    color: #444;
+    font-family: "Inter", sans-serif;
+    font-weight: 500;
+}
+
+.bd-empty {
+    font-size: 0.82rem;
+    color: #aaa;
+}
+
+/* Standalone page wrapper — mirrors modal panel look */
+.bd-page-wrap {
+    max-width: 780px;
+    margin: 1rem auto 4rem;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 28px rgba(0, 0, 0, 0.1);
+}
+
+.bd-page-nav {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 0;
+}
+
+@media (max-width: 600px) {
+    .bd-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .bd-img-wrap {
+        width: 100%;
+        height: 180px;
+    }
+
+    .bd-sections {
+        padding: 0 1rem 1.5rem;
+    }
+
+    .bd-common-name {
+        font-size: 1.15rem;
+    }
+}
+
+/* ── Size & Life-History Scaling ─────────────────────────────────────── */
+.lh-coverage {
+    font-size: 0.82rem;
+    color: #777;
+    margin: 0 0 0.15rem;
+}
+
+.lh-coverage--sparse {
+    color: #b8862e;
+    font-weight: 500;
+}
+
+.lh-insight {
+    font-size: 0.86rem;
+    font-style: italic;
+    color: #555;
+    margin: 0 0 1.1rem;
+    max-width: 720px;
+}
+
+.lh-chart-wrap {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.lh-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: #fff;
+    border: 1px solid #eceff4;
+    border-radius: 6px;
+}
+
+.lh-svg[hidden] {
+    display: none;
+}
+
+.lh-point {
+    transition: cy 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease, fill 0.3s ease;
+}
+
+.lh-point:hover {
+    r: 5.5;
+}
+
+/* Brushed species list */
+.lh-brush-panel {
+    background: #fbfaf6;
+    border: 1px solid #ece6d4;
+    border-radius: 6px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.lh-brush-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+}
+
+.lh-brush-head span {
+    font-family: "Inter", sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.lh-brush-list {
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.lh-brush-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.3rem 0.4rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.82rem;
+}
+
+.lh-brush-item:hover {
+    background: #fff;
+}
+
+.lh-brush-name {
+    color: var(--dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lh-brush-item:hover .lh-brush-name {
+    color: var(--amber);
+}
+
+.lh-brush-meta {
+    color: #888;
+    flex-shrink: 0;
+    font-size: 0.78rem;
+}
+
+.lh-brush-empty {
+    font-size: 0.82rem;
+    color: #aaa;
+    padding: 0.4rem;
+}
+
+/* ── Weights of Birds ─────────────────────────────────────────────────── */
+.wb-tabs {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 1.1rem;
+}
+
+.wb-tab {
+    font-family: "Inter", sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid #d6dbe4;
+    border-radius: 20px;
+    background: #fff;
+    color: #888;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.wb-tab:hover {
+    border-color: var(--amber);
+    color: var(--dark);
+}
+
+.wb-tab.is-active {
+    background: var(--dark);
+    border-color: var(--dark);
+    color: #fff;
+}
+
+.wb-canvas {
+    --wb-name-col: 210px;
+    --wb-track-h: 34px;
+}
+
+.wb-axis {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.wb-axis-spacer {
+    flex: 0 0 var(--wb-name-col);
+}
+
+.wb-axis-ticks {
+    flex: 1;
+    position: relative;
+    height: 16px;
+}
+
+.wb-tick-label {
+    position: absolute;
+    top: 0;
+    font-family: "Inter", sans-serif;
+    font-size: 0.66rem;
+    color: #9aa0aa;
+    white-space: nowrap;
+}
+
+.wb-list {
+    max-height: calc(100vh - 400px);
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.wb-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.wb-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.3rem 0.4rem;
+    border-radius: 4px;
+}
+
+.wb-row:hover {
+    background: #fff;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+}
+
+.wb-name {
+    flex: 0 0 var(--wb-name-col);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.82rem;
+    color: var(--dark);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.wb-name:hover {
+    color: var(--amber);
+    text-decoration: underline;
+}
+
+.wb-bar-track {
+    flex: 1;
+    position: relative;
+    height: var(--wb-track-h);
+    background: #fafafa;
+    border: 1px solid #eceff4;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.wb-tick-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.wb-bar {
+    position: absolute;
+    border-radius: 2px;
+    min-width: 3px;
+}
+
+.wb-avg-tick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    margin-left: -1px;
+    background: #1a1a1a;
+}
+
+.wb-no-data {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    padding-left: 0.6rem;
+    font-size: 0.74rem;
+    color: #aaa;
+    font-style: italic;
+}
+
+/* Dumbbell rows (Sexual Dimorphism tab) */
+.wb-dumbbell-line {
+    position: absolute;
+    top: 50%;
+    height: 2px;
+    margin-top: -1px;
+    background: #c7cbd3;
+}
+
+.wb-dot {
+    position: absolute;
+    top: 50%;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    margin-left: -5.5px;
+    margin-top: -5.5px;
+    border: 1.5px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.wb-dot--f {
+    background: #d65a9a;
+}
+
+.wb-dot--m {
+    background: #3d7bc0;
+}
+
+.wb-ratio-badge {
+    flex: 0 0 76px;
+    text-align: right;
+    font-family: "Inter", sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Tooltip (species image + mass values) */
+#wb-tooltip {
+    position: fixed;
+    z-index: 1200;
+    pointer-events: none;
+    background: var(--dark);
+    color: #fff;
+    border-radius: 6px;
+    padding: 0.7rem 0.85rem;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    max-width: 260px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+#wb-tooltip[hidden] {
+    display: none;
+}
+
+.wb-tt-head {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.wb-tt-img {
+    width: 48px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 4px;
+    background: #333;
+    flex-shrink: 0;
+}
+
+.wb-tt-head h4 {
+    font-family: "Inter", sans-serif;
+    font-size: 0.86rem;
+    margin: 0 0 0.1rem;
+    color: var(--amber);
+}
+
+.wb-tt-head .tt-sci {
+    font-style: italic;
+    color: #bbb;
+    font-size: 0.74rem;
+}
+
+#wb-tooltip dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.05rem 0.6rem;
+    margin: 0;
+}
+
+#wb-tooltip dt {
+    color: #999;
+}
+
+#wb-tooltip dd {
+    margin: 0;
+    color: #fff;
+}

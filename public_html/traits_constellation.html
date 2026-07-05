@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="base_res/img/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Traits Constellation — Soaring Wild</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Public+Sans:wght@400&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="base_res/style.css" />
+        <link rel="stylesheet" href="base_res/explorer.css" />
+        <style>
+            .site-header {
+                position: sticky;
+                top: 0;
+                background: var(--dark);
+            }
+        </style>
+    </head>
+    <body>
+        <header class="site-header">
+            <a href="/" class="logo-box"
+                ><img src="base_res/img/SoWi_title_light.png"
+            /></a>
+            <ul class="site-nav">
+                <li><a href="/#about">About Us</a></li>
+                <li><a href="/#projects">Our Projects</a></li>
+                <li><a href="resources.html">Resources</a></li>
+            </ul>
+        </header>
+
+        <main class="bbd-main">
+            <div class="bbd-header">
+                <div>
+                    <a href="data_explorer.html" class="page-back">&larr; Avian Data Explorer</a>
+                    <h1>Traits Constellation</h1>
+                </div>
+                <div class="bbd-header-actions">
+                    <button class="btn btn--ghost" id="bbd-legend-btn">Legend</button>
+                    <button class="btn" id="bbd-load-btn">Load Data</button>
+                </div>
+            </div>
+            <p id="bbd-status"></p>
+
+            <div class="tc-controls">
+                <div class="tc-field">
+                    <label for="tc-group">Group by</label>
+                    <select id="tc-group">
+                        <option value="ORDER" selected>Order</option>
+                        <option value="FAMILY">Family</option>
+                        <option value="DIET_PRIMARY">Primary diet</option>
+                        <option value="">None</option>
+                    </select>
+                </div>
+                <div class="tc-field">
+                    <label for="tc-sort">Sort by</label>
+                    <select id="tc-sort">
+                        <option value="COMMON_NAME" selected>Name</option>
+                        <option value="MASS_AVG">Body mass</option>
+                        <option value="DIET_ESI">Specialization (ESI)</option>
+                        <option value="DIET_BREADTH">Diet breadth</option>
+                        <option value="HABITAT_BREADTH">Habitat breadth</option>
+                        <option value="RED_LIST">Conservation status</option>
+                    </select>
+                </div>
+                <div class="tc-field">
+                    <label for="tc-search">Find</label>
+                    <input type="search" id="tc-search" placeholder="name, family, genus…" />
+                </div>
+                <span id="tc-count"></span>
+            </div>
+
+            <div class="tc-legend" id="tc-legend"></div>
+
+            <div class="tc-canvas" id="tc-canvas">
+                <p class="tc-empty">Load the data to grow the constellation.</p>
+            </div>
+        </main>
+
+        <div id="tc-tooltip" hidden></div>
+
+        <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
+            <li><a href="/#about">About Us</a></li>
+            <li><a href="/#projects">Our Projects</a></li>
+            <li><a href="resources.html">Resources</a></li>
+        </ul>
+
+        <!-- Legend Modal -->
+        <div id="legend-modal" class="lm-overlay" role="dialog" aria-modal="true" aria-labelledby="lm-title" hidden>
+            <div class="lm-backdrop"></div>
+            <div class="lm-panel">
+                <div class="lm-head">
+                    <h2 id="lm-title">Bird Base Data — Legend</h2>
+                    <button class="lm-close" aria-label="Close legend">&times;</button>
+                </div>
+                <div class="lm-body">
+
+                    <section class="lm-section">
+                        <h3>IUCN Red List Status</h3>
+                        <dl>
+                            <dt>EX</dt><dd>Extinct</dd>
+                            <dt>EW</dt><dd>Extinct in the Wild</dd>
+                            <dt>CR (PE)</dt><dd>Possibly Extinct</dd>
+                            <dt>CR (PEW)</dt><dd>Possibly Extinct in the Wild</dd>
+                            <dt>CR</dt><dd>Critically Endangered</dd>
+                            <dt>EN</dt><dd>Endangered</dd>
+                            <dt>VU</dt><dd>Vulnerable</dd>
+                            <dt>NT</dt><dd>Near-threatened</dd>
+                            <dt>LC</dt><dd>Least Concern</dd>
+                            <dt>DD</dt><dd>Data Deficient</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Restricted Range</h3>
+                        <p>Species with a global range size &lt;50,000 km² receive a value of <strong>1</strong>.</p>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Realm</h3>
+                        <p>If a species is found in two or more realms, realm is a combination (e.g. <strong>LN</strong> = Neotropical + Nearctic).</p>
+                        <dl>
+                            <dt>A</dt><dd>Australian</dd>
+                            <dt>C</dt><dd>Cosmopolitan</dd>
+                            <dt>E</dt><dd>Eastern Hemisphere</dd>
+                            <dt>F</dt><dd>Afrotropical</dd>
+                            <dt>I</dt><dd>Indomalayan</dd>
+                            <dt>L</dt><dd>Neotropical</dd>
+                            <dt>M</dt><dd>Madagascar &amp; islands</dd>
+                            <dt>N</dt><dd>Nearctic</dd>
+                            <dt>O</dt><dd>Oceania</dd>
+                            <dt>P</dt><dd>Palearctic</dd>
+                            <dt>S</dt><dd>South Polar</dd>
+                            <dt>W</dt><dd>Wallacea</dd>
+                            <dt>Z</dt><dd>New Zealand &amp; islands</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Latitudinal Range (LAT_RANGE)</h3>
+                        <p>Latitudinal range based on tropics and polar circles.</p>
+                        <dl>
+                            <dt>1</dt><dd>Tropical</dd>
+                            <dt>2</dt><dd>Tropical–Temperate</dd>
+                            <dt>3</dt><dd>Temperate</dd>
+                            <dt>4</dt><dd>Temperate–Polar</dd>
+                            <dt>5</dt><dd>Tropical–Polar</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Body Mass</h3>
+                        <dl>
+                            <dt>Male MinMass</dt><dd>Minimum mass value listed for males</dd>
+                            <dt>Male MaxMass</dt><dd>Maximum mass value listed for males</dd>
+                            <dt>Female MinMass</dt><dd>Minimum mass value listed for females</dd>
+                            <dt>Female MaxMass</dt><dd>Maximum mass value listed for females</dd>
+                            <dt>Unsexed MinMass</dt><dd>Minimum mass value listed for unsexed individuals</dd>
+                            <dt>Unsexed MaxMass</dt><dd>Maximum mass value listed for unsexed individuals</dd>
+                            <dt>Average Mass</dt><dd>Average value across males, females, and unsexed individuals</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Habitat</h3>
+                        <p>Habitats are numbered in order of preference.</p>
+                        <dl>
+                            <dt>F</dt><dd>Forest, secondary forest, swamp forest, tree-fall gaps, taiga, igapo, varzea</dd>
+                            <dt>BM</dt><dd>Bamboo</dd>
+                            <dt>WD</dt><dd>Acacia woodland, tropical deciduous/dry forest, savanna woodland, palm groves, miombo woodland, thorn forest, Polylepis woodland, pine-oak woodland</dd>
+                            <dt>SH</dt><dd>Shrubland, scrub, secondary growth (with few trees), cerrado, campo, karoo, thickets, roadside growth, heaths, copses, hedgerow, vine tangle, caatinga, chaco</dd>
+                            <dt>SV</dt><dd>Savanna, arid plains, wooded grassland, pampas, campos</dd>
+                            <dt>G</dt><dd>Grasslands, high altitude flats, puna, altiplano, tundra, tussock, pastures, steppe, paramo, moorland, plateaus, open vegetation</dd>
+                            <dt>PL</dt><dd>Plains, dry &amp; open areas, semi-desert, steppe, tundra, arid and semi-arid grassland</dd>
+                            <dt>R</dt><dd>Rocky areas, cliffs, outcrop, inselberg, koppi, escarpment</dd>
+                            <dt>D</dt><dd>Desert, sand dune (not coastal)</dd>
+                            <dt>A</dt><dd>Artificial, agricultural, farms, plantations, suburban, quarry, mine, excavation, dams and man-made lakes</dd>
+                            <dt>C</dt><dd>Sea coast, mangrove, estuary, bays, shores, fjords (only sea coast), coastal dune</dd>
+                            <dt>RV</dt><dd>Riparian, riverine, gallery forest, stream, running water, wooded ravines</dd>
+                            <dt>W</dt><dd>Wetlands, lakes, salt lakes, marsh, reedbed</dd>
+                            <dt>SE</dt><dd>Open sea, pelagic</dd>
+                            <dt>O</dt><dd>Other</dd>
+                            <dt>Primary Habitat</dt><dd>The main habitat type utilized by a species</dd>
+                            <dt>HB</dt><dd>Habitat breadth — number of major habitats used</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Diet</h3>
+                        <p>Infrequent feeding (described as "rarely" or a few times) = <strong>T</strong> (trace). "Occasionally" consumed = weight of <strong>1</strong>. "Also" consumed = weight of <strong>2</strong>.</p>
+                        <dl>
+                            <dt>Primary Diet</dt><dd>If any diet column ≥ 6, that column is the primary diet. Otherwise: Carnivore (primarily animal matter), Herbivore (primarily plant matter), or Omnivore (combination).</dd>
+                            <dt>IN-Wt</dt><dd>Invertebrates: arthropods, insects, aquatic invertebrates, molluscs, krill, shrimp, cephalopods, squid, crustaceans, polychaetes, gastropods, orthoptera</dd>
+                            <dt>FR-Wt</dt><dd>Fruit, drupes</dd>
+                            <dt>NE-Wt</dt><dd>Nectar</dd>
+                            <dt>SE-Wt</dt><dd>Seed, maize, nuts, spores, grain</dd>
+                            <dt>VE-Wt</dt><dd>Land vertebrates (non-sea): reptiles, snakes, amphibians, salamanders, mammals, birds</dd>
+                            <dt>FI-Wt</dt><dd>Fish</dd>
+                            <dt>SC-Wt</dt><dd>Scavenger: carcasses, garbage, offal, refuse, trawlers</dd>
+                            <dt>PL-Wt</dt><dd>Non-reproductive plant material: vegetation, algae, grass, roots, tubers, flowers</dd>
+                            <dt>MS-Wt</dt><dd>Miscellaneous (e.g. eggs = ovivores; beeswax)</dd>
+                            <dt>SUM-Wt</dt><dd>Sum of weighted diets — equals 10, or 0 if diet is unknown</dd>
+                            <dt>Desc</dt><dd>Description of miscellaneous food items</dd>
+                            <dt>DB</dt><dd>Diet breadth — number of major food types consumed</dd>
+                            <dt>Diet_Lit</dt><dd>0 = interpolated diet; 1 = diet from published source</dd>
+                            <dt>ESI</dt><dd>Ecological Specialization Index: log₁₀(100 ÷ [dietary breadth × habitat breadth]); maximum 2 for the most specialized species</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Social Behavior</h3>
+                        <p>0 = behavior not described for the species.</p>
+                        <dl>
+                            <dt>Social_1</dt><dd>1 = colonial</dd>
+                            <dt>Social_2</dt><dd>1 = social (large numbers, mixed-species flocks, seasonal flocks)</dd>
+                            <dt>Social_3</dt><dd>1 = pairs and family groups</dd>
+                            <dt>Social_4</dt><dd>1 = singly and pairs</dd>
+                            <dt>Social_5</dt><dd>1 = solitary</dd>
+                            <dt>Social_6</dt><dd>1 = lekking</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Monogamy</h3>
+                        <dl>
+                            <dt>Mono</dt><dd>1 = monogamous, 0 = not monogamous</dd>
+                            <dt>Poly</dt><dd>1 = polygynous, 0 = not polygynous</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Cooperative Breeding</h3>
+                        <dl>
+                            <dt>0</dt><dd>Does not breed cooperatively; solitary breeder</dd>
+                            <dt>1</dt><dd>Cooperative breeder</dd>
+                            <dt>2</dt><dd>Family member helper</dd>
+                            <dt>3</dt><dd>Occasional help</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Nest Type</h3>
+                        <dl>
+                            <dt>BU</dt><dd>Burrow (in ground; also ground cavities)</dd>
+                            <dt>CP</dt><dd>Cup, bowl</dd>
+                            <dt>CR</dt><dd>Crevice</dd>
+                            <dt>CV</dt><dd>Cavity (tree)</dd>
+                            <dt>DM</dt><dd>Dome (also oven)</dd>
+                            <dt>HC</dt><dd>Half cup, shallow</dd>
+                            <dt>NO</dt><dd>No nest</dd>
+                            <dt>O</dt><dd>Other bird's nest</dd>
+                            <dt>PL</dt><dd>Platform</dd>
+                            <dt>PN</dt><dd>Pendant, bag, purse</dd>
+                            <dt>SA</dt><dd>Saucer</dd>
+                            <dt>SC</dt><dd>Scrape</dd>
+                            <dt>SP</dt><dd>Sphere, globular</dd>
+                            <dt>M</dt><dd>Mound</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Nest Substrate (Nest_SBS)</h3>
+                        <p>The substrate refers to what the nest is placed on or in.</p>
+                        <dl>
+                            <dt>A</dt><dd>Bamboo</dd>
+                            <dt>B</dt><dd>Building</dd>
+                            <dt>C</dt><dd>Stump</dd>
+                            <dt>G</dt><dd>Ground</dd>
+                            <dt>K</dt><dd>Cactus</dd>
+                            <dt>N</dt><dd>Nest (of invertebrates, other birds, mammals, etc.)</dd>
+                            <dt>P</dt><dd>Pole</dd>
+                            <dt>R</dt><dd>Rock</dd>
+                            <dt>S</dt><dd>Shrub, bush, vine</dd>
+                            <dt>T</dt><dd>Tree</dd>
+                            <dt>W</dt><dd>Water</dd>
+                            <dt>Z</dt><dd>Grass</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Broods &amp; Breeding</h3>
+                        <dl>
+                            <dt>Brd1, Brd2</dt><dd>Minimum and maximum number of broods (does not include failed nesting attempts)</dd>
+                            <dt>Clutch_Min, Max</dt><dd>Lower and upper number of eggs laid (excluding rare clutch sizes)</dd>
+                            <dt>Incu_Sex</dt><dd>Sex incubating: F = female, M = male, B = both</dd>
+                            <dt>Incu1, Incu2</dt><dd>Lower and upper limits of incubation (days)</dd>
+                            <dt>Fldg1, Fldg2</dt><dd>Lower and upper limits of fledging (days)</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Nest Parasitism</h3>
+                        <p>0 = no known parasitism. Note: intra-specific parasitism receives a 1 in both columns.</p>
+                        <dl>
+                            <dt>Para.1</dt><dd>1 = nest parasite</dd>
+                            <dt>Para.2</dt><dd>1 = victim of nest parasitism</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Breeding Success &amp; Productivity</h3>
+                        <dl>
+                            <dt>BrS1, BrS2</dt><dd>Lower and upper limits of breeding success (% nests fledging young)</dd>
+                            <dt>Prod1, Prod2</dt><dd>Yearly productivity per pair (number of young raised to fledging)</dd>
+                        </dl>
+                    </section>
+
+                    <section class="lm-section">
+                        <h3>Movement</h3>
+                        <p>1 = species undertakes that type of movement.</p>
+                        <dl>
+                            <dt>Mig</dt><dd>Migration: yearly, regular, seasonal, and/or long-distance movement. 2 = partial migrant.</dd>
+                            <dt>Alt</dt><dd>Altitudinal/elevational migration: regular movements between high and low altitudes seasonally or post-breeding.</dd>
+                            <dt>Irreg</dt><dd>Nomadic, erratic, irruptive, or irregular movements due to weather, food availability, etc. Also unclear or poorly-known seasonal movements.</dd>
+                            <dt>Disp</dt><dd>Long-distance dispersal: usually once in a lifetime, post-fledging. Requires clear evidence of longer-distance movement.</dd>
+                            <dt>Sed</dt><dd>Sedentary: largely does not migrate; typically a resident species with at most local/seasonal movements.</dd>
+                        </dl>
+                    </section>
+
+                </div>
+            </div>
+        </div>
+
+        <script src="base_res/bird_data.js"></script>
+        <script src="base_res/bird_detail.js"></script>
+        <script>
+            // ── Load Data ───────────────────────────────────────────────────
+            const statusEl = document.getElementById("bbd-status");
+            let rows = [];
+
+            async function loadData() {
+                statusEl.textContent = "Loading…";
+                try {
+                    rows = await BirdData.load();
+                    statusEl.textContent = `${rows.length} row${rows.length !== 1 ? "s" : ""} loaded.`;
+                    renderConstellation();
+                } catch (err) {
+                    statusEl.textContent = `Error: ${err.message}`;
+                }
+            }
+
+            document.getElementById("bbd-load-btn").addEventListener("click", loadData);
+
+            // ── Trait Constellation (idea 1.1) ──────────────────────────────
+            //
+            // Each species is a radial "coxcomb" glyph:
+            //   • 9 diet wedges  — angle = food group, radius ∝ that diet's weight,
+            //                      colour = food group  → the species' diet mix.
+            //   • centre hub     — radius ∝ habitat breadth (generalist = bigger hub).
+            //   • outer ring     — colour = IUCN Red List status.
+            //   • overall scale  — ∝ log(body mass).
+            // Birds that live alike grow alike-looking flowers.
+
+            const DIETS = [
+                { key: "DIET_IN", label: "Invertebrates", color: "#3aa39a" },
+                { key: "DIET_FR", label: "Fruit",         color: "#d65a9a" },
+                { key: "DIET_NE", label: "Nectar",        color: "#8e5fc7" },
+                { key: "DIET_SE", label: "Seed",          color: "#d7b864" },
+                { key: "DIET_VE", label: "Vertebrates",   color: "#c0492f" },
+                { key: "DIET_FI", label: "Fish",          color: "#3d7bc0" },
+                { key: "DIET_SC", label: "Scavenger",     color: "#8a7a66" },
+                { key: "DIET_PL", label: "Plants",        color: "#6f9b3f" },
+                { key: "DIET_MS", label: "Misc.",         color: "#8d97a3" },
+            ];
+
+            // IUCN Red List → ring colour (warm = threatened, green = safe).
+            const STATUS_COLORS = {
+                "EX": "#000000", "EW": "#3a2a2a",
+                "CR (PE)": "#7a0d0d", "CR (PEW)": "#7a0d0d", "CR": "#9b1b1b",
+                "EN": "#d1582b", "VU": "#e0a52e", "NT": "#b8c24a",
+                "LC": "#5aa45a", "DD": "#b8bcc4",
+            };
+            const STATUS_LABELS = {
+                "EX": "Extinct", "EW": "Extinct in the Wild",
+                "CR (PE)": "Critically Endangered (Possibly Extinct)",
+                "CR (PEW)": "Critically Endangered (Possibly Extinct in Wild)",
+                "CR": "Critically Endangered", "EN": "Endangered", "VU": "Vulnerable",
+                "NT": "Near-threatened", "LC": "Least Concern", "DD": "Data Deficient",
+            };
+            function statusColor(s) { return STATUS_COLORS[s] || "#c9cdd4"; }
+
+            const SVG_NS = "http://www.w3.org/2000/svg";
+            const num = v => (v === null || v === undefined || v === "" || isNaN(+v)) ? null : +v;
+
+            // Mass → glyph scale factor in [0.55, 1] on a log scale across the dataset.
+            let massScale = () => 1;
+            function buildMassScale(rows) {
+                const masses = rows.map(r => num(r.MASS_AVG)).filter(m => m && m > 0);
+                if (!masses.length) { massScale = () => 0.8; return; }
+                const lmin = Math.log(Math.min(...masses));
+                const lmax = Math.log(Math.max(...masses));
+                const span = lmax - lmin || 1;
+                massScale = m => {
+                    if (!m || m <= 0) return 0.7;
+                    const t = (Math.log(m) - lmin) / span;
+                    return 0.55 + 0.45 * t;
+                };
+            }
+
+            function describeWedge(cx, cy, a0, a1, r) {
+                const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+                const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+                return `M${cx},${cy} L${x0.toFixed(2)},${y0.toFixed(2)} A${r.toFixed(2)},${r.toFixed(2)} 0 0 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z`;
+            }
+
+            function buildGlyph(row) {
+                const size = 60, c = size / 2;
+                const scale = massScale(num(row.MASS_AVG));
+                const maxR = (c - 6) * scale;          // outer petal reach
+                const svg = document.createElementNS(SVG_NS, "svg");
+                svg.setAttribute("width", size);
+                svg.setAttribute("height", size);
+                svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+
+                // status ring
+                const ring = document.createElementNS(SVG_NS, "circle");
+                ring.setAttribute("cx", c); ring.setAttribute("cy", c);
+                ring.setAttribute("r", c - 3);
+                ring.setAttribute("fill", "none");
+                ring.setAttribute("stroke", statusColor(row.RED_LIST));
+                ring.setAttribute("stroke-width", "2");
+                ring.setAttribute("opacity", "0.85");
+                svg.appendChild(ring);
+
+                // diet wedges (radius ∝ weight, 0–10)
+                const n = DIETS.length;
+                const slice = (Math.PI * 2) / n;
+                const gap = slice * 0.12;
+                let hasDiet = false;
+                DIETS.forEach((d, i) => {
+                    const w = num(row[d.key]) || 0;
+                    if (w <= 0) return;
+                    hasDiet = true;
+                    const a0 = -Math.PI / 2 + i * slice + gap / 2;
+                    const a1 = -Math.PI / 2 + (i + 1) * slice - gap / 2;
+                    const r = 4 + (maxR - 4) * (Math.min(w, 10) / 10);
+                    const p = document.createElementNS(SVG_NS, "path");
+                    p.setAttribute("d", describeWedge(c, c, a0, a1, r));
+                    p.setAttribute("fill", d.color);
+                    p.setAttribute("opacity", "0.9");
+                    svg.appendChild(p);
+                });
+
+                // centre hub ∝ habitat breadth
+                const hb = num(row.HABITAT_BREADTH) || 0;
+                const hub = document.createElementNS(SVG_NS, "circle");
+                hub.setAttribute("cx", c); hub.setAttribute("cy", c);
+                hub.setAttribute("r", (2 + Math.min(hb, 8) * 0.8).toFixed(1));
+                hub.setAttribute("fill", hasDiet ? "#2e3820" : "#cfd3da");
+                svg.appendChild(hub);
+
+                return svg;
+            }
+
+            // ── Tooltip ─────────────────────────────────────────────────────
+            const tooltip = document.getElementById("tc-tooltip");
+            function showTooltip(row, evt) {
+                const sci = [row.GENUS, row.SPECIES].filter(Boolean).join(" ");
+                const topDiet = DIETS
+                    .map(d => ({ label: d.label, w: num(row[d.key]) || 0 }))
+                    .filter(d => d.w > 0)
+                    .sort((a, b) => b.w - a.w)
+                    .slice(0, 3)
+                    .map(d => d.label).join(", ") || "unknown";
+                const mass = num(row.MASS_AVG);
+                const social = [
+                    [row.SOCIAL_1, "colonial"], [row.SOCIAL_2, "social"],
+                    [row.SOCIAL_3, "family groups"], [row.SOCIAL_4, "pairs"],
+                    [row.SOCIAL_5, "solitary"], [row.SOCIAL_6, "lekking"],
+                ].filter(([v]) => num(v) === 1).map(([, l]) => l).join(", ") || "—";
+                const moves = [
+                    [row.MIGRATION, "migratory"], [row.MIGRATION_ELEV, "altitudinal"],
+                    [row.MIGRATION_IRREG, "irruptive"], [row.MIGRATION_DISP, "dispersive"],
+                    [row.MIGRATION_SED, "sedentary"],
+                ].filter(([v]) => num(v) >= 1).map(([, l]) => l).join(", ") || "—";
+
+                tooltip.innerHTML =
+                    `<h4>${esc(row.COMMON_NAME || "—")}</h4>` +
+                    (sci ? `<div class="tt-sci">${esc(sci)}</div>` : "") +
+                    `<dl>` +
+                    `<dt>Family</dt><dd>${esc(row.FAMILY || "—")}</dd>` +
+                    `<dt>Status</dt><dd>${esc(STATUS_LABELS[row.RED_LIST] || row.RED_LIST || "—")}</dd>` +
+                    `<dt>Diet</dt><dd>${esc(topDiet)}</dd>` +
+                    `<dt>Habitats</dt><dd>${row.HABITAT_BREADTH ?? "—"} (breadth)</dd>` +
+                    `<dt>Mass</dt><dd>${mass ? mass.toLocaleString() + " g" : "—"}</dd>` +
+                    `<dt>Social</dt><dd>${esc(social)}</dd>` +
+                    `<dt>Movement</dt><dd>${esc(moves)}</dd>` +
+                    `</dl>`;
+                tooltip.hidden = false;
+                moveTooltip(evt);
+            }
+            function moveTooltip(evt) {
+                const pad = 14, w = tooltip.offsetWidth, h = tooltip.offsetHeight;
+                let x = evt.clientX + pad, y = evt.clientY + pad;
+                if (x + w > window.innerWidth) x = evt.clientX - w - pad;
+                if (y + h > window.innerHeight) y = evt.clientY - h - pad;
+                tooltip.style.left = x + "px";
+                tooltip.style.top = y + "px";
+            }
+            function hideTooltip() { tooltip.hidden = true; }
+
+            function esc(s) {
+                return String(s).replace(/[&<>"]/g, c =>
+                    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+            }
+
+            // ── Render constellation ────────────────────────────────────────
+            const canvas = document.getElementById("tc-canvas");
+            let legendBuilt = false;
+
+            function buildLegend() {
+                if (legendBuilt) return;
+                const el = document.getElementById("tc-legend");
+                let html = `<div class="tc-legend-title">Diet (wedge colour &amp; length = food-group weight)</div>`;
+                DIETS.forEach(d => {
+                    html += `<span class="tc-legend-item"><span class="tc-swatch" style="background:${d.color}"></span>${d.label}</span>`;
+                });
+                html += `<div class="tc-legend-note">Centre dot = habitat breadth · outer ring = IUCN status · overall size = body mass. Hover for a summary, click to open full details.</div>`;
+                el.innerHTML = html;
+                legendBuilt = true;
+            }
+
+            function compare(a, b, key) {
+                if (key === "COMMON_NAME") return String(a.COMMON_NAME || "").localeCompare(String(b.COMMON_NAME || ""));
+                if (key === "RED_LIST") {
+                    const order = ["EX","EW","CR (PE)","CR (PEW)","CR","EN","VU","NT","LC","DD"];
+                    return (order.indexOf(a.RED_LIST) + 1 || 99) - (order.indexOf(b.RED_LIST) + 1 || 99);
+                }
+                const av = num(a[key]), bv = num(b[key]);
+                if (av === null && bv === null) return 0;
+                if (av === null) return 1;
+                if (bv === null) return -1;
+                return key === "COMMON_NAME" ? av - bv : bv - av; // numeric: descending
+            }
+
+            function renderConstellation() {
+                buildLegend();
+                buildMassScale(rows);
+
+                const groupKey = document.getElementById("tc-group").value;
+                const sortKey = document.getElementById("tc-sort").value;
+                const q = document.getElementById("tc-search").value.trim().toLowerCase();
+
+                let filtered = rows;
+                if (q) {
+                    filtered = filtered.filter(r =>
+                        [r.COMMON_NAME, r.FAMILY, r.GENUS, r.SPECIES, r.ORDER]
+                            .some(v => String(v || "").toLowerCase().includes(q)));
+                }
+
+                document.getElementById("tc-count").textContent =
+                    `${filtered.length} of ${rows.length} species`;
+
+                canvas.innerHTML = "";
+                if (!filtered.length) {
+                    canvas.innerHTML = `<p class="tc-empty">No species match “${esc(q)}”.</p>`;
+                    return;
+                }
+
+                // group
+                const groups = new Map();
+                if (groupKey) {
+                    filtered.forEach(r => {
+                        const g = r[groupKey] || "—";
+                        if (!groups.has(g)) groups.set(g, []);
+                        groups.get(g).push(r);
+                    });
+                } else {
+                    groups.set("All species", filtered.slice());
+                }
+
+                const sortedGroupNames = [...groups.keys()].sort((a, b) =>
+                    String(a).localeCompare(String(b)));
+
+                const frag = document.createDocumentFragment();
+                sortedGroupNames.forEach(gName => {
+                    const items = groups.get(gName).slice().sort((a, b) => compare(a, b, sortKey));
+
+                    const groupEl = document.createElement("div");
+                    groupEl.className = "tc-group";
+
+                    if (groupKey) {
+                        const head = document.createElement("div");
+                        head.className = "tc-group-head";
+                        head.innerHTML = `${esc(gName)}<span>${items.length}</span>`;
+                        groupEl.appendChild(head);
+                    }
+
+                    const grid = document.createElement("div");
+                    grid.className = "tc-grid";
+                    items.forEach(row => {
+                        const cell = document.createElement("div");
+                        cell.className = "tc-glyph";
+                        cell.appendChild(buildGlyph(row));
+                        const name = document.createElement("div");
+                        name.className = "tc-glyph-name";
+                        name.textContent = row.COMMON_NAME || "—";
+                        cell.appendChild(name);
+
+                        cell.addEventListener("mouseenter", e => showTooltip(row, e));
+                        cell.addEventListener("mousemove", moveTooltip);
+                        cell.addEventListener("mouseleave", hideTooltip);
+                        cell.addEventListener("click", () => {
+                            hideTooltip();
+                            BirdDetail.open(row);
+                        });
+                        grid.appendChild(cell);
+                    });
+                    groupEl.appendChild(grid);
+                    frag.appendChild(groupEl);
+                });
+                canvas.appendChild(frag);
+            }
+
+            // control wiring — re-render on change (debounced search)
+            ["tc-group", "tc-sort"].forEach(id =>
+                document.getElementById(id).addEventListener("change", () => { if (rows.length) renderConstellation(); }));
+            let searchTimer;
+            document.getElementById("tc-search").addEventListener("input", () => {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(() => { if (rows.length) renderConstellation(); }, 180);
+            });
+
+            // ── Legend modal ────────────────────────────────────────────────
+            (function () {
+                const modal = document.getElementById("legend-modal");
+                const btn = document.getElementById("bbd-legend-btn");
+                const closeBtn = modal.querySelector(".lm-close");
+                const backdrop = modal.querySelector(".lm-backdrop");
+
+                function openLegend() {
+                    modal.hidden = false;
+                    document.body.style.overflow = "hidden";
+                }
+
+                function closeLegend() {
+                    modal.hidden = true;
+                    document.body.style.overflow = "";
+                }
+
+                btn.addEventListener("click", openLegend);
+                closeBtn.addEventListener("click", closeLegend);
+                backdrop.addEventListener("click", closeLegend);
+                document.addEventListener("keydown", function (e) {
+                    if (e.key === "Escape" && !modal.hidden) closeLegend();
+                });
+            })();
+        </script>
+    </body>
+</html>

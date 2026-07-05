@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="base_res/img/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Avian Data Explorer — Soaring Wild</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Public+Sans:wght@400&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="base_res/style.css" />
+        <link rel="stylesheet" href="base_res/explorer.css" />
+        <style>
+            .site-header {
+                position: sticky;
+                top: 0;
+                background: var(--dark);
+            }
+        </style>
+    </head>
+    <body>
+        <header class="site-header">
+            <a href="/" class="logo-box"
+                ><img src="base_res/img/SoWi_title_light.png"
+            /></a>
+            <ul class="site-nav">
+                <li><a href="/#about">About Us</a></li>
+                <li><a href="/#projects">Our Projects</a></li>
+                <li><a href="resources.html">Resources</a></li>
+            </ul>
+        </header>
+
+        <main class="de-main">
+            <div class="de-intro">
+                <h1>Avian Data Explorer</h1>
+                <p>Learn about the wonderful and fascinating lives of birds by exploring our datasets</p>
+            </div>
+
+            <div class="res-cards">
+                <div class="res-card">
+                    <div class="res-card-name">Browse the Dataset</div>
+                    <div class="res-card-field">Explore every record and field in the BIRDS_BASE_DATA table.</div>
+                    <div class="res-card-field" style="margin-top:0.5rem;">
+                        <a href="bird_base_data.html">Open &rarr;</a>
+                    </div>
+                </div>
+
+                <div class="res-card">
+                    <div class="res-card-name">Traits Constellation</div>
+                    <div class="res-card-field">A radial visualization of diet, habitat, body mass, and conservation status for every species.</div>
+                    <div class="res-card-field" style="margin-top:0.5rem;">
+                        <a href="traits_constellation.html">Open &rarr;</a>
+                    </div>
+                </div>
+
+                <div class="res-card">
+                    <div class="res-card-name">Weights of Birds</div>
+                    <div class="res-card-field">Compare the relative mass of every species with min&ndash;max weight bars for females, males, and unsexed birds &mdash; then switch to the Sexual Dimorphism tab to see how, and by how much, males and females diverge in size.</div>
+                    <div class="res-card-field" style="margin-top:0.5rem;">
+                        <a href="weights_of_birds.html">Open &rarr;</a>
+                    </div>
+                </div>
+
+                <div class="res-card">
+                    <div class="res-card-name">Size &amp; Life-History Scaling</div>
+                    <div class="res-card-field">See how body mass shapes a bird's breeding life &mdash; clutch size, incubation, fledging, broods, and productivity &mdash; with a brushable scatter plot.</div>
+                    <div class="res-card-field" style="margin-top:0.5rem;">
+                        <a href="life_history_scaling.html">Open &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
+            <li><a href="/#about">About Us</a></li>
+            <li><a href="/#projects">Our Projects</a></li>
+            <li><a href="resources.html">Resources</a></li>
+        </ul>
+    </body>
+</html>

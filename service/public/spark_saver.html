@@ -1,0 +1,1222 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+        />
+        <title>Spark Saver</title>
+        <link rel="stylesheet" href="/service/res/style.css" />
+        <script src="/service/res/common.js"></script>
+        <!-- Anti-flash: apply saved theme before first paint -->
+        <script>
+            (function () {
+                var t = localStorage.getItem("ss_theme");
+                if (t === "dark")
+                    document.documentElement.setAttribute("data-theme", "dark");
+            })();
+        </script>
+        <style>
+            /* ============================================================
+       DESIGN TOKENS
+    ============================================================ */
+            :root {
+                --bg: #ecf0f7;
+                --surface2: #f3f6fb;
+                --input-bg: #ecf0f7;
+                --del: #d94f4f;
+                --tab-on: #1e3a5c;
+                --tab-off: #9aaaba;
+                --pill-bg: #ecf0f7;
+                --pill-bdr: #c5d2e2;
+                --bar-bg: #ffffff;
+                --sh-sm:
+                    0 1px 3px rgba(0, 0, 0, 0.06),
+                    0 2px 10px rgba(0, 0, 0, 0.06);
+                --sh-md:
+                    0 4px 18px rgba(0, 0, 0, 0.09),
+                    0 1px 4px rgba(0, 0, 0, 0.05);
+                --sh-lg:
+                    0 12px 48px rgba(0, 0, 0, 0.14),
+                    0 2px 8px rgba(0, 0, 0, 0.06);
+                --r: 14px;
+                --r-sm: 10px;
+            }
+            [data-theme="dark"] {
+                --bg: #0b1825;
+                --surface: #142030;
+                --surface2: #0e1b29;
+                --primary: #4a8ece;
+                --primary-h: #5ba3eb;
+                --text: #dde6f2;
+                --text2: #6e8399;
+                --border: #1c3248;
+                --input-bg: #0e1b29;
+                --del: #e05252;
+                --tab-on: #4a8ece;
+                --tab-off: #435a70;
+                --pill-bg: #0e1b29;
+                --pill-bdr: #1e3a54;
+                --bar-bg: #142030;
+                --sh-sm:
+                    0 1px 3px rgba(0, 0, 0, 0.4), 0 2px 10px rgba(0, 0, 0, 0.25);
+                --sh-md: 0 4px 18px rgba(0, 0, 0, 0.5);
+                --sh-lg: 0 12px 48px rgba(0, 0, 0, 0.6);
+            }
+
+            /* ============================================================
+       RESET & BASE
+    ============================================================ */
+            *,
+            *::before,
+            *::after {
+                margin: 0;
+                padding: 0;
+            }
+            html {
+                height: 100%;
+                -webkit-tap-highlight-color: transparent;
+            }
+            body {
+                background: var(--bg);
+                color: var(--text);
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                transition:
+                    background 0.3s,
+                    color 0.3s;
+            }
+            /* ============================================================
+       APP FRAME
+    ============================================================ */
+            #frame {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                max-width: 430px;
+                height: 100%;
+                background: var(--bg);
+                overflow: hidden;
+                transition: background 0.3s;
+                position: relative;
+            }
+
+            #loadingOverlay {
+                display: none;
+                position: absolute;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.45);
+                z-index: 200;
+                align-items: center;
+                justify-content: center;
+                color: #fff;
+                font-size: 15px;
+                font-weight: 700;
+                letter-spacing: 0.5px;
+            }
+            #loadingOverlay.show {
+                display: flex;
+            }
+
+            /* ============================================================
+       HEADER
+    ============================================================ */
+            #hdr {
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 14px 20px 8px;
+                background: var(--bg);
+                transition: background 0.3s;
+            }
+            .logo {
+                font-size: 20px;
+                font-weight: 800;
+                color: var(--text);
+                letter-spacing: -0.25px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .hdr-r {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            #themeBtn,
+            #logoutBtn {
+                background: none;
+                border: none;
+                color: var(--text2);
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition:
+                    background 0.15s,
+                    color 0.15s;
+            }
+            #themeBtn:hover,
+            #logoutBtn:hover {
+                background: var(--surface);
+                color: var(--text);
+            }
+
+            #userAvatar {
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                display: none; /* shown after login */
+                align-items: center;
+                justify-content: center;
+                font-size: 13px;
+                font-weight: 800;
+                color: #fff;
+                letter-spacing: 0.4px;
+            }
+
+            /* ============================================================
+       VIEW SYSTEM
+    ============================================================ */
+            .view {
+                display: none;
+                flex: 1;
+                flex-direction: column;
+                min-height: 0;
+            }
+            .view.active {
+                display: flex;
+            }
+
+            /* ============================================================
+       MAIN VIEW (post-login)
+    ============================================================ */
+            #mainView {
+                overflow: hidden;
+            }
+
+            /* TABS */
+            #tabs {
+                flex-shrink: 0;
+                padding: 0 20px;
+                border-bottom: 1.5px solid var(--border);
+                transition: border-color 0.3s;
+            }
+            .tab-row {
+                display: flex;
+                gap: 24px;
+            }
+            .tab {
+                background: none;
+                border: none;
+                padding: 12px 0 10px;
+                font-size: 18px;
+                font-weight: 700;
+                color: var(--tab-off);
+                position: relative;
+                transition: color 0.2s;
+            }
+            .tab.on {
+                color: var(--tab-on);
+            }
+            .tab.on::after {
+                content: "";
+                position: absolute;
+                bottom: -1.5px;
+                left: 0;
+                right: 0;
+                height: 2.5px;
+                background: var(--tab-on);
+                border-radius: 2px;
+            }
+
+            /* ============================================================
+       SPARK PANE
+    ============================================================ */
+            #sparkPane {
+                flex: 1;
+                overflow-y: auto;
+                min-height: 0;
+                padding: 16px 20px 12px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            /* Author row */
+            .author-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+            #sparkAva {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 13px;
+                font-weight: 800;
+                color: #fff;
+                flex-shrink: 0;
+                border: 2px solid rgba(255, 255, 255, 0.25);
+            }
+            #sparkName {
+                font-size: 15px;
+                font-weight: 700;
+                color: var(--text);
+            }
+            #sparkDate {
+                font-size: 11.5px;
+                color: var(--text2);
+                margin-top: 2px;
+                letter-spacing: 0.3px;
+            }
+
+            /* Textarea card */
+            #textCard {
+                background: var(--surface);
+                border-radius: var(--r);
+                box-shadow: var(--sh-sm);
+                overflow: hidden;
+                transition: background 0.3s;
+            }
+            #sparkTA {
+                width: 100%;
+                min-height: 210px;
+                background: transparent;
+                border: none;
+                resize: none;
+                outline: none;
+                padding: 18px 18px;
+                font-size: 15px;
+                line-height: 1.7;
+                color: var(--text);
+            }
+            #sparkTA::placeholder {
+                color: var(--text2);
+            }
+
+            /* Categories card */
+            #catsCard {
+                background: var(--surface);
+                border-radius: var(--r);
+                padding: 15px 16px;
+                box-shadow: var(--sh-sm);
+                transition: background 0.3s;
+            }
+            .cats-lbl {
+                font-size: 10.5px;
+                font-weight: 700;
+                letter-spacing: 1.2px;
+                text-transform: uppercase;
+                color: var(--text2);
+                margin-bottom: 12px;
+            }
+            #pillList {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .pill {
+                padding: 7px 14px;
+                border-radius: 100px;
+                font-size: 13px;
+                font-weight: 600;
+                border: 1.5px solid var(--pill-bdr);
+                background: var(--pill-bg);
+                color: var(--text2);
+                transition:
+                    border-color 0.15s,
+                    background 0.15s,
+                    color 0.15s;
+                user-select: none;
+            }
+            .pill:hover {
+                border-color: var(--primary);
+                color: var(--primary);
+            }
+            .pill.on {
+                background: var(--primary);
+                border-color: var(--primary);
+                color: #fff;
+            }
+
+            /* Bottom action bar */
+            #bottomBar {
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 20px 14px;
+                background: var(--bar-bg);
+                border-top: 1px solid var(--border);
+                box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.06);
+                transition:
+                    background 0.3s,
+                    border-color 0.3s;
+            }
+            #deleteBtn {
+                background: none;
+                border: none;
+                color: var(--del);
+                width: 40px;
+                height: 40px;
+                border-radius: var(--r-sm);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background 0.15s;
+            }
+            #deleteBtn:hover {
+                background: rgba(217, 79, 79, 0.1);
+            }
+            #cancelBtn {
+                flex: 1;
+                background: none;
+                border: none;
+                color: var(--text2);
+                font-size: 12.5px;
+                font-weight: 700;
+                letter-spacing: 0.9px;
+                text-transform: uppercase;
+                text-align: center;
+                padding: 8px;
+                transition: color 0.15s;
+            }
+            #cancelBtn:hover {
+                color: var(--text);
+            }
+            #saveBtn {
+                background: var(--primary);
+                color: #fff;
+                border: none;
+                border-radius: var(--r-sm);
+                padding: 12px 20px;
+                font-size: 12px;
+                font-weight: 800;
+                letter-spacing: 0.6px;
+                text-transform: uppercase;
+                line-height: 1.45;
+                text-align: center;
+                transition:
+                    background 0.15s,
+                    transform 0.1s;
+                min-width: 84px;
+            }
+            #saveBtn:hover {
+                background: var(--primary-h);
+            }
+            #saveBtn:active {
+                transform: scale(0.97);
+            }
+
+            /* ============================================================
+       SMOLDERING PANE
+    ============================================================ */
+            #smolderingPane {
+                flex: 1;
+                overflow-y: auto;
+                min-height: 0;
+                padding: 16px 20px 24px;
+                display: none; /* toggled by JS */
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .s-card {
+                background: var(--surface);
+                border-radius: var(--r);
+                padding: 16px 16px 8px;
+                margin-bottom: 12px;
+                box-shadow: var(--sh-sm);
+                transition: background 0.3s;
+            }
+            .s-hdr {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+            .s-edit-btn {
+                margin-left: auto;
+                flex-shrink: 0;
+                background: none;
+                border: none;
+                color: var(--text2);
+                width: 32px;
+                height: 32px;
+                border-radius: var(--r-sm);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition:
+                    background 0.15s,
+                    color 0.15s;
+            }
+            .s-edit-btn:hover {
+                background: var(--surface2);
+                color: var(--primary);
+            }
+            .s-ava {
+                width: 34px;
+                height: 34px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                font-weight: 800;
+                color: #fff;
+                flex-shrink: 0;
+                border: 1.5px solid rgba(255, 255, 255, 0.2);
+            }
+            .s-author {
+                font-size: 13.5px;
+                font-weight: 700;
+                color: var(--text);
+            }
+            .s-date {
+                font-size: 11px;
+                color: var(--text2);
+                margin-top: 1px;
+                letter-spacing: 0.2px;
+            }
+            .s-text {
+                font-size: 14px;
+                color: var(--text);
+                line-height: 1.65;
+                margin-bottom: 11px;
+                display: -webkit-box;
+                -webkit-line-clamp: 3;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            .s-pills {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            /* Category pill hues — light & dark handled via CSS vars */
+            .s-pill {
+                padding: 3px 10px;
+                border-radius: 10px;
+                font-size: 10.5px;
+                font-weight: 700;
+                letter-spacing: 0.5px;
+                text-transform: uppercase;
+                background: hsl(192, 65%, 90%);
+                color: hsl(192, 75%, 26%);
+            }
+
+            [data-theme="dark"] .s-pill {
+                background: hsl(192, 50%, 18%);
+                color: hsl(192, 70%, 72%);
+            }
+
+            /* Empty state */
+            .empty {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 16px;
+                color: var(--text2);
+                text-align: center;
+                padding: 48px 24px;
+            }
+            .empty-icon {
+                opacity: 0.2;
+            }
+            .empty p {
+                font-size: 15px;
+                line-height: 1.6;
+            }
+
+            /* ============================================================
+       TOAST
+    ============================================================ */
+            #toast {
+                position: fixed;
+                bottom: 96px;
+                left: 50%;
+                transform: translateX(-50%) translateY(12px);
+                background: var(--primary);
+                color: #fff;
+                padding: 10px 22px;
+                border-radius: 100px;
+                font-size: 14px;
+                font-weight: 600;
+                opacity: 0;
+                transition:
+                    opacity 0.25s,
+                    transform 0.25s;
+                pointer-events: none;
+                z-index: 999;
+                white-space: nowrap;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            }
+            #toast.show {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+
+            /* ============================================================
+       DESKTOP LAYOUT
+    ============================================================ */
+            @media (min-width: 640px) {
+                body {
+                    align-items: center;
+                    padding: 40px 20px;
+                    overflow: auto;
+                    min-height: 100%;
+                }
+                body::before {
+                    content: "";
+                    position: fixed;
+                    inset: 0;
+                    background:
+                        radial-gradient(
+                            ellipse at 18% 8%,
+                            rgba(30, 58, 92, 0.09) 0%,
+                            transparent 55%
+                        ),
+                        radial-gradient(
+                            ellipse at 82% 92%,
+                            rgba(74, 142, 206, 0.06) 0%,
+                            transparent 55%
+                        );
+                    pointer-events: none;
+                    z-index: -1;
+                }
+                #frame {
+                    height: 812px;
+                    border-radius: 44px;
+                    box-shadow:
+                        0 0 0 1px rgba(0, 0, 0, 0.07),
+                        0 24px 64px rgba(0, 0, 0, 0.18),
+                        0 8px 24px rgba(0, 0, 0, 0.1);
+                    overflow: hidden;
+                    flex-shrink: 0;
+                }
+                #hdr {
+                    padding-top: 18px;
+                }
+                #bottomBar {
+                    padding-bottom: 20px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="frame">
+            <!-- ── HEADER ──────────────────────────────────────────────── -->
+            <header id="hdr">
+                <div class="logo">
+                    <button class="icon-btn" title="Admin Page">
+                        <a href="/service"
+                            ><img
+                                src="/service/res/img/admin_panel_settings.svg"
+                                alt="Admin Page"
+                        /></a>
+                    </button>
+                    Spark Saver
+                </div>
+                <div class="hdr-r">
+                    <button id="themeBtn" aria-label="Toggle dark mode">
+                        <!-- Sun icon (light mode default) -->
+                        <svg
+                            id="themeIco"
+                            width="19"
+                            height="19"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        >
+                            <circle cx="12" cy="12" r="5" />
+                            <line x1="12" y1="1" x2="12" y2="3" />
+                            <line x1="12" y1="21" x2="12" y2="23" />
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                            <line x1="1" y1="12" x2="3" y2="12" />
+                            <line x1="21" y1="12" x2="23" y2="12" />
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                        </svg>
+                    </button>
+                    <div
+                        id="userAvatar"
+                        role="img"
+                        aria-label="Logged-in user"
+                    ></div>
+                    <button id="logoutBtn" aria-label="Log out">
+                        <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- ── MAIN VIEW ───────────────────────────────────────────── -->
+            <div id="mainView" class="view">
+                <!-- Tabs -->
+                <div id="tabs">
+                    <div class="tab-row">
+                        <button class="tab on" data-tab="spark">Spark</button>
+                        <button class="tab" data-tab="smoldering">
+                            Smoldering
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SPARK pane -->
+                <div id="sparkPane">
+                    <div class="author-row">
+                        <div id="sparkAva"></div>
+                        <div>
+                            <div id="sparkName"></div>
+                            <div id="sparkDate"></div>
+                        </div>
+                    </div>
+
+                    <div id="textCard">
+                        <textarea
+                            id="sparkTA"
+                            placeholder="Write your spark here…"
+                        ></textarea>
+                    </div>
+
+                    <div id="catsCard">
+                        <div class="cats-lbl">Categories</div>
+                        <div id="pillList"></div>
+                    </div>
+                </div>
+
+                <!-- SMOLDERING pane -->
+                <div id="smolderingPane">
+                    <div id="cardList"></div>
+                </div>
+
+                <!-- Bottom action bar (spark tab only) -->
+                <div id="bottomBar">
+                    <button id="deleteBtn" aria-label="Clear draft">
+                        <svg
+                            width="19"
+                            height="19"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <polyline points="3 6 5 6 21 6" />
+                            <path
+                                d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"
+                            />
+                            <path d="M10 11v6M14 11v6" />
+                            <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+                        </svg>
+                    </button>
+                    <button id="cancelBtn">Cancel</button>
+                    <button id="saveBtn">Save<br />Spark</button>
+                </div>
+            </div>
+            <!-- /mainView -->
+            <div id="loadingOverlay">Syncing…</div>
+        </div>
+        <!-- /frame -->
+
+        <div id="toast"></div>
+
+        <!-- ============================================================
+     APP
+============================================================ -->
+        <script>
+            const APP = {
+                // ── Config ────────────────────────────────────────────────────────
+                // ── State ─────────────────────────────────────────────────────────
+                STATE: {
+                    user: null,
+                    theme: "light",
+                    selectedCats: new Set(),
+                    sparks: [],
+                    categories: [], // populated from GAS API
+                    activeTab: "spark",
+                    editingSparkId: null,
+                    editingAuthor: null,
+                },
+
+                // ── Lifecycle ─────────────────────────────────────────────────────
+                async init() {
+                    this._loadTheme();
+                    this._bindTheme();
+                    this._bindTabs();
+                    this._bindActions();
+                    document
+                        .getElementById("logoutBtn")
+                        .addEventListener("click", () => Auth.logout());
+
+                    Auth.accessToken = await Auth.silentRefresh();
+                    if (!Auth.accessToken) {
+                        window.location.href = "/service/login";
+                        return;
+                    }
+
+                    const { username } = Auth.parseJwtPayload(Auth.accessToken);
+                    this._setupUser(username);
+                    await this._loadData();
+                    this._showApp();
+                },
+
+                // ── User setup ────────────────────────────────────────────────────
+                _setupUser(username) {
+                    const name =
+                        username.charAt(0).toUpperCase() +
+                        username.slice(1).toLowerCase();
+                    this.STATE.user = {
+                        username,
+                        name,
+                        initials: username[0].toUpperCase(),
+                        color: this._colorFromName(name),
+                    };
+                },
+
+                _colorFromName(name) {
+                    const hue =
+                        [...name.toLowerCase()].reduce(
+                            (a, c) => a + c.charCodeAt(0),
+                            0,
+                        ) % 360;
+                    return `hsl(${hue}, 55%, 35%)`;
+                },
+
+                // ── API proxy ─────────────────────────────────────────────────────
+                async _loadData() {
+                    try {
+                        const data = await Auth.apiFetch(
+                            "GET",
+                            "/service/api/sparks",
+                        );
+                        if (data && !data.error) this._applyApiData(data);
+                    } catch {}
+                },
+
+                async _gasPost(body) {
+                    return Auth.apiFetch("POST", "/service/api/sparks", body);
+                },
+
+                _applyApiData(data) {
+                    this.STATE.sparks = (data.notes || []).map((n) => ({
+                        id: n.NOTE_ID,
+                        author: n.AUTHOR,
+                        date: new Date(n.NOTE_ID),
+                        text: n.NOTE_TEXT,
+                        cats: n.CATEGORIES || [],
+                    }));
+                    if (data.categories?.length) {
+                        this.STATE.categories = data.categories;
+                    }
+                },
+
+                // ── App entry ─────────────────────────────────────────────────────
+                _showApp() {
+                    const { user } = this.STATE;
+
+                    const ava = document.getElementById("userAvatar");
+                    ava.textContent = user.initials;
+                    ava.style.background = user.color;
+                    ava.style.display = "flex";
+
+                    document.getElementById("sparkAva").textContent =
+                        user.initials;
+                    document.getElementById("sparkAva").style.background =
+                        user.color;
+                    document.getElementById("sparkName").textContent =
+                        user.name;
+                    document.getElementById("sparkDate").textContent =
+                        this._fmtDate(new Date());
+
+                    document.getElementById("mainView").classList.add("active");
+                    this._renderPills();
+                    this._switchTab("spark");
+                },
+
+                // ── Theme ─────────────────────────────────────────────────────────
+                _loadTheme() {
+                    const saved = localStorage.getItem("ss_theme") || "light";
+                    this._applyTheme(saved);
+                },
+
+                _applyTheme(t) {
+                    this.STATE.theme = t;
+                    document.documentElement.setAttribute("data-theme", t);
+                    const ico = document.getElementById("themeIco");
+                    if (t === "dark") {
+                        ico.innerHTML =
+                            '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"' +
+                            ' fill="currentColor" stroke="none"/>';
+                    } else {
+                        ico.innerHTML = [
+                            '<circle cx="12" cy="12" r="5"/>',
+                            '<line x1="12" y1="1"  x2="12" y2="3"/>',
+                            '<line x1="12" y1="21" x2="12" y2="23"/>',
+                            '<line x1="4.22"  y1="4.22"   x2="5.64"  y2="5.64"/>',
+                            '<line x1="18.36" y1="18.36"  x2="19.78" y2="19.78"/>',
+                            '<line x1="1"  y1="12" x2="3"  y2="12"/>',
+                            '<line x1="21" y1="12" x2="23" y2="12"/>',
+                            '<line x1="4.22"  y1="19.78" x2="5.64"  y2="18.36"/>',
+                            '<line x1="18.36" y1="5.64"  x2="19.78" y2="4.22"/>',
+                        ].join("");
+                    }
+                },
+
+                _bindTheme() {
+                    document
+                        .getElementById("themeBtn")
+                        .addEventListener("click", () => {
+                            const next =
+                                this.STATE.theme === "light" ? "dark" : "light";
+                            this._applyTheme(next);
+                            localStorage.setItem("ss_theme", next);
+                        });
+                },
+
+                // ── Tabs ──────────────────────────────────────────────────────────
+                _bindTabs() {
+                    document
+                        .getElementById("tabs")
+                        .addEventListener("click", (e) => {
+                            const btn = e.target.closest(".tab");
+                            if (btn) this._switchTab(btn.dataset.tab);
+                        });
+                },
+
+                _switchTab(tab) {
+                    this.STATE.activeTab = tab;
+                    const isSpark = tab === "spark";
+
+                    document
+                        .querySelectorAll(".tab")
+                        .forEach((b) =>
+                            b.classList.toggle("on", b.dataset.tab === tab),
+                        );
+
+                    document.getElementById("sparkPane").style.display = isSpark
+                        ? "flex"
+                        : "none";
+                    document.getElementById("smolderingPane").style.display =
+                        isSpark ? "none" : "flex";
+                    document.getElementById("bottomBar").style.display = isSpark
+                        ? "flex"
+                        : "none";
+
+                    if (!isSpark) {
+                        this._renderSmoldering();
+                        this._loadData().then(() => this._renderSmoldering());
+                    }
+                },
+
+                // ── Categories / Pills ────────────────────────────────────────────
+                _renderPills() {
+                    const list = document.getElementById("pillList");
+                    list.innerHTML = "";
+                    this.STATE.categories.forEach((label) => {
+                        const btn = document.createElement("button");
+                        btn.className =
+                            "pill" +
+                            (this.STATE.selectedCats.has(label) ? " on" : "");
+                        btn.textContent = label;
+                        btn.addEventListener("click", () =>
+                            this._toggleCat(label),
+                        );
+                        list.appendChild(btn);
+                    });
+                },
+
+                _toggleCat(label) {
+                    if (this.STATE.selectedCats.has(label))
+                        this.STATE.selectedCats.delete(label);
+                    else this.STATE.selectedCats.add(label);
+                    this._renderPills();
+                },
+
+                // ── Spark form actions ────────────────────────────────────────────
+                _bindActions() {
+                    document
+                        .getElementById("saveBtn")
+                        .addEventListener("click", () => this.saveSpark());
+                    document
+                        .getElementById("cancelBtn")
+                        .addEventListener("click", () => this.cancelDraft());
+                    document
+                        .getElementById("deleteBtn")
+                        .addEventListener("click", () => this.deleteDraft());
+                },
+
+                async saveSpark() {
+                    const text = document
+                        .getElementById("sparkTA")
+                        .value.trim();
+                    if (!text) {
+                        this._toast("Write something first!");
+                        return;
+                    }
+
+                    const cats = [...this.STATE.selectedCats];
+                    const isUpdate = this.STATE.editingSparkId !== null;
+
+                    this._showLoading();
+                    try {
+                        const body = isUpdate
+                            ? {
+                                  op: "UPDATE",
+                                  NOTE_ID: this.STATE.editingSparkId,
+                                  NOTE_TEXT: text,
+                                  AUTHOR: this.STATE.editingAuthor,
+                                  CATEGORIES: cats,
+                              }
+                            : {
+                                  op: "ADD",
+                                  NOTE_TEXT: text,
+                                  AUTHOR: this.STATE.user.name,
+                                  CATEGORIES: cats,
+                              };
+
+                        const data = await this._gasPost(body);
+                        if (data.error) {
+                            this._toast("Error: " + data.error);
+                            return;
+                        }
+                        this._applyApiData(data);
+                        this.cancelDraft();
+                        this._switchTab("smoldering");
+                        this._toast(
+                            isUpdate ? "Spark updated!" : "Spark saved!",
+                        );
+                    } catch {
+                        this._toast("Network error. Try again.");
+                    } finally {
+                        this._hideLoading();
+                    }
+                },
+
+                cancelDraft() {
+                    document.getElementById("sparkTA").value = "";
+                    this.STATE.selectedCats.clear();
+                    this.STATE.editingSparkId = null;
+                    this.STATE.editingAuthor = null;
+                    document
+                        .getElementById("deleteBtn")
+                        .setAttribute("aria-label", "Clear draft");
+
+                    const { user } = this.STATE;
+                    document.getElementById("sparkAva").textContent =
+                        user.initials;
+                    document.getElementById("sparkAva").style.background =
+                        user.color;
+                    document.getElementById("sparkName").textContent =
+                        user.name;
+                    document.getElementById("sparkDate").textContent =
+                        this._fmtDate(new Date());
+                    this._renderPills();
+                },
+
+                async deleteDraft() {
+                    if (this.STATE.editingSparkId !== null) {
+                        this._showLoading();
+                        try {
+                            const data = await this._gasPost({
+                                op: "DELETE",
+                                NOTE_ID: this.STATE.editingSparkId,
+                                AUTHOR: this.STATE.editingAuthor,
+                            });
+                            if (data.error) {
+                                this._toast("Error: " + data.error);
+                                return;
+                            }
+                            this._applyApiData(data);
+                            this.cancelDraft();
+                            this._toast("Spark deleted.");
+                        } catch {
+                            this._toast("Network error. Try again.");
+                        } finally {
+                            this._hideLoading();
+                        }
+                    } else {
+                        const hasText = document
+                            .getElementById("sparkTA")
+                            .value.trim();
+                        if (!hasText && !this.STATE.selectedCats.size) {
+                            this._toast("Nothing to clear.");
+                            return;
+                        }
+                        this.cancelDraft();
+                        this._toast("Draft cleared.");
+                    }
+                },
+
+                // ── Smoldering ────────────────────────────────────────────────────
+                _renderSmoldering() {
+                    const list = document.getElementById("cardList");
+                    list.innerHTML = "";
+
+                    if (!this.STATE.sparks.length) {
+                        list.innerHTML = `
+        <div class="empty">
+          <svg class="empty-icon" width="56" height="56" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.3">
+            <path d="M12 2C11 5 8 7 8 11a4 4 0 008 0C16 7 13 5 12 2z"/>
+            <path d="M12 5.5C11.2 7.5 9.5 9 9.5 11a2.5 2.5 0 005 0
+                     C14.5 9 12.8 7.5 12 5.5z"/>
+          </svg>
+          <p>No sparks yet.<br>Add your first one!</p>
+        </div>`;
+                        return;
+                    }
+                    this.STATE.sparks.forEach((s) =>
+                        list.appendChild(this._buildCard(s)),
+                    );
+                },
+
+                _buildCard(spark) {
+                    const user = this._userByName(spark.author);
+
+                    const pillsHtml = (spark.cats || [])
+                        .map((label) => {
+                            const catId = label
+                                .toLowerCase()
+                                .replace(/\s+/g, "-");
+                            return `<span class="s-pill" data-cat="${catId}">${this._esc(label)}</span>`;
+                        })
+                        .join("");
+
+                    const card = document.createElement("div");
+                    card.className = "s-card";
+                    card.innerHTML = `
+      <div class="s-hdr">
+        <div class="s-ava" style="background:${user.color}">${this._esc(user.initials)}</div>
+        <div>
+          <div class="s-author">${this._esc(user.name)}</div>
+          <div class="s-date">${this._fmtDate(spark.date)}</div>
+        </div>
+        <button class="s-edit-btn" aria-label="Edit spark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="s-text">${this._esc(spark.text)}</div>
+      ${pillsHtml ? `<div class="s-pills">${pillsHtml}</div>` : ""}
+    `;
+                    card.querySelector(".s-edit-btn").addEventListener(
+                        "click",
+                        () => this.loadIntoSpark(spark),
+                    );
+                    return card;
+                },
+
+                loadIntoSpark(spark) {
+                    const user = this._userByName(spark.author);
+                    document.getElementById("sparkAva").textContent =
+                        user.initials;
+                    document.getElementById("sparkAva").style.background =
+                        user.color;
+                    document.getElementById("sparkName").textContent =
+                        user.name;
+                    document.getElementById("sparkDate").textContent =
+                        this._fmtDate(spark.date);
+
+                    document.getElementById("sparkTA").value = spark.text;
+                    this.STATE.selectedCats = new Set(spark.cats || []);
+                    this.STATE.editingSparkId = spark.id;
+                    this.STATE.editingAuthor = spark.author;
+                    document
+                        .getElementById("deleteBtn")
+                        .setAttribute("aria-label", "Delete spark");
+
+                    this._renderPills();
+                    this._switchTab("spark");
+                    document.getElementById("sparkTA").focus();
+                },
+
+                // ── Utils ─────────────────────────────────────────────────────────
+                _userByName(name) {
+                    return {
+                        name,
+                        initials: name[0].toUpperCase(),
+                        color: this._colorFromName(name),
+                    };
+                },
+
+                _fmtDate(d) {
+                    return d
+                        .toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                        })
+                        .toUpperCase();
+                },
+
+                _esc(s) {
+                    return String(s)
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;")
+                        .replace(/"/g, "&quot;");
+                },
+
+                _showLoading() {
+                    document
+                        .getElementById("loadingOverlay")
+                        .classList.add("show");
+                },
+                _hideLoading() {
+                    document
+                        .getElementById("loadingOverlay")
+                        .classList.remove("show");
+                },
+
+                _toastTimer: null,
+                _toast(msg) {
+                    const el = document.getElementById("toast");
+                    el.textContent = msg;
+                    el.classList.add("show");
+                    clearTimeout(this._toastTimer);
+                    this._toastTimer = setTimeout(
+                        () => el.classList.remove("show"),
+                        2400,
+                    );
+                },
+            };
+
+            APP.init();
+        </script>
+    </body>
+</html>

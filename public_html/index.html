@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="base_res/img/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Soaring Wild</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Public+Sans:wght@400&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="base_res/style.css" />
+    </head>
+    <body>
+        <!-- ── Header ─────────────────────────────────────────────── -->
+        <header class="site-header">
+            <a href="/" class="logo-box"
+                ><img src="base_res/img/SoWi_title_light.png"
+            /></a>
+            <ul class="site-nav">
+                <li><a href="#about">About Us</a></li>
+                <li><a href="#projects">Our Projects</a></li>
+                <li><a href="resources.html">Resources</a></li>
+            </ul>
+        </header>
+
+        <!-- ── Hero ───────────────────────────────────────────────── -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Connecting People with the Wild</h1>
+                <p>
+                    See how we empower individuals to become guardians of nature
+                    through education and grassroots research.
+                </p>
+                <a href="#about" class="btn">Learn More</a>
+            </div>
+        </section>
+
+        <!-- ── Icon Carousel ──────────────────────────────────────── -->
+        <section class="dark-section" id="about">
+            <div class="carousel-row">
+                <button
+                    class="carousel-arrow"
+                    id="icon-prev"
+                    aria-label="Previous"
+                >
+                    &#8249;
+                </button>
+                <div class="carousel-track-wrap">
+                    <div class="icon-track" id="icon-track">
+                        <div class="icon-item">
+                            <div class="icon-circle">🗺️</div>
+                            <span class="icon-label">Migration<br />Maps</span>
+                        </div>
+
+                        <div class="icon-item">
+                            <div class="icon-circle">🧑‍🤝‍🧑</div>
+                            <span class="icon-label">Citizen<br />Science</span>
+                        </div>
+
+                        <div class="icon-item">
+                            <div class="icon-circle">📹</div>
+                            <span class="icon-label">Wildlife<br />Cams</span>
+                        </div>
+
+                        <div class="icon-item">
+                            <div class="icon-circle">📊</div>
+                            <span class="icon-label">Research<br />Data</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="carousel-arrow" id="icon-next" aria-label="Next">
+                    &#8250;
+                </button>
+            </div>
+        </section>
+
+        <!-- ── Project Cards Carousel ─────────────────────────────── -->
+        <section class="dark-section" id="projects" style="padding-top: 2rem">
+            <div class="carousel-row">
+                <button
+                    class="carousel-arrow"
+                    id="cards-prev"
+                    aria-label="Previous"
+                >
+                    &#8249;
+                </button>
+                <div class="carousel-track-wrap">
+                    <div class="cards-track" id="cards-track">
+                        <div class="project-card">
+                            <div class="card-inner">
+                                <div
+                                    class="card-img-placeholder"
+                                    style="
+                                        background: linear-gradient(
+                                            135deg,
+                                            #3a5a30 0%,
+                                            #6a9a58 100%
+                                        );
+                                    "
+                                >
+                                    🦅
+                                </div>
+                                <div class="card-body">
+                                    <div class="card-title">
+                                        Raptor Education Program
+                                    </div>
+                                    <div class="card-desc">
+                                        Engaging students locally. Where impact.
+                                    </div>
+                                    <a href="#" class="btn">Learn More</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="project-card">
+                            <div class="card-inner">
+                                <div
+                                    class="card-img-placeholder"
+                                    style="
+                                        background: linear-gradient(
+                                            135deg,
+                                            #2d4e5e 0%,
+                                            #568a9a 100%
+                                        );
+                                    "
+                                >
+                                    🌿
+                                </div>
+                                <div class="card-body">
+                                    <div class="card-title">
+                                        Habitat Monitoring Initiative
+                                    </div>
+                                    <div class="card-desc">
+                                        Assessing viability of natural
+                                        environments.
+                                    </div>
+                                    <a href="#" class="btn">Learn More</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="project-card">
+                            <div class="card-inner">
+                                <div
+                                    class="card-img-placeholder"
+                                    style="
+                                        background: linear-gradient(
+                                            135deg,
+                                            #4a3a1a 0%,
+                                            #8a7040 100%
+                                        );
+                                    "
+                                >
+                                    🌾
+                                </div>
+                                <div class="card-body">
+                                    <div class="card-title">
+                                        Community Conservation
+                                    </div>
+                                    <div class="card-desc">
+                                        Collaborating locally to preserve wild
+                                        habitats.
+                                    </div>
+                                    <a href="#" class="btn">Learn More</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button
+                    class="carousel-arrow"
+                    id="cards-next"
+                    aria-label="Next"
+                >
+                    &#8250;
+                </button>
+            </div>
+        </section>
+
+        <!-- ── Mobile bottom nav ──────────────────────────────────── -->
+        <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
+            <li><a href="#about">About Us</a></li>
+            <li><a href="#projects">Our Projects</a></li>
+            <li><a href="resources.html">Resources</a></li>
+        </ul>
+
+        <script src="base_res/main.js"></script>
+    </body>
+</html>
