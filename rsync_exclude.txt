@@ -1,0 +1,12 @@
+rsync_exclude.txt
+.git/
+.gitignore
+node_modules/
+test_launch
+service/node_modules/
+service/.gitignore
+service/.env
+service/.secrets.json
+service/*.log
+service/test*.mjs
+.DS_Store
