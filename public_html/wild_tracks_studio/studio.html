@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Studio — Wild Tracks Studio</title>
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/studio.css" />
+  <link rel="stylesheet" href="../base_res/explorer.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E🐦%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="container" style="max-width: 1600px">
+      <div class="nav-brand-group">
+        <a class="nav-brand" href="index.html">Wild Tracks Studio</a>
+        <a class="nav-brand-sub" href="../index.html">A Soaring Wild project</a>
+      </div>
+      <a class="nav-link" href="index.html">Overview</a>
+      <a class="nav-link active" href="studio.html">My Studio</a>
+      <a class="nav-link" href="songs.html">My Songs</a>
+      <a class="nav-link" href="about.html">About</a>
+      <button class="btn btn-icon" data-theme-toggle title="Toggle theme">🌙</button>
+    </div>
+  </nav>
+
+  <div class="studio-layout">
+    <!-- ── Library ── -->
+    <aside class="library">
+      <div class="mobile-gate card col" style="gap: 0.5rem">
+        <strong>🖥️ The studio works best on a bigger screen</strong>
+        <p class="small muted">
+          Track editing needs a desktop or laptop. Meanwhile, you can still browse
+          the bird library below and listen to every sound.
+        </p>
+      </div>
+      <div class="library-tabs" id="library-tabs" role="tablist">
+        <button class="btn small toggled" data-tab="sound" role="tab" aria-selected="true">By sound</button>
+        <button class="btn small" data-tab="species" role="tab" aria-selected="false">By species</button>
+      </div>
+      <div class="card-inset library-list" id="library-list"></div>
+      <div class="card fact-card" id="fact-card">
+        <p class="small muted">Pick a sound to meet the bird behind it.</p>
+      </div>
+    </aside>
+
+    <!-- ── Editor ── -->
+    <main class="col" style="gap: 0">
+      <div class="card transport desktop-only" id="transport">
+        <button class="btn btn-icon btn-primary" id="btn-play" title="Play / pause (space)">▶</button>
+        <button class="btn btn-icon" id="btn-stop" title="Stop and rewind">⏹</button>
+        <span class="time" id="time-readout">0:00</span>
+        <span class="bpm-wrap">BPM <input type="number" id="bpm" min="40" max="240" step="1" value="120" /></span>
+        <span class="spacer"></span>
+        <input type="text" class="song-name" id="song-name" value="Untitled song" aria-label="Song name" />
+        <button class="btn small" id="btn-undo" title="Undo (Ctrl+Z)">↩ Undo</button>
+        <button class="btn small" id="btn-redo" title="Redo (Ctrl+Shift+Z)">↪ Redo</button>
+        <button class="btn small" id="btn-surprise" title="Generate a starter arrangement">🎲 Surprise me</button>
+        <button class="btn small" id="btn-save" title="Save to this browser (Ctrl+S)">💾 Save</button>
+        <button class="btn small" id="btn-export" title="Download as WAV audio">⬇ Export</button>
+      </div>
+
+      <div class="card timeline-wrap desktop-only" id="timeline-wrap">
+        <div class="timeline-scroll" id="timeline-scroll">
+          <div class="timeline-grid" id="timeline-grid">
+            <!-- filled by timeline.js: ruler row + track rows -->
+          </div>
+        </div>
+        <div class="track-actions row">
+          <button class="btn small" id="btn-add-track">＋ Add track</button>
+          <span class="small muted" id="track-count"></span>
+          <span class="spacer grow"></span>
+          <span class="small muted">zoom</span>
+          <button class="btn small" id="zoom-out" aria-label="Zoom out">−</button>
+          <button class="btn small" id="zoom-in" aria-label="Zoom in">＋</button>
+        </div>
+      </div>
+
+      <div class="card inspector desktop-only hidden" id="inspector">
+        <strong id="insp-title" style="min-width: 12rem">Clip</strong>
+        <div class="knob">
+          <label class="field" for="insp-pitch">Pitch <span class="val" id="insp-pitch-val">0 st</span></label>
+          <input type="range" id="insp-pitch" min="-12" max="12" step="1" value="0" />
+        </div>
+        <div class="knob">
+          <label class="field" for="insp-rate">Speed <span class="val" id="insp-rate-val">100%</span></label>
+          <input type="range" id="insp-rate" min="50" max="200" step="5" value="100" />
+        </div>
+        <button class="btn small" id="insp-split" title="Split clip at the playhead">✂ Split</button>
+        <button class="btn small" id="insp-dup" title="Duplicate right after (great for loops)">⧉ Loop it</button>
+        <button class="btn small danger" id="insp-delete" title="Delete clip (Del)">🗑 Delete</button>
+      </div>
+
+      <div class="card viz" id="viz">
+        <canvas id="spectrogram" height="130"></canvas>
+        <div class="now-playing" id="now-playing">
+          <span class="label">Now singing:</span>
+          <span class="small muted" id="now-playing-empty">—</span>
+        </div>
+      </div>
+
+      <!-- Mobile: simple playback of a saved song -->
+      <div class="mobile-gate card col" id="mobile-player" style="gap: 0.75rem; margin-top: 1rem; display: none">
+        <strong id="mobile-song-name"></strong>
+        <div class="row">
+          <button class="btn btn-icon btn-primary" id="mobile-play">▶</button>
+          <span class="time" id="mobile-time">0:00</span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">
+      A <a href="../index.html">Soaring Wild</a> project ·
+      <a href="about.html">Recording credits</a>
+    </div>
+  </footer>
+
+  <script src="../base_res/bird_detail.js"></script>
+  <script type="module" src="js/studio/main.js"></script>
+</body>
+</html>

@@ -2,6 +2,12 @@
 // Shared module. Call BirdDetail.open(row) for modal, or
 // BirdDetail.renderPage(row, containerEl) to render into any element.
 (function () {
+    // Resolve this script's own folder so image paths work no matter how
+    // deeply nested the consuming page is (root pages, wild_tracks_studio/, etc).
+    const BASE_RES_URL = document.currentScript
+        ? document.currentScript.src.replace(/bird_detail\.js(\?.*)?$/, "")
+        : "/base_res/";
+
     const HABITAT_LABELS = {
         HABITAT_F:  "Forest",    HABITAT_BM: "Bamboo",     HABITAT_WD: "Woodland",
         HABITAT_SH: "Shrubland", HABITAT_SV: "Savanna",    HABITAT_G:  "Grassland",
@@ -98,8 +104,8 @@
         const statusLabel = STATUS_LABELS[row.RED_LIST] || esc(row.RED_LIST) || "";
 
         const imgSrc = (row.GENUS && row.SPECIES)
-            ? `base_res/img/birds/${row.GENUS}_${row.SPECIES}.jpg`
-            : "base_res/img/birds/_generic.jpg";
+            ? `${BASE_RES_URL}img/birds/${row.GENUS}_${row.SPECIES}.jpg`
+            : `${BASE_RES_URL}img/birds/_generic.jpg`;
 
         const dietBars = DIET_ITEMS.map(d => {
             const w = num(row[d.key]) || 0;
@@ -142,7 +148,7 @@
   <div class="bd-img-wrap">
     <img class="bd-img"
          src="${esc(imgSrc)}"
-         onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'"
+         onerror="this.onerror=null;this.src='${esc(BASE_RES_URL)}img/birds/_generic.jpg'"
          alt="${esc(row.COMMON_NAME || "")}">
   </div>
   <div class="bd-ident">

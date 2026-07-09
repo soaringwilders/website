@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Songs — Wild Tracks Studio</title>
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E🐦%3C/text%3E%3C/svg%3E" />
+  <style>
+    .song-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      flex-wrap: wrap;
+    }
+    .song-row .name { font-weight: 600; font-size: 1.05rem; }
+    .song-row .meta { font-size: 0.85rem; color: var(--text-muted); }
+    .song-row .actions { margin-left: auto; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="container">
+      <div class="nav-brand-group">
+        <a class="nav-brand" href="index.html">Wild Tracks Studio</a>
+        <a class="nav-brand-sub" href="../index.html">A Soaring Wild project</a>
+      </div>
+      <a class="nav-link" href="index.html">Overview</a>
+      <a class="nav-link" href="studio.html">My Studio</a>
+      <a class="nav-link active" href="songs.html">My Songs</a>
+      <a class="nav-link" href="about.html">About</a>
+      <button class="btn btn-icon" data-theme-toggle title="Toggle theme">🌙</button>
+    </div>
+  </nav>
+
+  <main class="container section col" style="gap: 1.5rem; max-width: 880px">
+    <header class="row" style="justify-content: space-between; flex-wrap: wrap; gap: 1rem">
+      <div>
+        <h1>My Songs</h1>
+        <p class="small muted">Saved in this browser only — export a song to keep it safe elsewhere.</p>
+      </div>
+      <a class="btn btn-primary" href="studio.html">＋ New song</a>
+    </header>
+
+    <div id="song-list" class="col stagger" style="gap: 1rem"></div>
+
+    <div id="empty" class="empty-state hidden">
+      <div class="icon">🪹</div>
+      <h2>No songs yet</h2>
+      <p>The nest is empty. Head to the studio and make your first bird song!</p>
+      <a class="btn btn-primary" href="studio.html">Open the studio</a>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">A <a href="../index.html">Soaring Wild</a> project</div>
+  </footer>
+
+  <script type="module">
+    import { initTheme, toast, fmtTime } from './js/common.js';
+    import { listSongs, deleteSong, saveSong, songDuration } from './js/store.js';
+
+    initTheme();
+
+    const list = document.getElementById('song-list');
+    const empty = document.getElementById('empty');
+
+    function render() {
+      list.textContent = '';
+      const songs = listSongs();
+      empty.classList.toggle('hidden', songs.length > 0);
+      for (const song of songs) {
+        const row = document.createElement('div');
+        row.className = 'card song-row';
+
+        const info = document.createElement('div');
+        const name = document.createElement('div');
+        name.className = 'name';
+        name.textContent = song.name;
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        const clips = song.tracks.reduce((n, t) => n + t.clips.length, 0);
+        meta.textContent = `${fmtTime(songDuration(song))} · ${song.bpm} BPM · ${clips} clip${clips === 1 ? '' : 's'} · edited ${new Date(song.updatedAt).toLocaleDateString()}`;
+        info.append(name, meta);
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+
+        const open = document.createElement('a');
+        open.className = 'btn small btn-primary';
+        open.textContent = 'Open';
+        open.href = `studio.html?song=${encodeURIComponent(song.id)}`;
+
+        const rename = document.createElement('button');
+        rename.className = 'btn small';
+        rename.textContent = 'Rename';
+        rename.addEventListener('click', () => {
+          const next = prompt('Rename song', song.name);
+          if (next && next.trim()) {
+            song.name = next.trim();
+            saveSong(song);
+            render();
+          }
+        });
+
+        const exportBtn = document.createElement('a');
+        exportBtn.className = 'btn small';
+        exportBtn.textContent = 'Export WAV';
+        exportBtn.href = `studio.html?song=${encodeURIComponent(song.id)}&export=1`;
+        exportBtn.title = 'Opens the studio and renders this song to a WAV file';
+
+        const del = document.createElement('button');
+        del.className = 'btn small danger';
+        del.textContent = 'Delete';
+        del.addEventListener('click', () => {
+          if (confirm(`Delete “${song.name}”? This can't be undone.`)) {
+            deleteSong(song.id);
+            toast('Song deleted');
+            render();
+          }
+        });
+
+        actions.append(open, rename, exportBtn, del);
+        row.append(info, actions);
+        list.appendChild(row);
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>

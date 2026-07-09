@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About — Wild Tracks Studio</title>
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E🐦%3C/text%3E%3C/svg%3E" />
+  <style>
+    .credits-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .credits-table th, .credits-table td {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--shadow-dark);
+    }
+    .credits-table th { font-weight: 500; color: var(--text-muted); }
+    .table-scroll { overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="container">
+      <div class="nav-brand-group">
+        <a class="nav-brand" href="index.html">Wild Tracks Studio</a>
+        <a class="nav-brand-sub" href="../index.html">A Soaring Wild project</a>
+      </div>
+      <a class="nav-link" href="index.html">Overview</a>
+      <a class="nav-link" href="studio.html">My Studio</a>
+      <a class="nav-link" href="songs.html">My Songs</a>
+      <a class="nav-link active" href="about.html">About</a>
+      <button class="btn btn-icon" data-theme-toggle title="Toggle theme">🌙</button>
+    </div>
+  </nav>
+
+  <main class="container section col" style="gap: 2rem; max-width: 880px">
+    <header class="col" style="gap: 0.75rem">
+      <h1>About Wild Tracks Studio</h1>
+      <p class="muted">
+        Wild Tracks Studio is a small experiment with a big hope: that playing with bird sounds
+        makes people curious about the birds themselves. Every sample in the studio is a
+        real recording of a real species. If arranging a chickadee's call into a melody
+        makes you look one up — or step outside and listen for one — this app has done
+        its job.
+      </p>
+      <p class="muted">
+        Bird populations in North America have declined by roughly three billion birds
+        since 1970. Awareness is the first step toward conservation. This project is part
+        of <a href="../index.html">Soaring Wild</a>.
+      </p>
+    </header>
+
+    <section class="card col" style="gap: 1rem">
+      <h2>Recording credits</h2>
+      <p class="small muted">
+        Attribution for each recording (recordist, source, and license) is listed below.
+        <em>Full attribution details are being confirmed and will be updated here.</em>
+      </p>
+      <div class="table-scroll">
+        <table class="credits-table" id="credits-table">
+          <thead>
+            <tr><th>Recording</th><th>Species</th><th>Recordist</th><th>Source</th><th>License</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card col" style="gap: 0.5rem">
+      <h2>Open-source thanks</h2>
+      <p class="small muted">
+        Pitch shifting and time stretching are powered by
+        <a href="https://github.com/cutterbl/SoundTouchJS">SoundTouchJS</a>
+        (LGPL-2.1 — see <a href="vendor/soundtouch-LICENSE.txt">license</a>).
+        Everything else is plain web audio.
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">A <a href="../index.html">Soaring Wild</a> project</div>
+  </footer>
+
+  <script type="module">
+    import { initTheme, loadMetadata } from './js/common.js';
+    initTheme();
+    const meta = await loadMetadata();
+    const tbody = document.querySelector('#credits-table tbody');
+    for (const rec of meta.raw.recordings) {
+      const sp = meta.speciesById.get(rec.speciesId);
+      const tr = document.createElement('tr');
+      for (const text of [
+        `${sp.commonName} — ${rec.label}`,
+        sp.scientificName,
+        rec.attribution.recordist,
+        rec.attribution.source,
+        rec.attribution.license,
+      ]) {
+        const td = document.createElement('td');
+        td.textContent = text;
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+  </script>
+</body>
+</html>
