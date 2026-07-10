@@ -1,0 +1,1642 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="base_res/img/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Migration Trends — Soaring Wild</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Public+Sans:wght@400&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="base_res/style.css" />
+        <link rel="stylesheet" href="base_res/explorer.css" />
+        <style>
+            .site-header {
+                position: sticky;
+                top: 0;
+                background: var(--dark);
+            }
+
+            /* ── Color roles (validated categorical palette; light mode only —
+               the rest of the site is light-only, so dark mode is out of scope) */
+            :root {
+                --mt-vultures: #eda100;
+                --mt-eagles: #2a78d6;
+                --mt-harriers: #008300;
+                --mt-accipiters: #4a3aa7;
+                --mt-buteos: #e34948;
+                --mt-falcons: #1baf7a;
+                --mt-kites: #e87ba4;
+                --mt-other: #898781;
+                --mt-surface: #fffdf9;
+                --mt-grid: #e8e2d0;
+                --mt-axis: #c7bfa4;
+            }
+
+            .mt-main {
+                max-width: 1280px;
+                margin: 0 auto;
+                padding: 2.5rem 2rem 4rem;
+            }
+
+            .mt-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0.5rem 0 1.25rem;
+                border-bottom: 2px solid var(--amber);
+                margin-bottom: 1.25rem;
+                gap: 1rem;
+                flex-wrap: wrap;
+            }
+
+            .mt-header h1 {
+                font-family: "Inter", sans-serif;
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: var(--dark);
+            }
+
+            .mt-header-actions {
+                display: flex;
+                gap: 0.5rem;
+                align-items: center;
+            }
+
+            .mt-help-btn {
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                border: 1.5px solid var(--amber);
+                background: #fff;
+                color: var(--dark);
+                font-family: "Inter", sans-serif;
+                font-weight: 700;
+                cursor: pointer;
+                font-size: 0.85rem;
+                line-height: 1;
+            }
+            .mt-help-btn:hover {
+                background: var(--amber);
+            }
+
+            .mt-controls {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 0.75rem 1.25rem;
+                margin-bottom: 1rem;
+            }
+
+            .mt-scale-toggle {
+                display: inline-flex;
+                border: 1px solid #d6dbe4;
+                border-radius: 5px;
+                overflow: hidden;
+            }
+            .mt-scale-toggle button {
+                border: none;
+                background: #fff;
+                font-family: "Inter", sans-serif;
+                font-size: 0.75rem;
+                font-weight: 600;
+                padding: 0.4rem 0.75rem;
+                cursor: pointer;
+                color: #888;
+            }
+            .mt-scale-toggle button.is-active {
+                background: var(--dark);
+                color: #fff;
+            }
+
+            .mt-btn-row {
+                display: flex;
+                gap: 0.5rem;
+                margin-left: auto;
+            }
+            .mt-btn-row button {
+                font-family: "Inter", sans-serif;
+                font-size: 0.72rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                padding: 0.4rem 0.7rem;
+                border: 1px solid #d6dbe4;
+                border-radius: 4px;
+                background: #fff;
+                color: #666;
+                cursor: pointer;
+            }
+            .mt-btn-row button:hover {
+                border-color: var(--dark);
+                color: var(--dark);
+            }
+
+            /* ── Layout: chart + right-column legend ─────────────────────── */
+            .mt-layout {
+                display: grid;
+                grid-template-columns: 1fr 300px;
+                gap: 1.75rem;
+                align-items: start;
+            }
+            @media (max-width: 860px) {
+                .mt-layout {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .mt-chart-panel {
+                background: var(--mt-surface);
+                border: 1px solid var(--mt-grid);
+                border-radius: 8px;
+                padding: 1rem 1rem 0.5rem;
+            }
+
+            #mt-svg {
+                width: 100%;
+                height: auto;
+                display: block;
+            }
+            .mt-axis-label {
+                font-size: 10px;
+                fill: #8a8368;
+                font-family: "Public Sans", sans-serif;
+            }
+            .mt-gridline {
+                stroke: var(--mt-grid);
+                stroke-width: 1;
+            }
+            .mt-axis-line {
+                stroke: var(--mt-axis);
+                stroke-width: 1;
+            }
+            .mt-ghost-line {
+                fill: none;
+                stroke-width: 1.5;
+                opacity: 0.16;
+            }
+            .mt-line {
+                fill: none;
+                stroke-width: 2.25;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+            .mt-end-dot {
+                stroke: #fff;
+                stroke-width: 1.5;
+            }
+            .mt-end-label {
+                font-family: "Inter", sans-serif;
+                font-size: 10.5px;
+                font-weight: 700;
+            }
+            .mt-crosshair {
+                stroke: #b3ab8e;
+                stroke-width: 1;
+                stroke-dasharray: 3 3;
+                pointer-events: none;
+            }
+            .mt-now-line {
+                stroke: var(--dark);
+                stroke-width: 1.25;
+                opacity: 0.32;
+                pointer-events: none;
+            }
+            .mt-now-tag-bg {
+                fill: var(--dark);
+                pointer-events: none;
+            }
+            .mt-now-tag-text {
+                font-family: "Inter", sans-serif;
+                font-size: 11px;
+                font-weight: 700;
+                fill: #fff;
+                pointer-events: none;
+            }
+
+            /* ── Scrubber axis (lives directly on the chart's x-axis) ───────── */
+            .mt-scrub-track {
+                stroke: var(--mt-grid);
+                stroke-width: 3;
+                stroke-linecap: round;
+                pointer-events: none;
+            }
+            .mt-scrub-fill {
+                stroke: var(--amber);
+                stroke-width: 3;
+                stroke-linecap: round;
+                pointer-events: none;
+            }
+            .mt-scrub-tick {
+                stroke: var(--mt-axis);
+                stroke-width: 1;
+                pointer-events: none;
+            }
+            .mt-scrub-thumb {
+                fill: #fff;
+                stroke: var(--dark);
+                stroke-width: 2.5;
+                pointer-events: none;
+            }
+            .mt-scrub-hitrow {
+                fill: transparent;
+                cursor: grab;
+            }
+            #mt-svg.is-dragging {
+                cursor: grabbing;
+            }
+            #mt-svg.is-dragging .mt-scrub-hitrow {
+                cursor: grabbing;
+            }
+
+            /* ── Playback bar ─────────────────────────────────────────────── */
+            .mt-playbar {
+                display: flex;
+                align-items: center;
+                gap: 0.6rem;
+                padding: 0.6rem 0.25rem 0.25rem;
+            }
+            .mt-play-btn,
+            .mt-step-btn {
+                width: 34px;
+                height: 34px;
+                border-radius: 50%;
+                border: 1.5px solid var(--dark);
+                background: var(--dark);
+                color: #fff;
+                cursor: pointer;
+                font-size: 0.85rem;
+                flex-shrink: 0;
+            }
+            .mt-step-btn {
+                background: #fff;
+                color: var(--dark);
+                font-size: 0.7rem;
+            }
+            .mt-playbar-note {
+                font-size: 0.72rem;
+                color: #999;
+            }
+
+            /* ── Drill-in inset ───────────────────────────────────────────── */
+            .mt-drill {
+                margin-top: 0.75rem;
+                border-top: 1px dashed var(--mt-grid);
+                padding-top: 0.75rem;
+            }
+            .mt-drill[hidden] {
+                display: none;
+            }
+            .mt-drill-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 0.4rem;
+            }
+            .mt-drill-head h3 {
+                font-family: "Inter", sans-serif;
+                font-size: 0.85rem;
+                font-weight: 700;
+                color: var(--dark);
+            }
+            .mt-drill-close {
+                background: none;
+                border: none;
+                color: #888;
+                font-size: 1rem;
+                cursor: pointer;
+            }
+            .mt-drill-note {
+                font-size: 0.75rem;
+                color: #888;
+                margin-bottom: 0.5rem;
+            }
+
+            /* ── Legend (right column) ────────────────────────────────────── */
+            .mt-legend {
+                background: #fbfaf6;
+                border: 1px solid #ece6d4;
+                border-radius: 8px;
+                padding: 0.75rem 0.9rem;
+                max-height: calc(100vh - 220px);
+                overflow-y: auto;
+            }
+            .mt-leg-group {
+                margin-bottom: 0.4rem;
+            }
+            .mt-leg-group-head {
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                font-family: "Inter", sans-serif;
+                font-size: 0.7rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: var(--dark);
+                padding: 0.4rem 0.2rem;
+                cursor: pointer;
+                border-bottom: 1px solid #ece6d4;
+            }
+            .mt-leg-group-head .mt-leg-caret {
+                transition: transform 0.15s;
+                font-size: 0.65rem;
+                color: #a08a4a;
+            }
+            .mt-leg-group.is-collapsed .mt-leg-caret {
+                transform: rotate(-90deg);
+            }
+            .mt-leg-group.is-collapsed .mt-leg-items {
+                display: none;
+            }
+            .mt-leg-group-count {
+                margin-left: auto;
+                color: #a08a4a;
+                font-weight: 500;
+            }
+
+            .mt-leg-items {
+                padding: 0.2rem 0;
+            }
+            .mt-leg-item {
+                display: flex;
+                align-items: center;
+                gap: 0.45rem;
+                padding: 0.28rem 0.2rem;
+                border-radius: 4px;
+            }
+            .mt-leg-item:hover {
+                background: #f2ede0;
+            }
+            .mt-leg-check {
+                flex-shrink: 0;
+                accent-color: var(--dark);
+                cursor: pointer;
+            }
+            .mt-leg-swatch {
+                width: 10px;
+                height: 10px;
+                border-radius: 2px;
+                flex-shrink: 0;
+            }
+            .mt-leg-name {
+                font-size: 0.8rem;
+                color: #444;
+                text-decoration: none;
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .mt-leg-name:hover:not(.mt-leg-name--nolink) {
+                color: var(--dark);
+                text-decoration: underline;
+            }
+            .mt-leg-name--nolink {
+                cursor: default;
+                color: #777;
+            }
+            .mt-leg-count {
+                font-size: 0.7rem;
+                color: #a08a4a;
+                flex-shrink: 0;
+            }
+
+            .mt-leg-actions {
+                display: flex;
+                gap: 0.5rem;
+                margin-bottom: 0.5rem;
+            }
+            .mt-leg-actions button {
+                font-family: "Inter", sans-serif;
+                font-size: 0.68rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                padding: 0.25rem 0.5rem;
+                border: 1px solid #d8cfae;
+                border-radius: 4px;
+                background: #fff;
+                color: #8a7a4a;
+                cursor: pointer;
+            }
+            .mt-leg-actions button:hover {
+                background: var(--amber);
+                border-color: var(--amber);
+                color: var(--dark);
+            }
+
+            /* ── Floating tooltips ─────────────────────────────────────────── */
+            #mt-bird-tip,
+            #mt-chart-tip {
+                position: fixed;
+                z-index: 500;
+                background: #fff;
+                border: 1px solid #e0e5ed;
+                border-radius: 6px;
+                box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14);
+                padding: 0.5rem 0.65rem;
+                font-size: 0.78rem;
+                color: #333;
+                pointer-events: none;
+                max-width: 220px;
+            }
+            #mt-bird-tip[hidden],
+            #mt-chart-tip[hidden] {
+                display: none;
+            }
+            #mt-bird-tip img {
+                display: block;
+                width: 100%;
+                height: 130px;
+                object-fit: contain;
+                object-position: center;
+                border-radius: 4px;
+                margin-bottom: 0.35rem;
+                background: #f2ede0;
+            }
+            #mt-bird-tip .mt-tip-name {
+                font-family: "Inter", sans-serif;
+                font-weight: 700;
+                color: var(--dark);
+            }
+            #mt-bird-tip .mt-tip-note {
+                font-size: 0.7rem;
+                color: #999;
+                margin-top: 0.15rem;
+            }
+            #mt-chart-tip .mt-ct-year {
+                font-family: "Inter", sans-serif;
+                font-weight: 700;
+                color: var(--dark);
+                margin-bottom: 0.25rem;
+            }
+            #mt-chart-tip dl {
+                margin: 0;
+                display: grid;
+                grid-template-columns: auto max-content;
+                gap: 0.1rem 0.6rem;
+            }
+            #mt-chart-tip dt {
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+            }
+            #mt-chart-tip dd {
+                text-align: right;
+                font-variant-numeric: tabular-nums;
+                color: #444;
+            }
+            .mt-ct-swatch {
+                width: 8px;
+                height: 8px;
+                border-radius: 2px;
+                display: inline-block;
+            }
+
+            .mt-empty-note {
+                text-align: center;
+                color: #999;
+                font-size: 0.85rem;
+                padding: 3rem 1rem;
+            }
+        </style>
+    </head>
+    <body>
+        <header class="site-header">
+            <a href="/" class="logo-box"
+                ><img src="base_res/img/SoWi_title_light.png"
+            /></a>
+            <ul class="site-nav">
+                <li><a href="/#about">About Us</a></li>
+                <li><a href="/#projects">Our Projects</a></li>
+                <li><a href="resources.html">Resources</a></li>
+            </ul>
+        </header>
+
+        <main class="mt-main">
+            <div class="mt-header">
+                <div>
+                    <a href="data_explorer.html" class="page-back"
+                        >&larr; Avian Data Explorer</a
+                    >
+                    <h1>
+                        Migration Trends — Illinois Beach State Park Hawk Watch
+                    </h1>
+                </div>
+                <div class="mt-header-actions">
+                    <button
+                        class="mt-help-btn"
+                        id="mt-help-btn"
+                        title="How to use / About this data"
+                        aria-label="Help"
+                    >
+                        ?
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-controls">
+                <div
+                    class="mt-scale-toggle"
+                    role="group"
+                    aria-label="Y-axis scale"
+                >
+                    <button
+                        id="mt-scale-log"
+                        class="is-active"
+                        data-scale="log"
+                    >
+                        Log scale
+                    </button>
+                    <button id="mt-scale-linear" data-scale="linear">
+                        Linear
+                    </button>
+                </div>
+                <span
+                    id="mt-selection-count"
+                    style="font-size: 0.8rem; color: #888"
+                ></span>
+                <div class="mt-btn-row">
+                    <button id="mt-select-all">Select all</button>
+                    <button id="mt-clear-all">Clear all</button>
+                </div>
+            </div>
+
+            <div class="mt-layout">
+                <div class="mt-chart-panel">
+                    <svg
+                        id="mt-svg"
+                        viewBox="0 0 900 440"
+                        preserveAspectRatio="xMidYMid meet"
+                    ></svg>
+
+                    <div class="mt-playbar">
+                        <button
+                            class="mt-step-btn"
+                            id="mt-step-back"
+                            title="Previous season"
+                            aria-label="Previous season"
+                        >
+                            &#9664;
+                        </button>
+                        <button
+                            class="mt-play-btn"
+                            id="mt-play"
+                            title="Play"
+                            aria-label="Play"
+                        >
+                            &#9654;
+                        </button>
+                        <button
+                            class="mt-step-btn"
+                            id="mt-step-fwd"
+                            title="Next season"
+                            aria-label="Next season"
+                        >
+                            &#9654;
+                        </button>
+                        <span class="mt-playbar-note"
+                            >Drag the dot on the timeline above to scrub, or
+                            click a year to inspect that season.</span
+                        >
+                    </div>
+
+                    <div class="mt-drill" id="mt-drill" hidden>
+                        <div class="mt-drill-head">
+                            <h3 id="mt-drill-title"></h3>
+                            <button
+                                class="mt-drill-close"
+                                id="mt-drill-close"
+                                aria-label="Close"
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <p class="mt-drill-note">
+                            Aug&ndash;Nov monthly counts for the selected
+                            species this season. Click the year again, or press
+                            Play, to return to the timeline.
+                        </p>
+                        <svg
+                            id="mt-drill-svg"
+                            viewBox="0 0 860 160"
+                            preserveAspectRatio="xMidYMid meet"
+                            style="width: 100%; height: auto"
+                        ></svg>
+                    </div>
+                </div>
+
+                <div class="mt-legend" id="mt-legend">
+                    <div class="mt-leg-actions">
+                        <button id="mt-leg-select-all">All</button>
+                        <button id="mt-leg-clear-all">None</button>
+                    </div>
+                    <div id="mt-leg-groups"></div>
+                </div>
+            </div>
+        </main>
+
+        <div id="mt-bird-tip" hidden></div>
+        <div id="mt-chart-tip" hidden></div>
+
+        <!-- How to use / About this data -->
+        <div
+            id="mt-help-modal"
+            class="lm-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mt-help-title"
+            hidden
+        >
+            <div class="lm-backdrop"></div>
+            <div class="lm-panel">
+                <div class="lm-head">
+                    <h2 id="mt-help-title">How to use this chart</h2>
+                    <button
+                        class="lm-close"
+                        id="mt-help-close"
+                        aria-label="Close help"
+                    >
+                        &times;
+                    </button>
+                </div>
+                <div class="lm-body">
+                    <section class="lm-section">
+                        <h3>How to use it</h3>
+                        <p>
+                            This chart starts with a
+                            <strong
+                                >curated subset of species already
+                                selected</strong
+                            >
+                            — Red-tailed Hawk, Sharp-shinned Hawk, Broad-winged
+                            Hawk, Merlin, and Turkey Vulture, the five
+                            most-counted raptors at this site — rather than all
+                            ~26 at once. That's expected, not a bug; use the
+                            legend on the right to add or remove species.
+                        </p>
+                        <p>
+                            Press <strong>Play</strong> to animate the count
+                            through each fall migration season from 2000 to
+                            2025, one season at a time. Use
+                            <strong>step</strong> to move one season at a time,
+                            or drag the scrubber handle to jump anywhere.
+                            <strong>Click directly on a year</strong> along the
+                            scrubber to pause and reveal that season's
+                            Aug&ndash;Nov monthly breakdown.
+                        </p>
+                        <p>
+                            Counts span four orders of magnitude between
+                            species, so the chart defaults to a
+                            <strong>log scale</strong> — this keeps rare species
+                            like Golden Eagle or Gyrfalcon visible as real
+                            trends instead of flat lines near zero. Switch to
+                            <strong>Linear</strong> above the chart to compare
+                            true-to-scale magnitudes instead.
+                        </p>
+                        <p>
+                            In the legend, <strong>hover</strong> a species name
+                            to see its photo, and <strong>click</strong> the
+                            name to open its full species profile — except for
+                            the Unknown/Other codes and four species (Osprey,
+                            Golden Eagle, Merlin, Peregrine Falcon) that don't
+                            yet have a profile in this dataset; those still plot
+                            with real counts, just without a click-through.
+                        </p>
+                    </section>
+                    <section class="lm-section">
+                        <h3>About this data</h3>
+                        <p>
+                            These counts come from the
+                            <strong>Illinois Beach State Park Hawk Watch</strong
+                            >, on the Lake Michigan shoreline in Lake County,
+                            Illinois — an
+                            <strong>all-volunteer effort</strong> that has run
+                            every fall season since 2000.
+                        </p>
+                        <p>
+                            In 1999, Vic Berardi scouted sites across
+                            northeastern Illinois for a viable raptor migration
+                            count and settled on a spot within the state park.
+                            The following year he conducted the first season
+                            with Janice Sweet, Paul Sweet, Bill Wengelewski, and
+                            others — every year since has brought more
+                            volunteers.
+                        </p>
+                        <dl>
+                            <dt>Site Coordinator</dt>
+                            <dd>Vic Berardi</dd>
+                            <dt>Data Compiler</dt>
+                            <dd>Janice Sweet</dd>
+                            <dt>Data Analyst</dt>
+                            <dd>Paul Sweet</dd>
+                            <dt>Count season</dt>
+                            <dd>Fall, Aug 25 &ndash; Nov 25</dd>
+                        </dl>
+                        <p style="margin-top: 0.75rem">
+                            This page is a downstream retelling of their
+                            volunteer count data, not a replacement for the
+                            source — see the full
+                            <a
+                                href="https://hawkcount.org/siteinfo.php?rsite=527"
+                                target="_blank"
+                                rel="noopener"
+                                >site profile on hawkcount.org</a
+                            >
+                            for site history, topography, and directions.
+                        </p>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
+            <li><a href="/#about">About Us</a></li>
+            <li><a href="/#projects">Our Projects</a></li>
+            <li><a href="resources.html">Resources</a></li>
+        </ul>
+
+        <script src="base_res/bird_data.js"></script>
+        <script src="base_res/bird_detail.js"></script>
+        <script>
+            const GROUP_COLOR = {
+                Vultures: "var(--mt-vultures)",
+                Eagles: "var(--mt-eagles)",
+                Harriers: "var(--mt-harriers)",
+                Accipiters: "var(--mt-accipiters)",
+                Buteos: "var(--mt-buteos)",
+                Falcons: "var(--mt-falcons)",
+                Kites: "var(--mt-kites)",
+                Other: "var(--mt-other)",
+            };
+            const GROUP_COLOR_HEX = {
+                Vultures: "#eda100",
+                Eagles: "#2a78d6",
+                Harriers: "#008300",
+                Accipiters: "#4a3aa7",
+                Buteos: "#e34948",
+                Falcons: "#1baf7a",
+                Kites: "#e87ba4",
+                Other: "#898781",
+            };
+            const DASH_PATTERNS = [
+                "none",
+                "6 4",
+                "2 3",
+                "10 4 2 4",
+                "1 3",
+                "8 2 2 2",
+            ];
+            const DEFAULT_SELECTED = new Set(["RT", "SS", "BW", "ML", "TV"]);
+            const MONTHS = ["08", "09", "10", "11"];
+            const MONTH_LABELS = {
+                "08": "Aug",
+                "09": "Sep",
+                10: "Oct",
+                11: "Nov",
+            };
+
+            let migData = null; // parsed migration_trends.json
+            let speciesByCode = new Map();
+            let csvRowByKey = new Map(); // "Genus_species" -> CSV row
+            let selected = new Set(DEFAULT_SELECTED);
+            let collapsedGroups = new Set();
+            let scaleMode = "log";
+            let currentIndex = 0; // season index, 0..N-1
+            let playing = false;
+            let playTimer = null;
+            let drillIndex = null; // season index currently drilled into, or null
+            let dragging = false;
+
+            const esc = (s) =>
+                String(s ?? "").replace(
+                    /[&<>"]/g,
+                    (c) =>
+                        ({
+                            "&": "&amp;",
+                            "<": "&lt;",
+                            ">": "&gt;",
+                            '"': "&quot;",
+                        })[c],
+                );
+
+            function speciesRank(code) {
+                // index within its group, by descending totalCount (already sorted that way in the data file)
+                const groupMembers = migData.species.filter(
+                    (s) => s.group === speciesByCode.get(code).group,
+                );
+                return groupMembers.findIndex((s) => s.code === code);
+            }
+            function colorFor(code) {
+                return GROUP_COLOR[speciesByCode.get(code).group];
+            }
+            function colorHexFor(code) {
+                return GROUP_COLOR_HEX[speciesByCode.get(code).group];
+            }
+            function dashFor(code) {
+                return DASH_PATTERNS[speciesRank(code) % DASH_PATTERNS.length];
+            }
+
+            async function init() {
+                const [mig, csvRows] = await Promise.all([
+                    fetch("base_res/data/migration_trends.json").then((r) =>
+                        r.json(),
+                    ),
+                    BirdData.load().catch(() => []),
+                ]);
+                migData = mig;
+                migData.species.forEach((s) => speciesByCode.set(s.code, s));
+                csvRows.forEach((row) => {
+                    if (row.GENUS && row.SPECIES)
+                        csvRowByKey.set(`${row.GENUS}_${row.SPECIES}`, row);
+                });
+
+                buildLegend();
+                renderChart();
+                wireControls();
+                wireScrubDrag();
+                wireChartHover();
+                maybeShowHelpOnFirstLoad();
+            }
+
+            // ── Scales ──────────────────────────────────────────────────────
+            const MARGIN = { top: 30, right: 64, bottom: 28, left: 46 };
+            const VB_W = 900,
+                VB_H = 440;
+            const plotW = VB_W - MARGIN.left - MARGIN.right;
+            const plotH = VB_H - MARGIN.top - MARGIN.bottom;
+
+            function globalMax() {
+                let max = 1;
+                migData.species.forEach((s) =>
+                    s.seasons.forEach((v) => {
+                        if (v > max) max = v;
+                    }),
+                );
+                return max;
+            }
+            let gMax = 1;
+
+            function xFor(i) {
+                const n = migData.meta.years.length;
+                return MARGIN.left + (n === 1 ? 0 : (i / (n - 1)) * plotW);
+            }
+            function yFor(v) {
+                const t =
+                    scaleMode === "log"
+                        ? Math.log10(v + 1) / Math.log10(gMax + 1)
+                        : v / gMax;
+                return MARGIN.top + (1 - Math.max(0, Math.min(1, t))) * plotH;
+            }
+            function niceTicksFor(max, log) {
+                if (!log) {
+                    const step = Math.pow(10, Math.floor(Math.log10(max || 1)));
+                    const ticks = [];
+                    for (let v = 0; v <= max; v += step)
+                        ticks.push(Math.round(v));
+                    if (ticks[ticks.length - 1] < max)
+                        ticks.push(Math.round(max));
+                    return ticks;
+                }
+                const ticks = [];
+                const endExp = Math.ceil(Math.log10(max + 1));
+                for (let e = 0; e <= endExp; e++) {
+                    const v = Math.pow(10, e);
+                    if (v <= max * 1.5) ticks.push(v);
+                }
+                return ticks;
+            }
+
+            const svgNS = "http://www.w3.org/2000/svg";
+            function el(tag, attrs) {
+                const e = document.createElementNS(svgNS, tag);
+                for (const k in attrs) e.setAttribute(k, attrs[k]);
+                return e;
+            }
+
+            function renderChart() {
+                gMax = globalMax();
+                const svg = document.getElementById("mt-svg");
+                svg.innerHTML = "";
+                svg.setAttribute("viewBox", `0 0 ${VB_W} ${VB_H}`);
+
+                // gridlines + y ticks
+                const ticks = niceTicksFor(gMax, scaleMode === "log");
+                ticks.forEach((v) => {
+                    const y = yFor(v);
+                    svg.appendChild(
+                        el("line", {
+                            class: "mt-gridline",
+                            x1: MARGIN.left,
+                            x2: VB_W - MARGIN.right,
+                            y1: y,
+                            y2: y,
+                        }),
+                    );
+                    const label = el("text", {
+                        class: "mt-axis-label",
+                        x: MARGIN.left - 8,
+                        y: y + 3,
+                        "text-anchor": "end",
+                    });
+                    label.textContent = v >= 1000 ? v / 1000 + "k" : v;
+                    svg.appendChild(label);
+                });
+                svg.appendChild(
+                    el("line", {
+                        class: "mt-axis-line",
+                        x1: MARGIN.left,
+                        x2: MARGIN.left,
+                        y1: MARGIN.top,
+                        y2: VB_H - MARGIN.bottom,
+                    }),
+                );
+
+                // x-axis / scrubber: one shared axis, doubling as the timeline scrubber
+                const axisY = VB_H - MARGIN.bottom;
+                const nYears = migData.meta.years.length;
+                svg.appendChild(
+                    el("line", {
+                        class: "mt-scrub-track",
+                        x1: MARGIN.left,
+                        x2: VB_W - MARGIN.right,
+                        y1: axisY,
+                        y2: axisY,
+                    }),
+                );
+                svg.appendChild(
+                    el("line", {
+                        class: "mt-scrub-fill",
+                        x1: MARGIN.left,
+                        x2: xFor(currentIndex),
+                        y1: axisY,
+                        y2: axisY,
+                    }),
+                );
+                migData.meta.years.forEach((yr, i) => {
+                    const x = xFor(i);
+                    svg.appendChild(
+                        el("line", {
+                            class: "mt-scrub-tick",
+                            x1: x,
+                            x2: x,
+                            y1: axisY - 4,
+                            y2: axisY + 4,
+                        }),
+                    );
+                    if (i % 5 === 0 || i === nYears - 1) {
+                        const label = el("text", {
+                            class: "mt-axis-label",
+                            x,
+                            y: axisY + 16,
+                            "text-anchor": "middle",
+                        });
+                        label.textContent = yr;
+                        svg.appendChild(label);
+                    }
+                });
+                svg.appendChild(
+                    el("circle", {
+                        class: "mt-scrub-thumb",
+                        cx: xFor(currentIndex),
+                        cy: axisY,
+                        r: 6.5,
+                    }),
+                );
+                // single wide invisible strip: click = jump + drill into nearest year, drag = scrub only
+                svg.appendChild(
+                    el("rect", {
+                        class: "mt-scrub-hitrow",
+                        x: MARGIN.left - 6,
+                        y: axisY - 12,
+                        width: plotW + 12,
+                        height: 24,
+                    }),
+                );
+
+                const selectedCodes = [...selected];
+
+                // ghost full-range preview lines
+                selectedCodes.forEach((code) => {
+                    const s = speciesByCode.get(code);
+                    const d = s.seasons
+                        .map(
+                            (v, i) =>
+                                `${i === 0 ? "M" : "L"}${xFor(i)},${yFor(v)}`,
+                        )
+                        .join(" ");
+                    svg.appendChild(
+                        el("path", {
+                            class: "mt-ghost-line",
+                            d,
+                            stroke: colorHexFor(code),
+                        }),
+                    );
+                });
+
+                // revealed bold lines up to currentIndex
+                selectedCodes.forEach((code) => {
+                    const s = speciesByCode.get(code);
+                    const pts = s.seasons.slice(0, currentIndex + 1);
+                    const d = pts
+                        .map(
+                            (v, i) =>
+                                `${i === 0 ? "M" : "L"}${xFor(i)},${yFor(v)}`,
+                        )
+                        .join(" ");
+                    svg.appendChild(
+                        el("path", {
+                            class: "mt-line",
+                            d,
+                            stroke: colorHexFor(code),
+                            "stroke-dasharray":
+                                dashFor(code) === "none" ? "" : dashFor(code),
+                        }),
+                    );
+                });
+
+                // end dots + direct labels
+                const labelYs = [];
+                selectedCodes
+                    .slice()
+                    .sort(
+                        (a, b) =>
+                            speciesByCode.get(b).seasons[currentIndex] -
+                            speciesByCode.get(a).seasons[currentIndex],
+                    )
+                    .forEach((code) => {
+                        const s = speciesByCode.get(code);
+                        const v = s.seasons[currentIndex];
+                        const x = xFor(currentIndex),
+                            y0 = yFor(v);
+                        svg.appendChild(
+                            el("circle", {
+                                class: "mt-end-dot",
+                                cx: x,
+                                cy: y0,
+                                r: 4,
+                                fill: colorHexFor(code),
+                            }),
+                        );
+                        let y = y0;
+                        for (const used of labelYs) {
+                            if (Math.abs(used - y) < 11) y = used + 11;
+                        }
+                        labelYs.push(y);
+                        const label = el("text", {
+                            class: "mt-end-label",
+                            x: x + 8,
+                            y: y + 3,
+                            fill: colorHexFor(code),
+                        });
+                        label.textContent = s.name;
+                        svg.appendChild(label);
+                    });
+
+                if (!selectedCodes.length) {
+                    const t = el("text", {
+                        x: VB_W / 2,
+                        y: VB_H / 2,
+                        "text-anchor": "middle",
+                        fill: "#999",
+                        "font-size": 13,
+                    });
+                    t.textContent =
+                        "No species selected — choose one or more from the legend.";
+                    svg.appendChild(t);
+                }
+
+                // persistent "you are here" indicator: always-visible vertical
+                // line + year tag above the scrubber, tracking currentIndex
+                // regardless of hover — painted last so it's never obscured.
+                const nowX = xFor(currentIndex);
+                svg.appendChild(
+                    el("line", {
+                        class: "mt-now-line",
+                        x1: nowX,
+                        x2: nowX,
+                        y1: MARGIN.top - 6,
+                        y2: axisY,
+                    }),
+                );
+                const tagW = 38,
+                    tagH = 18,
+                    tagY = 2;
+                svg.appendChild(
+                    el("rect", {
+                        class: "mt-now-tag-bg",
+                        x: nowX - tagW / 2,
+                        y: tagY,
+                        width: tagW,
+                        height: tagH,
+                        rx: 4,
+                    }),
+                );
+                const nowLabel = el("text", {
+                    class: "mt-now-tag-text",
+                    x: nowX,
+                    y: tagY + tagH / 2 + 4,
+                    "text-anchor": "middle",
+                });
+                nowLabel.textContent = migData.meta.years[currentIndex];
+                svg.appendChild(nowLabel);
+
+                document.getElementById("mt-selection-count").textContent =
+                    `${selectedCodes.length} of ${migData.species.length} species shown`;
+            }
+
+            // ── Shared: nearest season index for a client X position ────────
+            function nearestIndexForClientX(svg, clientX, maxIndex) {
+                const rect = svg.getBoundingClientRect();
+                const scaleX = VB_W / rect.width;
+                const localX = (clientX - rect.left) * scaleX;
+                let nearest = 0,
+                    best = Infinity;
+                for (let i = 0; i <= maxIndex; i++) {
+                    const dx = Math.abs(xFor(i) - localX);
+                    if (dx < best) {
+                        best = dx;
+                        nearest = i;
+                    }
+                }
+                return nearest;
+            }
+
+            // ── Chart hover crosshair + tooltip (wired once; reads live selection) ──
+            function wireChartHover() {
+                const svg = document.getElementById("mt-svg");
+                const tip = document.getElementById("mt-chart-tip");
+                let crosshair = null;
+                svg.addEventListener("mousemove", (e) => {
+                    if (dragging) {
+                        tip.hidden = true;
+                        return;
+                    }
+                    const selectedCodes = [...selected];
+                    const nearest = nearestIndexForClientX(
+                        svg,
+                        e.clientX,
+                        Math.min(currentIndex, migData.meta.years.length - 1),
+                    );
+                    if (!selectedCodes.length) {
+                        tip.hidden = true;
+                        return;
+                    }
+                    if (crosshair) crosshair.remove();
+                    crosshair = el("line", {
+                        class: "mt-crosshair",
+                        x1: xFor(nearest),
+                        x2: xFor(nearest),
+                        y1: MARGIN.top,
+                        y2: VB_H - MARGIN.bottom,
+                    });
+                    svg.appendChild(crosshair);
+
+                    const rows = selectedCodes
+                        .map((code) => ({
+                            code,
+                            v: speciesByCode.get(code).seasons[nearest],
+                        }))
+                        .sort((a, b) => b.v - a.v)
+                        .map(
+                            (r) =>
+                                `<dt><span class="mt-ct-swatch" style="background:${colorHexFor(r.code)}"></span>${esc(speciesByCode.get(r.code).name)}</dt><dd>${r.v.toLocaleString()}</dd>`,
+                        )
+                        .join("");
+                    tip.innerHTML = `<div class="mt-ct-year">${migData.meta.years[nearest]}</div><dl>${rows}</dl>`;
+                    tip.hidden = false;
+                    const pad = 14;
+                    let x = e.clientX + pad,
+                        y = e.clientY + pad;
+                    if (x + 220 > window.innerWidth) x = e.clientX - 220 - pad;
+                    tip.style.left = x + "px";
+                    tip.style.top = y + "px";
+                });
+                svg.addEventListener("mouseleave", () => {
+                    tip.hidden = true;
+                    if (crosshair) {
+                        crosshair.remove();
+                        crosshair = null;
+                    }
+                });
+            }
+
+            // ── Scrubber: lives directly on the chart's x-axis. Click anywhere
+            // on the axis to jump + drill into that season; drag to scrub only. ──
+            function wireScrubDrag() {
+                const svg = document.getElementById("mt-svg");
+                let dragMoved = false,
+                    dragStartX = 0;
+
+                svg.addEventListener("mousedown", (e) => {
+                    if (!e.target.classList.contains("mt-scrub-hitrow")) return;
+                    e.preventDefault();
+                    pause();
+                    closeDrill();
+                    dragging = true;
+                    dragMoved = false;
+                    dragStartX = e.clientX;
+                    currentIndex = nearestIndexForClientX(
+                        svg,
+                        e.clientX,
+                        migData.meta.years.length - 1,
+                    );
+                    svg.classList.add("is-dragging");
+                    renderChart();
+                });
+                window.addEventListener("mousemove", (e) => {
+                    if (!dragging) return;
+                    if (Math.abs(e.clientX - dragStartX) > 3) dragMoved = true;
+                    const idx = nearestIndexForClientX(
+                        svg,
+                        e.clientX,
+                        migData.meta.years.length - 1,
+                    );
+                    if (idx !== currentIndex) {
+                        currentIndex = idx;
+                        renderChart();
+                    }
+                });
+                window.addEventListener("mouseup", () => {
+                    if (!dragging) return;
+                    dragging = false;
+                    svg.classList.remove("is-dragging");
+                    if (!dragMoved) openDrill(currentIndex);
+                });
+            }
+
+            // ── Playback ──────────────────────────────────────────────────────
+            function play() {
+                if (playing) return;
+                closeDrill();
+                if (currentIndex >= migData.meta.years.length - 1)
+                    currentIndex = 0;
+                playing = true;
+                document.getElementById("mt-play").innerHTML =
+                    "&#10074;&#10074;";
+                document.getElementById("mt-play").title = "Pause";
+                playTimer = setInterval(() => {
+                    currentIndex++;
+                    if (currentIndex >= migData.meta.years.length - 1) {
+                        currentIndex = migData.meta.years.length - 1;
+                        pause();
+                    }
+                    renderChart();
+                }, 750);
+            }
+            function pause() {
+                playing = false;
+                clearInterval(playTimer);
+                document.getElementById("mt-play").innerHTML = "&#9654;";
+                document.getElementById("mt-play").title = "Play";
+            }
+            function togglePlay() {
+                playing ? pause() : play();
+            }
+            function step(delta) {
+                pause();
+                closeDrill();
+                const n = migData.meta.years.length;
+                currentIndex = Math.max(
+                    0,
+                    Math.min(n - 1, currentIndex + delta),
+                );
+                renderChart();
+            }
+
+            // ── Drill-in inset ──────────────────────────────────────────────
+            function openDrill(index) {
+                if (drillIndex === index) {
+                    closeDrill();
+                    return;
+                }
+                pause();
+                drillIndex = index;
+                currentIndex = index;
+                renderChart();
+                const yr = migData.meta.years[index];
+                document.getElementById("mt-drill-title").textContent =
+                    `${yr} season — Aug–Nov breakdown`;
+                document.getElementById("mt-drill").hidden = false;
+                renderDrillChart(yr);
+            }
+            function closeDrill() {
+                drillIndex = null;
+                document.getElementById("mt-drill").hidden = true;
+            }
+            document
+                .getElementById("mt-drill-close")
+                .addEventListener("click", closeDrill);
+
+            function renderDrillChart(year) {
+                const svg = document.getElementById("mt-drill-svg");
+                svg.innerHTML = "";
+                const W = 860,
+                    H = 160;
+                const m = { top: 10, right: 90, bottom: 22, left: 34 };
+                const pw = W - m.left - m.right,
+                    ph = H - m.top - m.bottom;
+                const codes = [...selected];
+                if (!codes.length) {
+                    const t = el("text", {
+                        x: W / 2,
+                        y: H / 2,
+                        "text-anchor": "middle",
+                        fill: "#999",
+                        "font-size": 12,
+                    });
+                    t.textContent = "No species selected.";
+                    svg.appendChild(t);
+                    return;
+                }
+                let max = 1;
+                codes.forEach((code) => {
+                    MONTHS.forEach((mo) => {
+                        const v =
+                            speciesByCode.get(code).monthly[`${year}-${mo}`] ||
+                            0;
+                        if (v > max) max = v;
+                    });
+                });
+                const xForM = (i) => m.left + (i / (MONTHS.length - 1)) * pw;
+                const yForM = (v) => m.top + (1 - v / max) * ph;
+
+                MONTHS.forEach((mo, i) => {
+                    const label = el("text", {
+                        class: "mt-axis-label",
+                        x: xForM(i),
+                        y: H - 6,
+                        "text-anchor": "middle",
+                    });
+                    label.textContent = MONTH_LABELS[mo];
+                    svg.appendChild(label);
+                });
+                svg.appendChild(
+                    el("line", {
+                        class: "mt-axis-line",
+                        x1: m.left,
+                        x2: W - m.right,
+                        y1: H - m.bottom,
+                        y2: H - m.bottom,
+                    }),
+                );
+
+                const labelYs = [];
+                codes
+                    .slice()
+                    .sort(
+                        (a, b) =>
+                            (speciesByCode.get(b).monthly[`${year}-11`] || 0) -
+                            (speciesByCode.get(a).monthly[`${year}-11`] || 0),
+                    )
+                    .forEach((code) => {
+                        const s = speciesByCode.get(code);
+                        const pts = MONTHS.map(
+                            (mo) => s.monthly[`${year}-${mo}`] || 0,
+                        );
+                        const d = pts
+                            .map(
+                                (v, i) =>
+                                    `${i === 0 ? "M" : "L"}${xForM(i)},${yForM(v)}`,
+                            )
+                            .join(" ");
+                        svg.appendChild(
+                            el("path", {
+                                d,
+                                fill: "none",
+                                stroke: colorHexFor(code),
+                                "stroke-width": 2,
+                                "stroke-dasharray":
+                                    dashFor(code) === "none"
+                                        ? ""
+                                        : dashFor(code),
+                            }),
+                        );
+                        pts.forEach((v, i) =>
+                            svg.appendChild(
+                                el("circle", {
+                                    cx: xForM(i),
+                                    cy: yForM(v),
+                                    r: 2.5,
+                                    fill: colorHexFor(code),
+                                }),
+                            ),
+                        );
+                        let y = yForM(pts[pts.length - 1]);
+                        for (const used of labelYs) {
+                            if (Math.abs(used - y) < 11) y = used + 11;
+                        }
+                        labelYs.push(y);
+                        const label = el("text", {
+                            class: "mt-end-label",
+                            x: xForM(pts.length - 1) + 8,
+                            y: y + 3,
+                            fill: colorHexFor(code),
+                            "font-size": 9.5,
+                        });
+                        label.textContent = s.name;
+                        svg.appendChild(label);
+                    });
+            }
+
+            // ── Legend ──────────────────────────────────────────────────────
+            function buildLegend() {
+                const container = document.getElementById("mt-leg-groups");
+                container.innerHTML = "";
+                migData.groups.forEach((group) => {
+                    const members = migData.species.filter(
+                        (s) => s.group === group,
+                    );
+                    if (!members.length) return;
+                    const groupEl = document.createElement("div");
+                    groupEl.className = "mt-leg-group";
+                    groupEl.dataset.group = group;
+
+                    const head = document.createElement("div");
+                    head.className = "mt-leg-group-head";
+                    head.innerHTML = `<span class="mt-leg-caret">&#9662;</span>${esc(group)}<span class="mt-leg-group-count">${members.length}</span>`;
+                    head.addEventListener("click", () => {
+                        groupEl.classList.toggle("is-collapsed");
+                    });
+                    groupEl.appendChild(head);
+
+                    const itemsEl = document.createElement("div");
+                    itemsEl.className = "mt-leg-items";
+                    members.forEach((s) => {
+                        const row = document.createElement("div");
+                        row.className = "mt-leg-item";
+                        row.dataset.code = s.code;
+                        const nameClass = s.hasTraitRow
+                            ? "mt-leg-name"
+                            : "mt-leg-name mt-leg-name--nolink";
+                        row.innerHTML =
+                            `<input type="checkbox" class="mt-leg-check" ${selected.has(s.code) ? "checked" : ""} aria-label="Show ${esc(s.name)}">` +
+                            `<span class="mt-leg-swatch" style="background:${GROUP_COLOR_HEX[group]}"></span>` +
+                            `<a href="#" class="${nameClass}">${esc(s.name)}</a>` +
+                            `<span class="mt-leg-count">${s.totalCount.toLocaleString()}</span>`;
+                        itemsEl.appendChild(row);
+                    });
+                    groupEl.appendChild(itemsEl);
+                    container.appendChild(groupEl);
+                });
+            }
+
+            function wireLegendEvents() {
+                const container = document.getElementById("mt-leg-groups");
+                container.addEventListener("change", (e) => {
+                    if (!e.target.classList.contains("mt-leg-check")) return;
+                    const code = e.target.closest(".mt-leg-item").dataset.code;
+                    if (e.target.checked) selected.add(code);
+                    else selected.delete(code);
+                    renderChart();
+                    if (drillIndex !== null)
+                        renderDrillChart(migData.meta.years[drillIndex]);
+                });
+                container.addEventListener("click", (e) => {
+                    const nameEl = e.target.closest(".mt-leg-name");
+                    if (!nameEl) return;
+                    e.preventDefault();
+                    if (nameEl.classList.contains("mt-leg-name--nolink"))
+                        return;
+                    const code = nameEl.closest(".mt-leg-item").dataset.code;
+                    const s = speciesByCode.get(code);
+                    const row = csvRowByKey.get(`${s.genus}_${s.species}`);
+                    if (row) BirdDetail.open(row);
+                });
+                container.addEventListener("mouseover", (e) => {
+                    const item = e.target.closest(".mt-leg-item");
+                    if (!item) return;
+                    showBirdTip(speciesByCode.get(item.dataset.code), e);
+                });
+                container.addEventListener("mousemove", (e) => {
+                    if (e.target.closest(".mt-leg-item")) moveBirdTip(e);
+                });
+                container.addEventListener("mouseout", (e) => {
+                    const item = e.target.closest(".mt-leg-item");
+                    if (item && !item.contains(e.relatedTarget))
+                        document.getElementById("mt-bird-tip").hidden = true;
+                });
+            }
+
+            function showBirdTip(s, evt) {
+                const tip = document.getElementById("mt-bird-tip");
+                const imgSrc = s.imageFile
+                    ? `base_res/img/birds/${s.imageFile}`
+                    : "base_res/img/birds/_generic.jpg";
+                tip.innerHTML =
+                    `<img src="${esc(imgSrc)}" onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'" alt="">` +
+                    `<div class="mt-tip-name">${esc(s.name)}</div>` +
+                    (s.hasTraitRow
+                        ? ""
+                        : `<div class="mt-tip-note">No species profile in this dataset yet.</div>`);
+                tip.hidden = false;
+                moveBirdTip(evt);
+            }
+            function moveBirdTip(evt) {
+                const tip = document.getElementById("mt-bird-tip");
+                const pad = 14;
+                let x = evt.clientX + pad,
+                    y = evt.clientY + pad;
+                if (x + 200 > window.innerWidth) x = evt.clientX - 200 - pad;
+                if (y + 160 > window.innerHeight) y = evt.clientY - 160 - pad;
+                tip.style.left = x + "px";
+                tip.style.top = y + "px";
+            }
+
+            function setAllSelected(on) {
+                selected = on
+                    ? new Set(migData.species.map((s) => s.code))
+                    : new Set();
+                document.querySelectorAll(".mt-leg-check").forEach((cb) => {
+                    cb.checked = on;
+                });
+                renderChart();
+                if (drillIndex !== null)
+                    renderDrillChart(migData.meta.years[drillIndex]);
+            }
+
+            // ── Controls wiring ──────────────────────────────────────────────
+            function wireControls() {
+                wireLegendEvents();
+                document
+                    .getElementById("mt-play")
+                    .addEventListener("click", togglePlay);
+                document
+                    .getElementById("mt-step-back")
+                    .addEventListener("click", () => step(-1));
+                document
+                    .getElementById("mt-step-fwd")
+                    .addEventListener("click", () => step(1));
+
+                document
+                    .getElementById("mt-scale-log")
+                    .addEventListener("click", () => setScale("log"));
+                document
+                    .getElementById("mt-scale-linear")
+                    .addEventListener("click", () => setScale("linear"));
+
+                document
+                    .getElementById("mt-select-all")
+                    .addEventListener("click", () => setAllSelected(true));
+                document
+                    .getElementById("mt-clear-all")
+                    .addEventListener("click", () => setAllSelected(false));
+                document
+                    .getElementById("mt-leg-select-all")
+                    .addEventListener("click", () => setAllSelected(true));
+                document
+                    .getElementById("mt-leg-clear-all")
+                    .addEventListener("click", () => setAllSelected(false));
+
+                const helpModal = document.getElementById("mt-help-modal");
+                function openHelp() {
+                    helpModal.hidden = false;
+                }
+                function closeHelp() {
+                    helpModal.hidden = true;
+                }
+                document
+                    .getElementById("mt-help-btn")
+                    .addEventListener("click", openHelp);
+                document
+                    .getElementById("mt-help-close")
+                    .addEventListener("click", closeHelp);
+                helpModal
+                    .querySelector(".lm-backdrop")
+                    .addEventListener("click", closeHelp);
+                document.addEventListener("keydown", (e) => {
+                    if (e.key === "Escape" && !helpModal.hidden) closeHelp();
+                });
+                window.mtOpenHelp = openHelp;
+            }
+
+            function setScale(mode) {
+                scaleMode = mode;
+                document
+                    .getElementById("mt-scale-log")
+                    .classList.toggle("is-active", mode === "log");
+                document
+                    .getElementById("mt-scale-linear")
+                    .classList.toggle("is-active", mode === "linear");
+                renderChart();
+            }
+
+            function maybeShowHelpOnFirstLoad() {
+                const KEY = "sowi:migration_trends:seen_help_v1";
+                if (!localStorage.getItem(KEY)) {
+                    window.mtOpenHelp();
+                    try {
+                        localStorage.setItem(KEY, "1");
+                    } catch {}
+                }
+            }
+
+            init();
+        </script>
+    </body>
+</html>
