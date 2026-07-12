@@ -40,6 +40,7 @@
                     <h1>Weights of Birds</h1>
                 </div>
                 <div class="bbd-header-actions">
+                    <button class="btn btn--ghost" id="bbd-help-btn">About this page</button>
                     <button class="btn" id="bbd-load-btn">Load Data</button>
                 </div>
             </div>
@@ -111,6 +112,63 @@
             <li><a href="/#projects">Our Projects</a></li>
             <li><a href="resources.html">Resources</a></li>
         </ul>
+
+        <!-- How to use / About this page -->
+        <div id="help-modal" class="lm-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
+            <div class="lm-backdrop"></div>
+            <div class="lm-panel">
+                <div class="lm-head">
+                    <h2 id="help-title">About this page</h2>
+                    <button class="lm-close" aria-label="Close">&times;</button>
+                </div>
+                <div class="lm-body">
+                    <section class="lm-section">
+                        <h3>How to use it</h3>
+                        <p>
+                            Click <strong>Load Data</strong>, then switch between the
+                            <strong>Weight Ranges</strong> and
+                            <strong>Sexual Dimorphism</strong> tabs. Weight Ranges shows a
+                            min&ndash;max bar for females, males, and unsexed birds on a shared
+                            log scale, so species of any size are comparable at a glance.
+                            Sexual Dimorphism plots average male vs. female mass for species
+                            with data for both sexes, with a badge showing the ratio and which
+                            sex runs larger.
+                        </p>
+                        <p>
+                            Use <strong>Group by</strong>, <strong>Sort by</strong>, and
+                            <strong>Find</strong> to organize the list, hover a row for details,
+                            or click a species name to open its full profile.
+                        </p>
+                    </section>
+                    <section class="lm-section">
+                        <h3>About this data</h3>
+                        <p>
+                            The species data on this page comes from
+                            <strong>BIRDBASE</strong>, a peer-reviewed global dataset of avian
+                            biogeography, conservation, ecology, and life-history traits &mdash;
+                            78 traits for 11,589 species across 254 families, synthesized from
+                            367 published sources spanning 1957&ndash;2025.
+                        </p>
+                        <p>
+                            Şekercioğlu, Ç.H., Kittelberger, K.D., Mota, F.M.M. et al.
+                            <em>BIRDBASE: A Global Dataset of Avian Biogeography, Conservation,
+                            Ecology and Life History Traits.</em> Scientific Data (2025).
+                        </p>
+                        <p style="margin-top: 0.75rem">
+                            This page is a downstream retelling of that dataset, not a
+                            replacement for the source &mdash; see the full
+                            <a
+                                href="https://www.nature.com/articles/s41597-025-05615-3"
+                                target="_blank"
+                                rel="noopener"
+                                >paper on nature.com</a
+                            >
+                            for methodology, sources, and citation details.
+                        </p>
+                    </section>
+                </div>
+            </div>
+        </div>
 
         <script src="base_res/bird_data.js"></script>
         <script src="base_res/bird_detail.js"></script>
@@ -595,6 +653,39 @@
                 clearTimeout(searchTimer);
                 searchTimer = setTimeout(() => { if (rows.length) renderList(); }, 180);
             });
+
+            // ── Help modal ──────────────────────────────────────────────────
+            (function () {
+                const modal = document.getElementById("help-modal");
+                const btn = document.getElementById("bbd-help-btn");
+                const closeBtn = modal.querySelector(".lm-close");
+                const backdrop = modal.querySelector(".lm-backdrop");
+
+                function openHelp() {
+                    modal.hidden = false;
+                    document.body.style.overflow = "hidden";
+                }
+
+                function closeHelp() {
+                    modal.hidden = true;
+                    document.body.style.overflow = "";
+                }
+
+                btn.addEventListener("click", openHelp);
+                closeBtn.addEventListener("click", closeHelp);
+                backdrop.addEventListener("click", closeHelp);
+                document.addEventListener("keydown", function (e) {
+                    if (e.key === "Escape" && !modal.hidden) closeHelp();
+                });
+
+                const KEY = "sowi:weights_of_birds:seen_help_v1";
+                if (!sessionStorage.getItem(KEY)) {
+                    openHelp();
+                    try {
+                        sessionStorage.setItem(KEY, "1");
+                    } catch {}
+                }
+            })();
         </script>
     </body>
 </html>

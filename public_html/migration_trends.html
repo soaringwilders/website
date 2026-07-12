@@ -66,23 +66,6 @@
                 align-items: center;
             }
 
-            .mt-help-btn {
-                width: 30px;
-                height: 30px;
-                border-radius: 50%;
-                border: 1.5px solid var(--amber);
-                background: #fff;
-                color: var(--dark);
-                font-family: "Inter", sans-serif;
-                font-weight: 700;
-                cursor: pointer;
-                font-size: 0.85rem;
-                line-height: 1;
-            }
-            .mt-help-btn:hover {
-                background: var(--amber);
-            }
-
             .mt-controls {
                 display: flex;
                 flex-wrap: wrap;
@@ -530,12 +513,11 @@
                 </div>
                 <div class="mt-header-actions">
                     <button
-                        class="mt-help-btn"
+                        class="btn btn--ghost"
                         id="mt-help-btn"
                         title="How to use / About this data"
-                        aria-label="Help"
                     >
-                        ?
+                        About this page
                     </button>
                 </div>
             </div>
@@ -677,8 +659,8 @@
                             — Red-tailed Hawk, Sharp-shinned Hawk, Broad-winged
                             Hawk, Merlin, and Turkey Vulture, the five
                             most-counted raptors at this site — rather than all
-                            ~26 at once. That's expected, not a bug; use the
-                            legend on the right to add or remove species.
+                            ~26 at once. Use the legend on the right to add or
+                            remove species.
                         </p>
                         <p>
                             Press <strong>Play</strong> to animate the count
@@ -1628,10 +1610,10 @@
 
             function maybeShowHelpOnFirstLoad() {
                 const KEY = "sowi:migration_trends:seen_help_v1";
-                if (!localStorage.getItem(KEY)) {
+                if (!sessionStorage.getItem(KEY)) {
                     window.mtOpenHelp();
                     try {
-                        localStorage.setItem(KEY, "1");
+                        sessionStorage.setItem(KEY, "1");
                     } catch {}
                 }
             }

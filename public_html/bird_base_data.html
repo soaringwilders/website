@@ -40,6 +40,7 @@
                     <h1>Browse the Dataset</h1>
                 </div>
                 <div class="bbd-header-actions">
+                    <button class="btn btn--ghost" id="bbd-help-btn">About this page</button>
                     <button class="btn btn--ghost" id="bbd-legend-btn">Legend</button>
                     <button class="btn" id="bbd-load-btn">Load Data</button>
                 </div>
@@ -56,6 +57,55 @@
             <li><a href="/#projects">Our Projects</a></li>
             <li><a href="resources.html">Resources</a></li>
         </ul>
+
+        <!-- How to use / About this page -->
+        <div id="help-modal" class="lm-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
+            <div class="lm-backdrop"></div>
+            <div class="lm-panel">
+                <div class="lm-head">
+                    <h2 id="help-title">About this page</h2>
+                    <button class="lm-close" aria-label="Close">&times;</button>
+                </div>
+                <div class="lm-body">
+                    <section class="lm-section">
+                        <h3>How to use it</h3>
+                        <p>
+                            Click <strong>Load Data</strong> to fetch the full BIRDS_BASE_DATA
+                            table and browse every field for every species. Scroll the table
+                            horizontally to see all columns and vertically through every
+                            species. Click <strong>Legend</strong> to look up what each column
+                            code and abbreviation means.
+                        </p>
+                    </section>
+                    <section class="lm-section">
+                        <h3>About this data</h3>
+                        <p>
+                            The species data on this page comes from
+                            <strong>BIRDBASE</strong>, a peer-reviewed global dataset of avian
+                            biogeography, conservation, ecology, and life-history traits &mdash;
+                            78 traits for 11,589 species across 254 families, synthesized from
+                            367 published sources spanning 1957&ndash;2025.
+                        </p>
+                        <p>
+                            Şekercioğlu, Ç.H., Kittelberger, K.D., Mota, F.M.M. et al.
+                            <em>BIRDBASE: A Global Dataset of Avian Biogeography, Conservation,
+                            Ecology and Life History Traits.</em> Scientific Data (2025).
+                        </p>
+                        <p style="margin-top: 0.75rem">
+                            This page is a downstream retelling of that dataset, not a
+                            replacement for the source &mdash; see the full
+                            <a
+                                href="https://www.nature.com/articles/s41597-025-05615-3"
+                                target="_blank"
+                                rel="noopener"
+                                >paper on nature.com</a
+                            >
+                            for methodology, sources, and citation details.
+                        </p>
+                    </section>
+                </div>
+            </div>
+        </div>
 
         <!-- Legend Modal -->
         <div id="legend-modal" class="lm-overlay" role="dialog" aria-modal="true" aria-labelledby="lm-title" hidden>
@@ -313,6 +363,88 @@
 
             document.getElementById("bbd-load-btn").addEventListener("click", loadData);
 
+            // ── Column tooltips (mirrors the Legend modal content) ────────────
+            const COLUMN_TOOLTIPS = {
+                ID: "Internal record identifier.",
+                COMMON_NAME: "Species common name.",
+                BANDING_CODE: "Standard alpha/banding code for the species.",
+                ORDER: "Taxonomic order.",
+                FAMILY: "Taxonomic family.",
+                GENUS: "Taxonomic genus.",
+                SPECIES: "Taxonomic species epithet.",
+                RED_LIST: "IUCN Red List conservation status. See Legend for code definitions.",
+                RESTRICTED_RANGE: "1 = species has a global range size under 50,000 km².",
+                REALM: "Biogeographic realm(s) the species occupies; combined codes (e.g. LN) indicate two or more realms. See Legend for code definitions.",
+                LAT_RANGE: "Latitudinal range based on tropics and polar circles, from 1 (Tropical) to 5 (Tropical–Polar). See Legend for code definitions.",
+                MASS_MIN_F: "Minimum mass value listed for females.",
+                MASS_MAX_F: "Maximum mass value listed for females.",
+                MASS_MIN_M: "Minimum mass value listed for males.",
+                MASS_MAX_M: "Maximum mass value listed for males.",
+                MASS_MIN: "Minimum mass value listed for unsexed individuals.",
+                MASS_MAX: "Maximum mass value listed for unsexed individuals.",
+                MASS_AVG: "Average mass across males, females, and unsexed individuals.",
+                HABITAT_F: "Forest, secondary forest, swamp forest, tree-fall gaps, taiga, igapo, varzea. Habitats are numbered in order of preference.",
+                HABITAT_BM: "Bamboo. Habitats are numbered in order of preference.",
+                HABITAT_WD: "Acacia woodland, tropical deciduous/dry forest, savanna woodland, palm groves, miombo woodland, thorn forest, Polylepis woodland, pine-oak woodland. Habitats are numbered in order of preference.",
+                HABITAT_SH: "Shrubland, scrub, secondary growth (with few trees), cerrado, campo, karoo, thickets, roadside growth, heaths, copses, hedgerow, vine tangle, caatinga, chaco. Habitats are numbered in order of preference.",
+                HABITAT_SV: "Savanna, arid plains, wooded grassland, pampas, campos. Habitats are numbered in order of preference.",
+                HABITAT_G: "Grasslands, high altitude flats, puna, altiplano, tundra, tussock, pastures, steppe, paramo, moorland, plateaus, open vegetation. Habitats are numbered in order of preference.",
+                HABITAT_PL: "Plains, dry & open areas, semi-desert, steppe, tundra, arid and semi-arid grassland. Habitats are numbered in order of preference.",
+                HABITAT_R: "Rocky areas, cliffs, outcrop, inselberg, koppi, escarpment. Habitats are numbered in order of preference.",
+                HABITAT_D: "Desert, sand dune (not coastal). Habitats are numbered in order of preference.",
+                HABITAT_A: "Artificial, agricultural, farms, plantations, suburban, quarry, mine, excavation, dams and man-made lakes. Habitats are numbered in order of preference.",
+                HABITAT_RV: "Riparian, riverine, gallery forest, stream, running water, wooded ravines. Habitats are numbered in order of preference.",
+                HABITAT_C: "Sea coast, mangrove, estuary, bays, shores, fjords, coastal dune. Habitats are numbered in order of preference.",
+                HABITAT_W: "Wetlands, lakes, salt lakes, marsh, reedbed. Habitats are numbered in order of preference.",
+                HABITAT_SE: "Open sea, pelagic. Habitats are numbered in order of preference.",
+                HABITAT_PRIMARY: "The main habitat type utilized by the species.",
+                HABITAT_BREADTH: "Habitat breadth — number of major habitats used.",
+                DIET_PRIMARY: "If any diet weight is ≥ 6, that food type is the primary diet. Otherwise: Carnivore (primarily animal matter), Herbivore (primarily plant matter), or Omnivore (a combination).",
+                DIET_IN: "Invertebrates: arthropods, insects, aquatic invertebrates, molluscs, krill, shrimp, cephalopods, squid, crustaceans, polychaetes, gastropods, orthoptera. T = trace/rare, 1 = occasional, 2 = also consumed.",
+                DIET_FR: "Fruit, drupes. T = trace/rare, 1 = occasional, 2 = also consumed.",
+                DIET_NE: "Nectar. T = trace/rare, 1 = occasional, 2 = also consumed.",
+                DIET_SE: "Seed, maize, nuts, spores, grain. T = trace/rare, 1 = occasional, 2 = also consumed.",
+                DIET_VE: "Land vertebrates (non-sea): reptiles, snakes, amphibians, salamanders, mammals, birds. T = trace/rare, 1 = occasional, 2 = also consumed.",
+                DIET_FI: "Fish. T = trace/rare, 1 = occasional, 2 = also consumed.",
+                DIET_SC: "Scavenger: carcasses, garbage, offal, refuse, trawlers. T = trace/rare, 1 = occasional, 2 = also consumed.",
+                DIET_PL: "Non-reproductive plant material: vegetation, algae, grass, roots, tubers, flowers. T = trace/rare, 1 = occasional, 2 = also consumed.",
+                DIET_MS: "Miscellaneous food items (e.g. eggs = ovivores; beeswax). T = trace/rare, 1 = occasional, 2 = also consumed.",
+                DIET_MS_DESC: "Description of miscellaneous food items.",
+                DIET_BREADTH: "Diet breadth — number of major food types consumed.",
+                DIET_ESI: "Ecological Specialization Index: log₁₀(100 ÷ [diet breadth × habitat breadth]); maximum 2 for the most specialized species.",
+                SOCIAL_1: "1 = colonial. 0 = not described for the species.",
+                SOCIAL_2: "1 = social (large numbers, mixed-species flocks, seasonal flocks). 0 = not described for the species.",
+                SOCIAL_3: "1 = pairs and family groups. 0 = not described for the species.",
+                SOCIAL_4: "1 = singly and pairs. 0 = not described for the species.",
+                SOCIAL_5: "1 = solitary. 0 = not described for the species.",
+                SOCIAL_6: "1 = lekking. 0 = not described for the species.",
+                MONOGAMOUS: "1 = monogamous, 0 = not monogamous.",
+                POLYGYNOUS: "1 = polygynous, 0 = not polygynous.",
+                COOPERATIVE_BREEDER: "0 = solitary breeder, 1 = cooperative breeder, 2 = family member helper, 3 = occasional help.",
+                NEST_TYPE: "Nest type code. See Legend for code definitions.",
+                NEST_SUBSTRATE: "What the nest is placed on or in. See Legend for code definitions.",
+                BROODS_MIN: "Minimum number of broods (does not include failed nesting attempts).",
+                BROODS_MAX: "Maximum number of broods (does not include failed nesting attempts).",
+                CLUTCH_MIN: "Lower number of eggs laid (excluding rare clutch sizes).",
+                CLUTCH_MAX: "Upper number of eggs laid (excluding rare clutch sizes).",
+                INCUBATOR: "Sex incubating: F = female, M = male, B = both.",
+                INCUBATION_MIN: "Lower limit of incubation period (days).",
+                INCUBATION_MAX: "Upper limit of incubation period (days).",
+                FLEDGLING_MIN: "Lower limit of fledging period (days).",
+                FLEDGLING_MAX: "Upper limit of fledging period (days).",
+                NEST_PARASITER: "1 = nest parasite. 0 = no known parasitism.",
+                NEST_PARASITEE: "1 = victim of nest parasitism. 0 = no known parasitism.",
+                BREEDING_SUCCESS_MIN: "Lower limit of breeding success (% of nests fledging young).",
+                BREEDING_SUCCESS_MAX: "Upper limit of breeding success (% of nests fledging young).",
+                PRODUCTIVITY_MIN: "Lower limit of yearly productivity per pair (young raised to fledging).",
+                PRODUCTIVITY_MAX: "Upper limit of yearly productivity per pair (young raised to fledging).",
+                MIGRATION: "Migration: yearly, regular, seasonal, and/or long-distance movement. 1 = migrant, 2 = partial migrant.",
+                MIGRATION_ELEV: "Altitudinal/elevational migration: regular movement between high and low altitudes seasonally or post-breeding. 1 = species undertakes this movement.",
+                MIGRATION_IRREG: "Nomadic, erratic, irruptive, or irregular movements due to weather, food availability, etc. — also unclear or poorly-known seasonal movements. 1 = species undertakes this movement.",
+                MIGRATION_DISP: "Long-distance dispersal, usually once in a lifetime post-fledging, with clear evidence of longer-distance movement. 1 = species undertakes this movement.",
+                MIGRATION_SED: "Sedentary: largely does not migrate; typically a resident species with at most local/seasonal movements. 1 = species undertakes this pattern.",
+            };
+
             // ── Data Table ──────────────────────────────────────────────────
             function renderTable() {
                 if (tableRendered) return;            // data is immutable once loaded
@@ -326,6 +458,7 @@
                 cols.forEach(c => {
                     const th = document.createElement("th");
                     th.textContent = c;
+                    if (COLUMN_TOOLTIPS[c]) th.title = COLUMN_TOOLTIPS[c];
                     hr.appendChild(th);
                 });
                 thead.appendChild(hr);
@@ -368,6 +501,39 @@
                 document.addEventListener("keydown", function (e) {
                     if (e.key === "Escape" && !modal.hidden) closeLegend();
                 });
+            })();
+
+            // ── Help modal ──────────────────────────────────────────────────
+            (function () {
+                const modal = document.getElementById("help-modal");
+                const btn = document.getElementById("bbd-help-btn");
+                const closeBtn = modal.querySelector(".lm-close");
+                const backdrop = modal.querySelector(".lm-backdrop");
+
+                function openHelp() {
+                    modal.hidden = false;
+                    document.body.style.overflow = "hidden";
+                }
+
+                function closeHelp() {
+                    modal.hidden = true;
+                    document.body.style.overflow = "";
+                }
+
+                btn.addEventListener("click", openHelp);
+                closeBtn.addEventListener("click", closeHelp);
+                backdrop.addEventListener("click", closeHelp);
+                document.addEventListener("keydown", function (e) {
+                    if (e.key === "Escape" && !modal.hidden) closeHelp();
+                });
+
+                const KEY = "sowi:bird_base_data:seen_help_v1";
+                if (!sessionStorage.getItem(KEY)) {
+                    openHelp();
+                    try {
+                        sessionStorage.setItem(KEY, "1");
+                    } catch {}
+                }
             })();
         </script>
     </body>

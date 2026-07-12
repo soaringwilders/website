@@ -1,0 +1,1943 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="base_res/img/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Diet &amp; Habitat Explorer — Soaring Wild</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Public+Sans:wght@400&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="base_res/style.css" />
+        <link rel="stylesheet" href="base_res/explorer.css" />
+        <style>
+            .site-header {
+                position: sticky;
+                top: 0;
+                background: var(--dark);
+            }
+
+            /* ── Table: sortable headers + hover-linked row highlight ────────── */
+            #bbd-table th.dh-sortable,
+            #dhs-table th.dh-sortable {
+                cursor: pointer;
+                user-select: none;
+            }
+            #bbd-table th.dh-sortable:hover,
+            #dhs-table th.dh-sortable:hover {
+                color: var(--dark);
+            }
+            #bbd-table tbody tr.dh-row-hot td,
+            #dhs-table tbody tr.dh-row-hot td {
+                background: #fdf1cf;
+            }
+            #bbd-table td.dh-swatch-cell,
+            #dhs-table td.dh-swatch-cell {
+                width: 20px;
+            }
+
+            .dh-name {
+                color: var(--dark);
+                text-decoration: none;
+                cursor: pointer;
+            }
+            .dh-name:hover {
+                color: var(--amber);
+                text-decoration: underline;
+            }
+
+            /* ── Sankey tab (Habitat ↔ Diet Flow) ──────────────────────────── */
+            .dhs-ribbon {
+                cursor: pointer;
+                transition: fill-opacity 0.15s ease;
+            }
+            .dhs-node-rect {
+                cursor: pointer;
+            }
+            .dhs-node-label {
+                cursor: pointer;
+            }
+            .dhs-node-icon {
+                cursor: pointer;
+                pointer-events: none;
+            }
+            .dhs-cell-icon {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                object-fit: cover;
+                vertical-align: middle;
+                display: inline-block;
+            }
+            .dhs-cell-label {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+            }
+            #dhs-tip dl {
+                margin: 0.25rem 0 0;
+                display: grid;
+                grid-template-columns: auto max-content;
+                gap: 0.1rem 0.6rem;
+            }
+            #dhs-tip dt {
+                color: #999;
+            }
+            #dhs-tip dd {
+                text-align: right;
+                font-variant-numeric: tabular-nums;
+                color: #444;
+                margin: 0;
+            }
+            .dhs-tip-icons {
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                margin-bottom: 0.4rem;
+            }
+            .dhs-tip-icons img {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                object-fit: cover;
+            }
+            .dhs-tip-arrow {
+                color: #bbb;
+            }
+            .dhs-status-bar {
+                display: flex;
+                height: 6px;
+                border-radius: 3px;
+                overflow: hidden;
+                margin: 0.4rem 0 0.1rem;
+            }
+
+            /* ── Floating tooltips ─────────────────────────────────────────── */
+            #dh-bird-tip,
+            #dh-line-tip,
+            #dhs-tip {
+                position: fixed;
+                z-index: 500;
+                background: #fff;
+                border: 1px solid #e0e5ed;
+                border-radius: 6px;
+                box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14);
+                padding: 0.5rem 0.65rem;
+                font-size: 0.78rem;
+                color: #333;
+                pointer-events: none;
+                max-width: 220px;
+            }
+            #dh-bird-tip[hidden],
+            #dh-line-tip[hidden] {
+                display: none;
+            }
+            #dh-bird-tip img {
+                display: block;
+                width: 100%;
+                height: 130px;
+                object-fit: contain;
+                object-position: center;
+                border-radius: 4px;
+                margin-bottom: 0.35rem;
+                background: #f2ede0;
+            }
+            .dh-tip-name {
+                font-family: "Inter", sans-serif;
+                font-weight: 700;
+                color: var(--dark);
+            }
+            #dh-line-tip dl {
+                margin: 0.25rem 0 0;
+                display: grid;
+                grid-template-columns: auto max-content;
+                gap: 0.1rem 0.6rem;
+            }
+            #dh-line-tip dt {
+                color: #999;
+            }
+            #dh-line-tip dd {
+                text-align: right;
+                font-variant-numeric: tabular-nums;
+                color: #444;
+                margin: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <header class="site-header">
+            <a href="/" class="logo-box"
+                ><img src="base_res/img/SoWi_title_light.png"
+            /></a>
+            <ul class="site-nav">
+                <li><a href="/#about">About Us</a></li>
+                <li><a href="/#projects">Our Projects</a></li>
+                <li><a href="resources.html">Resources</a></li>
+            </ul>
+        </header>
+
+        <main class="bbd-main">
+            <div class="bbd-header">
+                <div>
+                    <a href="data_explorer.html" class="page-back"
+                        >&larr; Avian Data Explorer</a
+                    >
+                    <h1>Diet &amp; Habitat Explorer</h1>
+                </div>
+                <div class="bbd-header-actions">
+                    <button class="btn btn--ghost" id="bbd-help-btn">
+                        About this page
+                    </button>
+                    <button class="btn" id="bbd-load-btn">Load Data</button>
+                </div>
+            </div>
+            <p id="bbd-status"></p>
+
+            <div class="wb-tabs" role="tablist">
+                <button
+                    type="button"
+                    class="wb-tab is-active"
+                    id="dh-tab-parallel"
+                    role="tab"
+                    aria-selected="true"
+                >
+                    Parallel Coordinates
+                </button>
+                <button
+                    type="button"
+                    class="wb-tab"
+                    id="dh-tab-sankey"
+                    role="tab"
+                    aria-selected="false"
+                >
+                    Habitat ↔ Diet Flow
+                </button>
+            </div>
+
+            <div id="dh-panel-parallel">
+                <p class="lh-coverage" id="dh-coverage" hidden></p>
+
+                <div class="tc-legend" id="dh-legend" style="display: none"></div>
+
+                <div
+                    class="tc-controls"
+                    id="dh-toolbar"
+                    style="display: none"
+                >
+                    <span id="dh-count" style="color: #888; font-size: 0.8rem"></span>
+                    <button
+                        class="btn btn--ghost"
+                        id="dh-clear-all"
+                        style="margin-left: auto"
+                    >
+                        Clear all selections
+                    </button>
+                </div>
+
+                <div class="lh-chart-wrap" id="dh-chart-wrap">
+                    <p class="tc-empty" id="dh-empty">
+                        Load the data to explore how diet, habitat, and body size
+                        relate across species.
+                    </p>
+                    <svg
+                        id="dh-svg"
+                        class="lh-svg"
+                        viewBox="0 0 960 460"
+                        preserveAspectRatio="xMidYMid meet"
+                        hidden
+                    ></svg>
+                </div>
+
+                <div
+                    class="bbd-table-wrap"
+                    id="dh-table-wrap"
+                    style="display: none; max-height: 340px; margin-top: 0.5rem"
+                >
+                    <table id="bbd-table">
+                        <thead>
+                            <tr>
+                                <th title="Conservation status (IUCN Red List) — see the legend above."></th>
+                                <th
+                                    class="dh-sortable"
+                                    data-sort="COMMON_NAME"
+                                    title="Common name of the species. Click a name to open its full profile."
+                                >
+                                    Species
+                                </th>
+                                <th
+                                    class="dh-sortable"
+                                    data-sort="MASS_AVG"
+                                    title="Average adult body mass, across males, females, and unsexed individuals."
+                                >
+                                    Mass
+                                </th>
+                                <th
+                                    class="dh-sortable"
+                                    data-sort="HABITAT_BREADTH"
+                                    title="Number of major habitat types the species is known to use."
+                                >
+                                    Habitat Breadth
+                                </th>
+                                <th
+                                    class="dh-sortable"
+                                    data-sort="DIET_BREADTH"
+                                    title="Number of major food types the species is known to consume."
+                                >
+                                    Diet Breadth
+                                </th>
+                                <th
+                                    class="dh-sortable"
+                                    data-sort="DIET_ESI"
+                                    title="Ecological Specialization Index: log₁₀(100 ÷ [diet breadth × habitat breadth]). Higher values indicate a more specialized (narrower) ecological niche; a maximum of 2 marks the most specialized species."
+                                >
+                                    ESI
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="dh-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="dh-panel-sankey" hidden>
+                <p class="lh-coverage" id="dhs-coverage" hidden></p>
+
+                <div
+                    class="tc-controls"
+                    id="dhs-toolbar"
+                    style="display: none"
+                >
+                    <span id="dhs-count" style="color: #888; font-size: 0.8rem"></span>
+                    <button
+                        class="btn btn--ghost"
+                        id="dhs-clear"
+                        style="margin-left: auto"
+                    >
+                        Clear selection
+                    </button>
+                </div>
+
+                <div class="lh-chart-wrap" id="dhs-chart-wrap">
+                    <p class="tc-empty" id="dhs-empty">
+                        Load the data to see which habitats and diets pair up
+                        across species.
+                    </p>
+                    <svg
+                        id="dhs-svg"
+                        class="lh-svg"
+                        viewBox="0 0 980 640"
+                        preserveAspectRatio="xMidYMid meet"
+                        hidden
+                    ></svg>
+                </div>
+
+                <div
+                    class="bbd-table-wrap"
+                    id="dhs-table-wrap"
+                    style="display: none; max-height: 340px; margin-top: 0.5rem"
+                >
+                    <table id="dhs-table">
+                        <thead>
+                            <tr>
+                                <th title="Conservation status (IUCN Red List)."></th>
+                                <th
+                                    class="dh-sortable"
+                                    data-sort="COMMON_NAME"
+                                    title="Common name of the species. Click a name to open its full profile."
+                                >
+                                    Species
+                                </th>
+                                <th
+                                    class="dh-sortable"
+                                    data-sort="HABITAT_PRIMARY"
+                                    title="The species' primary (most-used) habitat type."
+                                >
+                                    Habitat
+                                </th>
+                                <th
+                                    class="dh-sortable"
+                                    data-sort="DIET_PRIMARY"
+                                    title="The species' primary (dominant) diet category."
+                                >
+                                    Diet
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="dhs-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <div id="dh-line-tip" hidden></div>
+        <div id="dh-bird-tip" hidden></div>
+        <div id="dhs-tip" hidden></div>
+
+        <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
+            <li><a href="/#about">About Us</a></li>
+            <li><a href="/#projects">Our Projects</a></li>
+            <li><a href="resources.html">Resources</a></li>
+        </ul>
+
+        <!-- How to use / About this page -->
+        <div
+            id="help-modal"
+            class="lm-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="help-title"
+            hidden
+        >
+            <div class="lm-backdrop"></div>
+            <div class="lm-panel">
+                <div class="lm-head">
+                    <h2 id="help-title">About this page</h2>
+                    <button class="lm-close" aria-label="Close">&times;</button>
+                </div>
+                <div class="lm-body">
+                    <section class="lm-section">
+                        <h3>How to use it</h3>
+                        <p>
+                            Click <strong>Load Data</strong>, then switch
+                            between the <strong>Parallel Coordinates</strong>
+                            and <strong>Habitat &harr; Diet Flow</strong>
+                            tabs.
+                        </p>
+                        <p>
+                            <strong>Parallel Coordinates</strong> draws every
+                            species as a line crossing four axes: body mass,
+                            habitat breadth, diet breadth, and the Ecological
+                            Specialization Index (ESI) &mdash; which is itself
+                            a formula of the two breadth axes next to it, so
+                            watching a line's path across those three
+                            right-hand axes shows the formula resolve in real
+                            time. Lines are colored by IUCN conservation
+                            status. <strong>Drag</strong> up or down on any
+                            axis to brush a range on it &mdash; only species
+                            that fall within the range on <em>every</em>
+                            currently-brushed axis stay visible, and the
+                            table below filters to match. Click an axis
+                            without dragging to clear just that axis's brush,
+                            or use <strong>Clear all selections</strong> to
+                            reset everything at once.
+                        </p>
+                        <p>
+                            <strong>Habitat &harr; Diet Flow</strong> is a
+                            Sankey diagram: every species' primary habitat on
+                            the left, primary diet on the right, connected by
+                            a ribbon sized to how many species share that
+                            exact pairing. <strong>Hover</strong> a node to
+                            highlight its ribbons, or a ribbon for its exact
+                            count and conservation-status breakdown.
+                            <strong>Click</strong> a node or ribbon to filter
+                            the table below to just those species; use
+                            <strong>Clear selection</strong> to reset.
+                        </p>
+                        <p>
+                            On both tabs, <strong>hover</strong> a chart
+                            element or a table row to highlight the other one
+                            &mdash; they're always linked in both directions.
+                            Hovering a species' name shows its photo; clicking
+                            the name opens its full species profile. Click any
+                            column header in a table to sort by it.
+                        </p>
+                    </section>
+                    <section class="lm-section">
+                        <h3>About this data</h3>
+                        <p>
+                            The species data on this page comes from
+                            <strong>BIRDBASE</strong>, a peer-reviewed global
+                            dataset of avian biogeography, conservation,
+                            ecology, and life-history traits &mdash; 78 traits
+                            for 11,589 species across 254 families,
+                            synthesized from 367 published sources spanning
+                            1957&ndash;2025.
+                        </p>
+                        <p>
+                            Şekercioğlu, Ç.H., Kittelberger, K.D., Mota,
+                            F.M.M. et al.
+                            <em
+                                >BIRDBASE: A Global Dataset of Avian
+                                Biogeography, Conservation, Ecology and Life
+                                History Traits.</em
+                            >
+                            Scientific Data (2025).
+                        </p>
+                        <p style="margin-top: 0.75rem">
+                            This page is a downstream retelling of that
+                            dataset, not a replacement for the source &mdash;
+                            see the full
+                            <a
+                                href="https://www.nature.com/articles/s41597-025-05615-3"
+                                target="_blank"
+                                rel="noopener"
+                                >paper on nature.com</a
+                            >
+                            for methodology, sources, and citation details.
+                        </p>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <script src="base_res/bird_data.js"></script>
+        <script src="base_res/bird_detail.js"></script>
+        <script>
+            // ── Shared helpers ────────────────────────────────────────────────
+            const num = (v) =>
+                v === null || v === undefined || v === "" || isNaN(+v)
+                    ? null
+                    : +v;
+            function esc(s) {
+                return String(s ?? "").replace(
+                    /[&<>"]/g,
+                    (c) =>
+                        ({
+                            "&": "&amp;",
+                            "<": "&lt;",
+                            ">": "&gt;",
+                            '"': "&quot;",
+                        })[c],
+                );
+            }
+            function rowKey(row) {
+                return row.GENUS && row.SPECIES
+                    ? `${row.GENUS}_${row.SPECIES}`
+                    : `name_${row.COMMON_NAME}`;
+            }
+            function fmtMass(v) {
+                return v >= 1000
+                    ? (v / 1000).toLocaleString(undefined, {
+                          maximumFractionDigits: 1,
+                      }) + "kg"
+                    : Math.round(v).toLocaleString() + "g";
+            }
+            function fmtNum(v) {
+                const r = Math.round(v * 10) / 10;
+                return Number.isInteger(r) ? String(r) : r.toFixed(1);
+            }
+            function fmtInt(v) {
+                return String(Math.round(v));
+            }
+            const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+            // IUCN Red List → color (shared convention with Traits
+            // Constellation / Life-History Scaling / bird detail).
+            const STATUS_COLORS = {
+                EX: "#111111",
+                EW: "#3a2a2a",
+                "CR (PE)": "#7a0d0d",
+                "CR (PEW)": "#7a0d0d",
+                CR: "#9b1b1b",
+                EN: "#d1582b",
+                VU: "#e0a52e",
+                NT: "#b8c24a",
+                LC: "#5aa45a",
+                DD: "#b8bcc4",
+            };
+            const STATUS_LABELS = {
+                EX: "Extinct",
+                EW: "Extinct in the Wild",
+                "CR (PE)": "Critically Endangered (Possibly Extinct)",
+                "CR (PEW)":
+                    "Critically Endangered (Possibly Extinct in Wild)",
+                CR: "Critically Endangered",
+                EN: "Endangered",
+                VU: "Vulnerable",
+                NT: "Near-threatened",
+                LC: "Least Concern",
+                DD: "Data Deficient",
+            };
+            const STATUS_ORDER = [
+                "EX",
+                "EW",
+                "CR (PE)",
+                "CR (PEW)",
+                "CR",
+                "EN",
+                "VU",
+                "NT",
+                "LC",
+                "DD",
+            ];
+            function statusColor(s) {
+                return STATUS_COLORS[s] || "#c9cdd4";
+            }
+
+            function niceNum(range, round) {
+                const exponent = Math.floor(Math.log10(range || 1));
+                const fraction = range / Math.pow(10, exponent);
+                let nf;
+                if (round) {
+                    nf =
+                        fraction < 1.5
+                            ? 1
+                            : fraction < 3
+                              ? 2
+                              : fraction < 7
+                                ? 5
+                                : 10;
+                } else {
+                    nf =
+                        fraction <= 1
+                            ? 1
+                            : fraction <= 2
+                              ? 2
+                              : fraction <= 5
+                                ? 5
+                                : 10;
+                }
+                return nf * Math.pow(10, exponent);
+            }
+            function niceTicks(lo, hi, count) {
+                const range = niceNum(hi - lo, false);
+                const step = niceNum(range / (count - 1), true);
+                const niceLo = Math.floor(lo / step) * step;
+                const niceHi = Math.ceil(hi / step) * step;
+                const ticks = [];
+                for (let v = niceLo; v <= niceHi + step * 1e-6; v += step)
+                    ticks.push(+v.toFixed(6));
+                return ticks;
+            }
+            function logTicks(domain) {
+                const ticks = [];
+                const startExp = Math.floor(Math.log10(domain.lo));
+                const endExp = Math.ceil(Math.log10(domain.hi));
+                for (let e = startExp; e <= endExp; e++) {
+                    [1, 2, 5].forEach((m) => {
+                        const v = m * Math.pow(10, e);
+                        if (v >= domain.lo * 0.999 && v <= domain.hi * 1.001)
+                            ticks.push(v);
+                    });
+                }
+                return [...new Set(ticks)].sort((a, b) => a - b);
+            }
+            function integerTicks(lo, hi) {
+                const out = [];
+                for (let v = Math.ceil(lo); v <= Math.floor(hi); v++)
+                    out.push(v);
+                return out;
+            }
+
+            // ── Axes (fixed order: mass bookends left; the ESI derivation
+            // trio — habitat breadth, diet breadth, ESI — runs consecutively
+            // on the right) ───────────────────────────────────────────────
+            const AXES = [
+                {
+                    key: "MASS_AVG",
+                    label: "Mass (log scale)",
+                    scale: "log",
+                    fmt: fmtMass,
+                },
+                {
+                    key: "HABITAT_BREADTH",
+                    label: "Habitat Breadth",
+                    scale: "linear",
+                    integer: true,
+                    fmt: fmtInt,
+                },
+                {
+                    key: "DIET_BREADTH",
+                    label: "Diet Breadth",
+                    scale: "linear",
+                    integer: true,
+                    fmt: fmtInt,
+                },
+                {
+                    key: "DIET_ESI",
+                    label: "Diet ESI",
+                    scale: "linear",
+                    integer: false,
+                    fmt: fmtNum,
+                },
+            ];
+            const AXIS_INDEX = { MASS_AVG: 0, HABITAT_BREADTH: 1, DIET_BREADTH: 2, DIET_ESI: 3 };
+
+            // ── Geometry ──────────────────────────────────────────────────
+            const VB_W = 960,
+                VB_H = 460;
+            const MARGIN = { top: 64, right: 56, bottom: 30, left: 56 };
+            const plotW = VB_W - MARGIN.left - MARGIN.right;
+            const plotH = VB_H - MARGIN.top - MARGIN.bottom;
+            const AXIS_HIT_HALF_WIDTH = 8;
+            function axisX(i) {
+                return MARGIN.left + (i / (AXES.length - 1)) * plotW;
+            }
+
+            const BASE_OPACITY = 0.16;
+            const SELECTED_OPACITY = 0.85;
+            const BASE_STROKE_WIDTH = 1.1;
+            const HOVER_STROKE_WIDTH = 2.6;
+
+            function buildDomains(pts) {
+                AXES.forEach((ax, i) => {
+                    let lo = Infinity,
+                        hi = -Infinity;
+                    pts.forEach((p) => {
+                        const v = p.vals[i];
+                        if (v < lo) lo = v;
+                        if (v > hi) hi = v;
+                    });
+                    if (!isFinite(lo) || !isFinite(hi) || lo === hi) {
+                        lo = 0;
+                        hi = 1;
+                    }
+                    if (ax.scale === "log") {
+                        lo *= 0.92;
+                        hi *= 1.08;
+                        if (lo <= 0) lo = 0.1;
+                    } else {
+                        const pad = (hi - lo) * 0.06 || 0.5;
+                        lo -= pad;
+                        hi += pad;
+                    }
+                    ax.domain = { lo, hi };
+                });
+            }
+            function valueToY(i, v) {
+                const ax = AXES[i];
+                let t;
+                if (ax.scale === "log") {
+                    const llo = Math.log10(ax.domain.lo),
+                        lhi = Math.log10(ax.domain.hi);
+                    t = (Math.log10(v) - llo) / (lhi - llo || 1);
+                } else {
+                    t = (v - ax.domain.lo) / (ax.domain.hi - ax.domain.lo || 1);
+                }
+                t = clamp(t, 0, 1);
+                return MARGIN.top + (1 - t) * plotH;
+            }
+            function yToValue(i, y) {
+                const ax = AXES[i];
+                const t = clamp(1 - (y - MARGIN.top) / plotH, 0, 1);
+                if (ax.scale === "log") {
+                    const llo = Math.log10(ax.domain.lo),
+                        lhi = Math.log10(ax.domain.hi);
+                    return Math.pow(10, llo + t * (lhi - llo));
+                }
+                return ax.domain.lo + t * (ax.domain.hi - ax.domain.lo);
+            }
+
+            // ── SVG scaffolding ───────────────────────────────────────────
+            const SVG_NS = "http://www.w3.org/2000/svg";
+            function el(tag, attrs) {
+                const e = document.createElementNS(SVG_NS, tag);
+                for (const k in attrs) e.setAttribute(k, attrs[k]);
+                return e;
+            }
+            const svgEl = document.getElementById("dh-svg");
+            function svgY(evt) {
+                const rect = svgEl.getBoundingClientRect();
+                return (evt.clientY - rect.top) * (VB_H / rect.height);
+            }
+            function groupIn(parent, id) {
+                const g = el("g", { id });
+                parent.appendChild(g);
+                return g;
+            }
+
+            // ── State ─────────────────────────────────────────────────────
+            let points = []; // [{key, row, name, vals:[mass,hab,diet,esi]}]
+            let pointByKey = new Map();
+            let lineEls = new Map(); // key -> { vis }
+            let rowEls = new Map(); // key -> <tr>
+            let brushPixel = [null, null, null, null]; // per axis: {y0,y1} or null
+            let brushRectEls = [null, null, null, null];
+            let selectedKeys = null; // null = no brush active (show/select all)
+            let hoveredKey = null;
+            let sortKey = "COMMON_NAME";
+            let sortDir = 1;
+
+            const TH_LABELS = {
+                COMMON_NAME: "Species",
+                MASS_AVG: "Mass",
+                HABITAT_BREADTH: "Habitat Breadth",
+                DIET_BREADTH: "Diet Breadth",
+                DIET_ESI: "ESI",
+            };
+
+            // ── Load Data ─────────────────────────────────────────────────
+            const statusEl = document.getElementById("bbd-status");
+            async function loadData() {
+                statusEl.textContent = "Loading…";
+                try {
+                    const rows = await BirdData.load();
+                    const pts = [];
+                    rows.forEach((row) => {
+                        const mass = num(row.MASS_AVG),
+                            hab = num(row.HABITAT_BREADTH),
+                            diet = num(row.DIET_BREADTH),
+                            esi = num(row.DIET_ESI);
+                        if (
+                            mass === null ||
+                            hab === null ||
+                            diet === null ||
+                            esi === null
+                        )
+                            return;
+                        pts.push({
+                            key: rowKey(row),
+                            row,
+                            name: row.COMMON_NAME || "—",
+                            vals: [mass, hab, diet, esi],
+                        });
+                    });
+                    points = pts;
+                    pointByKey = new Map(points.map((p) => [p.key, p]));
+
+                    statusEl.textContent = `${rows.length} row${rows.length !== 1 ? "s" : ""} loaded.`;
+                    const coverageEl = document.getElementById("dh-coverage");
+                    coverageEl.hidden = false;
+                    const pct = Math.round((points.length / rows.length) * 100);
+                    coverageEl.textContent =
+                        `Showing ${points.length} of ${rows.length} species with complete data ` +
+                        `across all four traits (${pct}%).`;
+
+                    document.getElementById("dh-empty").hidden = true;
+                    svgEl.removeAttribute("hidden");
+                    document.getElementById("dh-legend").style.display = "";
+                    document.getElementById("dh-toolbar").style.display = "";
+                    document.getElementById("dh-table-wrap").style.display = "";
+
+                    buildChart(points);
+                    renderLegend();
+                    selectedKeys = null;
+                    sortKey = "COMMON_NAME";
+                    sortDir = 1;
+                    renderTable();
+
+                    loadSankey(rows);
+                } catch (err) {
+                    statusEl.textContent = `Error: ${err.message}`;
+                }
+            }
+            document
+                .getElementById("bbd-load-btn")
+                .addEventListener("click", loadData);
+
+            // ── Legend ────────────────────────────────────────────────────
+            function renderLegend() {
+                const legendEl = document.getElementById("dh-legend");
+                const present = new Set(
+                    points.map((p) => p.row.RED_LIST).filter(Boolean),
+                );
+                const sorted = STATUS_ORDER.filter((s) => present.has(s));
+                legendEl.innerHTML =
+                    `<div class="tc-legend-title">Conservation status (IUCN Red List) — line color</div>` +
+                    sorted
+                        .map(
+                            (s) =>
+                                `<span class="tc-legend-item"><span class="tc-swatch" style="background:${statusColor(s)}"></span>${esc(STATUS_LABELS[s] || s)}</span>`,
+                        )
+                        .join("");
+            }
+
+            // ── Chart build (once per Load Data click) ───────────────────
+            function buildChart(pts) {
+                buildDomains(pts);
+                svgEl.innerHTML = "";
+                svgEl.setAttribute("viewBox", `0 0 ${VB_W} ${VB_H}`);
+
+                const gStatic = groupIn(svgEl, "dh-g-static");
+                const gLinesVis = groupIn(svgEl, "dh-g-lines");
+                const gLinesHit = groupIn(svgEl, "dh-g-hits");
+                const gBrush = groupIn(svgEl, "dh-g-brush");
+                const gAxisHit = groupIn(svgEl, "dh-g-axis-hit");
+
+                // static axis visuals
+                AXES.forEach((ax, i) => {
+                    const x = axisX(i);
+                    gStatic.appendChild(
+                        el("line", {
+                            x1: x,
+                            x2: x,
+                            y1: MARGIN.top,
+                            y2: MARGIN.top + plotH,
+                            stroke: "#c9cdd4",
+                            "pointer-events": "none",
+                        }),
+                    );
+                    const ticks =
+                        ax.scale === "log"
+                            ? logTicks(ax.domain)
+                            : ax.integer
+                              ? integerTicks(ax.domain.lo, ax.domain.hi)
+                              : niceTicks(ax.domain.lo, ax.domain.hi, 5);
+                    ticks.forEach((v) => {
+                        const y = valueToY(i, v);
+                        gStatic.appendChild(
+                            el("line", {
+                                x1: x,
+                                x2: x + 4,
+                                y1: y,
+                                y2: y,
+                                stroke: "#c9cdd4",
+                                "pointer-events": "none",
+                            }),
+                        );
+                        const t = el("text", {
+                            x: x + 8,
+                            y: y + 3,
+                            "font-size": 10.5,
+                            fill: "#8a8f99",
+                            "font-family": "Inter, sans-serif",
+                            "pointer-events": "none",
+                        });
+                        t.textContent = ax.fmt(v);
+                        gStatic.appendChild(t);
+                    });
+                    const title = el("text", {
+                        x,
+                        y: MARGIN.top - 26,
+                        "text-anchor": "middle",
+                        "font-size": 12,
+                        "font-weight": 700,
+                        fill: "#555",
+                        "font-family": "Inter, sans-serif",
+                        "pointer-events": "none",
+                    });
+                    title.textContent = ax.label;
+                    gStatic.appendChild(title);
+                });
+
+                // species lines (visible + wider invisible hit-path)
+                lineEls.clear();
+                pts.forEach((p) => {
+                    const d = AXES.map(
+                        (ax, i) =>
+                            `${i === 0 ? "M" : "L"}${axisX(i)},${valueToY(i, p.vals[i])}`,
+                    ).join(" ");
+                    const color = statusColor(p.row.RED_LIST);
+                    const vis = el("path", {
+                        d,
+                        fill: "none",
+                        stroke: color,
+                        "stroke-width": BASE_STROKE_WIDTH,
+                        "stroke-opacity": BASE_OPACITY,
+                        "stroke-linejoin": "round",
+                        "stroke-linecap": "round",
+                        "pointer-events": "none",
+                    });
+                    gLinesVis.appendChild(vis);
+
+                    const hit = el("path", {
+                        d,
+                        fill: "none",
+                        stroke: "transparent",
+                        "stroke-width": 10,
+                        "pointer-events": "stroke",
+                        style: "cursor: pointer",
+                    });
+                    hit.dataset.key = p.key;
+                    hit.addEventListener("mouseenter", (e) =>
+                        onLineEnter(p.key, e),
+                    );
+                    hit.addEventListener("mousemove", onLineMove);
+                    hit.addEventListener("mouseleave", (e) =>
+                        onLineLeave(p.key, e),
+                    );
+                    hit.addEventListener("click", () =>
+                        BirdDetail.open(p.row),
+                    );
+                    gLinesHit.appendChild(hit);
+
+                    lineEls.set(p.key, { vis, hit });
+                });
+
+                // per-axis brush hit-rects
+                brushPixel = AXES.map(() => null);
+                brushRectEls = AXES.map(() => null);
+                AXES.forEach((ax, i) => {
+                    const x = axisX(i);
+                    const hitRect = el("rect", {
+                        x: x - AXIS_HIT_HALF_WIDTH,
+                        y: MARGIN.top,
+                        width: AXIS_HIT_HALF_WIDTH * 2,
+                        height: plotH,
+                        fill: "transparent",
+                        style: "cursor: crosshair",
+                    });
+                    gAxisHit.appendChild(hitRect);
+                    wireAxisBrush(hitRect, i, gBrush);
+                });
+            }
+
+            // ── Brushing ──────────────────────────────────────────────────
+            function showBrushRect(i, y0, y1, gBrush) {
+                if (brushRectEls[i]) brushRectEls[i].remove();
+                const x = axisX(i);
+                const r = el("rect", {
+                    x: x - AXIS_HIT_HALF_WIDTH,
+                    y: y0,
+                    width: AXIS_HIT_HALF_WIDTH * 2,
+                    height: Math.max(1, y1 - y0),
+                    fill: "rgba(215,184,100,0.18)",
+                    stroke: "#d7b864",
+                    "stroke-dasharray": "3 2",
+                    "pointer-events": "none",
+                });
+                gBrush.appendChild(r);
+                brushRectEls[i] = r;
+            }
+            function clearAxisBrush(i, gBrush) {
+                brushPixel[i] = null;
+                if (brushRectEls[i]) {
+                    brushRectEls[i].remove();
+                    brushRectEls[i] = null;
+                }
+            }
+            function wireAxisBrush(hitRect, i, gBrush) {
+                let dragging = false,
+                    startY = 0;
+                hitRect.addEventListener("pointerdown", (e) => {
+                    dragging = true;
+                    hitRect.setPointerCapture(e.pointerId);
+                    startY = clamp(svgY(e), MARGIN.top, MARGIN.top + plotH);
+                    showBrushRect(i, startY, startY, gBrush);
+                });
+                hitRect.addEventListener("pointermove", (e) => {
+                    if (!dragging) return;
+                    const cur = clamp(svgY(e), MARGIN.top, MARGIN.top + plotH);
+                    showBrushRect(
+                        i,
+                        Math.min(startY, cur),
+                        Math.max(startY, cur),
+                        gBrush,
+                    );
+                });
+                hitRect.addEventListener("pointerup", (e) => {
+                    if (!dragging) return;
+                    dragging = false;
+                    const cur = clamp(svgY(e), MARGIN.top, MARGIN.top + plotH);
+                    const y0 = Math.min(startY, cur),
+                        y1 = Math.max(startY, cur);
+                    if (y1 - y0 < 4) {
+                        clearAxisBrush(i, gBrush);
+                    } else {
+                        brushPixel[i] = { y0, y1 };
+                        showBrushRect(i, y0, y1, gBrush);
+                    }
+                    onBrushChanged();
+                });
+            }
+            function computeSelectedKeys() {
+                const activeIdxs = [];
+                for (let i = 0; i < AXES.length; i++)
+                    if (brushPixel[i]) activeIdxs.push(i);
+                if (!activeIdxs.length) return null;
+                const sel = new Set();
+                points.forEach((p) => {
+                    const ok = activeIdxs.every((i) => {
+                        const { y0, y1 } = brushPixel[i];
+                        const hiVal = yToValue(i, y0);
+                        const loVal = yToValue(i, y1);
+                        const v = p.vals[i];
+                        return v >= loVal && v <= hiVal;
+                    });
+                    if (ok) sel.add(p.key);
+                });
+                return sel;
+            }
+            function onBrushChanged() {
+                selectedKeys = computeSelectedKeys();
+                applySelectionStyles();
+                renderTable();
+            }
+            function clearAllSelections() {
+                const gBrush = document.getElementById("dh-g-brush");
+                AXES.forEach((_, i) => clearAxisBrush(i, gBrush));
+                onBrushChanged();
+            }
+            document
+                .getElementById("dh-clear-all")
+                .addEventListener("click", clearAllSelections);
+
+            // ── Line style (selection + hover) ───────────────────────────
+            function computeOpacity(key) {
+                if (selectedKeys !== null && !selectedKeys.has(key)) return 0;
+                if (hoveredKey === key) return 1;
+                if (selectedKeys === null) return BASE_OPACITY;
+                return SELECTED_OPACITY;
+            }
+            function updateLineStyle(key) {
+                const entry = lineEls.get(key);
+                if (!entry) return;
+                const opacity = computeOpacity(key);
+                entry.vis.setAttribute("stroke-opacity", opacity);
+                entry.vis.setAttribute(
+                    "stroke-width",
+                    hoveredKey === key ? HOVER_STROKE_WIDTH : BASE_STROKE_WIDTH,
+                );
+                entry.hit.style.pointerEvents = opacity === 0 ? "none" : "stroke";
+            }
+            function applySelectionStyles() {
+                points.forEach((p) => updateLineStyle(p.key));
+            }
+
+            // ── Hover linking (bidirectional: row <-> line) ──────────────
+            function setHover(key) {
+                if (hoveredKey === key) return;
+                const prevKey = hoveredKey;
+                hoveredKey = key;
+                if (prevKey) {
+                    updateLineStyle(prevKey);
+                    setRowHot(prevKey, false);
+                }
+                if (key) {
+                    updateLineStyle(key);
+                    setRowHot(key, true);
+                }
+            }
+            function setRowHot(key, on) {
+                const tr = rowEls.get(key);
+                if (tr) tr.classList.toggle("dh-row-hot", on);
+            }
+            function onLineEnter(key, evt) {
+                setHover(key);
+                showLineTip(pointByKey.get(key), evt);
+                const tr = rowEls.get(key);
+                if (tr) tr.scrollIntoView({ block: "nearest" });
+            }
+            function onLineMove(evt) {
+                moveLineTip(evt);
+            }
+            function onLineLeave(key) {
+                if (hoveredKey === key) setHover(null);
+                hideLineTip();
+            }
+            function onRowEnter(key) {
+                setHover(key);
+            }
+            function onRowLeave(key) {
+                if (hoveredKey === key) setHover(null);
+            }
+
+            // ── Tooltips ──────────────────────────────────────────────────
+            function showLineTip(p, evt) {
+                const tip = document.getElementById("dh-line-tip");
+                tip.innerHTML =
+                    `<div class="dh-tip-name">${esc(p.name)}</div>` +
+                    `<dl>` +
+                    `<dt>Mass</dt><dd>${fmtMass(p.vals[0])}</dd>` +
+                    `<dt>Habitat Breadth</dt><dd>${fmtInt(p.vals[1])}</dd>` +
+                    `<dt>Diet Breadth</dt><dd>${fmtInt(p.vals[2])}</dd>` +
+                    `<dt>ESI</dt><dd>${fmtNum(p.vals[3])}</dd>` +
+                    `<dt>Status</dt><dd>${esc(STATUS_LABELS[p.row.RED_LIST] || p.row.RED_LIST || "—")}</dd>` +
+                    `</dl>`;
+                tip.hidden = false;
+                moveLineTip(evt);
+            }
+            function moveLineTip(evt) {
+                const tip = document.getElementById("dh-line-tip");
+                const pad = 14,
+                    w = tip.offsetWidth,
+                    h = tip.offsetHeight;
+                let x = evt.clientX + pad,
+                    y = evt.clientY + pad;
+                if (x + w > window.innerWidth) x = evt.clientX - w - pad;
+                if (y + h > window.innerHeight) y = evt.clientY - h - pad;
+                tip.style.left = x + "px";
+                tip.style.top = y + "px";
+            }
+            function hideLineTip() {
+                document.getElementById("dh-line-tip").hidden = true;
+            }
+
+            function showBirdTip(p, evt) {
+                if (!p) return;
+                const tip = document.getElementById("dh-bird-tip");
+                const imgSrc =
+                    p.row.GENUS && p.row.SPECIES
+                        ? `base_res/img/birds/${p.row.GENUS}_${p.row.SPECIES}.jpg`
+                        : "base_res/img/birds/_generic.jpg";
+                tip.innerHTML =
+                    `<img src="${esc(imgSrc)}" onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'" alt="">` +
+                    `<div class="dh-tip-name">${esc(p.name)}</div>`;
+                tip.hidden = false;
+                moveBirdTip(evt);
+            }
+            function moveBirdTip(evt) {
+                const tip = document.getElementById("dh-bird-tip");
+                const pad = 14;
+                let x = evt.clientX + pad,
+                    y = evt.clientY + pad;
+                if (x + 200 > window.innerWidth) x = evt.clientX - 200 - pad;
+                if (y + 160 > window.innerHeight) y = evt.clientY - 160 - pad;
+                tip.style.left = x + "px";
+                tip.style.top = y + "px";
+            }
+            function hideBirdTip() {
+                document.getElementById("dh-bird-tip").hidden = true;
+            }
+
+            // ── Table ─────────────────────────────────────────────────────
+            const tbody = document.getElementById("dh-tbody");
+            function compareRows(a, b) {
+                if (sortKey === "COMMON_NAME") {
+                    return sortDir * String(a.name).localeCompare(String(b.name));
+                }
+                const idx = AXIS_INDEX[sortKey];
+                return sortDir * (a.vals[idx] - b.vals[idx]);
+            }
+            function rowHTML(p) {
+                return (
+                    `<tr data-key="${esc(p.key)}">` +
+                    `<td class="dh-swatch-cell"><span class="tc-swatch" style="background:${statusColor(p.row.RED_LIST)}"></span></td>` +
+                    `<td><a href="#" class="dh-name">${esc(p.name)}</a></td>` +
+                    `<td>${fmtMass(p.vals[0])}</td>` +
+                    `<td>${fmtInt(p.vals[1])}</td>` +
+                    `<td>${fmtInt(p.vals[2])}</td>` +
+                    `<td>${fmtNum(p.vals[3])}</td>` +
+                    `</tr>`
+                );
+            }
+            function updateHeaderArrows() {
+                document
+                    .querySelectorAll("#bbd-table th.dh-sortable")
+                    .forEach((th) => {
+                        const key = th.dataset.sort;
+                        const active = key === sortKey;
+                        const arrow = active ? (sortDir === 1 ? " ▲" : " ▼") : "";
+                        th.textContent = TH_LABELS[key] + arrow;
+                    });
+            }
+            function renderTable() {
+                const filtered =
+                    selectedKeys === null
+                        ? points
+                        : points.filter((p) => selectedKeys.has(p.key));
+                const sorted = filtered.slice().sort(compareRows);
+                rowEls.clear();
+                tbody.innerHTML = sorted.map(rowHTML).join("");
+                tbody
+                    .querySelectorAll("tr[data-key]")
+                    .forEach((tr) => rowEls.set(tr.dataset.key, tr));
+                updateHeaderArrows();
+                document.getElementById("dh-count").textContent =
+                    selectedKeys === null
+                        ? `${points.length} species shown`
+                        : `${filtered.length} of ${points.length} species selected`;
+            }
+            document
+                .querySelector("#bbd-table thead")
+                .addEventListener("click", (e) => {
+                    const th = e.target.closest("th.dh-sortable");
+                    if (!th) return;
+                    const key = th.dataset.sort;
+                    if (sortKey === key) sortDir *= -1;
+                    else {
+                        sortKey = key;
+                        sortDir = 1;
+                    }
+                    renderTable();
+                });
+
+            tbody.addEventListener("mouseover", (e) => {
+                const tr = e.target.closest("tr[data-key]");
+                if (!tr) return;
+                onRowEnter(tr.dataset.key);
+                const nameEl = e.target.closest(".dh-name");
+                if (nameEl) showBirdTip(pointByKey.get(tr.dataset.key), e);
+            });
+            tbody.addEventListener("mousemove", (e) => {
+                if (e.target.closest(".dh-name")) moveBirdTip(e);
+            });
+            tbody.addEventListener("mouseout", (e) => {
+                const tr = e.target.closest("tr[data-key]");
+                if (tr && !tr.contains(e.relatedTarget))
+                    onRowLeave(tr.dataset.key);
+                const nameEl = e.target.closest(".dh-name");
+                if (nameEl && !nameEl.contains(e.relatedTarget)) hideBirdTip();
+            });
+            tbody.addEventListener("click", (e) => {
+                const nameEl = e.target.closest(".dh-name");
+                if (!nameEl) return;
+                e.preventDefault();
+                const tr = nameEl.closest("tr");
+                const p = pointByKey.get(tr.dataset.key);
+                if (p) BirdDetail.open(p.row);
+            });
+
+            // ── Habitat ↔ Diet Flow (Sankey) ─────────────────────────────────
+            // The 8 shared food-group hues reuse Traits Constellation's exact
+            // existing palette (traits_constellation.html) for cross-page
+            // consistency; Carnivore/Herbivore/Omnivore are 3 new hues chosen
+            // via the dataviz skill's OKLCH validator (worst touching-pair
+            // ΔE ≈ 11.9 under protan/deutan — WARN floor band, legal because
+            // every node also carries an icon + always-visible text label as
+            // mandatory secondary encoding). Keyed by value, never by count
+            // rank, so a future data refresh can't repaint which category
+            // wears which color.
+            const DIET_COLORS = {
+                Invertebrate: "#3aa39a",
+                Fruit: "#d65a9a",
+                Nectar: "#8e5fc7",
+                Seed: "#d7b864",
+                Vertebrate: "#c0492f",
+                Fish: "#3d7bc0",
+                Scavenger: "#8a7a66",
+                Plant: "#6f9b3f",
+                Carnivore: "#00689a",
+                Herbivore: "#00ae61",
+                Omnivore: "#8f99ff",
+            };
+            // A new 13-color set, validated the same way, assigned to a fixed
+            // alphabetical list of habitat names (this page is the site's
+            // first habitat-color reference).
+            const HABITAT_COLORS = {
+                Artificial: "#a3394e",
+                Coastal: "#be6547",
+                Desert: "#c89257",
+                Forest: "#8b6f00",
+                Grassland: "#83a02d",
+                Plains: "#006724",
+                Riparian: "#009a81",
+                Rocky: "#00b6c9",
+                Savanna: "#00709f",
+                Sea: "#6092eb",
+                Shrub: "#6352ad",
+                Wetland: "#af70c6",
+                Woodland: "#da78b3",
+            };
+            // Icon filenames don't cleanly derive from field values (typos and
+            // pluralization are baked into the asset filenames themselves) —
+            // an explicit lookup, not a string transform.
+            const DIET_ICON_FILE = {
+                Invertebrate: "Food_Invertebrates.png",
+                Fruit: "Food_Fruit.png",
+                Nectar: "Food_Nectar.png",
+                Seed: "Food_Seed.png",
+                Vertebrate: "Food_Verterbrates.png",
+                Fish: "Food_Fish.png",
+                Scavenger: "Food_Scavenger.png",
+                Plant: "Food_Plants.png",
+                Carnivore: "Food_Carnivore.png",
+                Herbivore: "Food_Herbivore.png",
+                Omnivore: "Food_Omnivore.png",
+            };
+            function dietIconSrc(name) {
+                return "base_res/img/icons/" + (DIET_ICON_FILE[name] || "");
+            }
+            function habitatIconSrc(name) {
+                return `base_res/img/icons/Habitat_${name}.png`;
+            }
+
+            // ── Geometry ──────────────────────────────────────────────────
+            const DHS_VB_W = 980,
+                DHS_VB_H = 640;
+            const DHS_MARGIN = { top: 20, right: 190, bottom: 20, left: 190 };
+            const DHS_PLOT_H = DHS_VB_H - DHS_MARGIN.top - DHS_MARGIN.bottom;
+            const DHS_BAR_W = 14;
+            const DHS_NODE_PAD = 24;
+            const DHS_MIN_NODE_H = 3;
+            const DHS_ICON_SIZE = 20;
+            const DHS_LEFT_X = DHS_MARGIN.left;
+            const DHS_RIGHT_X = DHS_VB_W - DHS_MARGIN.right - DHS_BAR_W;
+
+            const DHS_RIBBON_REST = 0.42;
+            const DHS_RIBBON_DIM = 0.08;
+            const DHS_RIBBON_HOT = 0.88;
+
+            // ── State ─────────────────────────────────────────────────────
+            let dhsSpecies = []; // [{key, row, name, hab, diet}]
+            let dhsSpeciesByKey = new Map();
+            let dhsHabNodes = []; // [{name, count, species, x, y0, height}]
+            let dhsDietNodes = [];
+            let dhsHabByName = new Map();
+            let dhsDietByName = new Map();
+            let dhsPairs = []; // [{hab, diet, count, species, y0h,y1h,y0d,y1d}]
+            let dhsPairByKey = new Map();
+            let dhsKy = 1;
+            let dhsSelection = null; // {type:"node",side,name} | {type:"pair",hab,diet} | null
+            let dhsHoverSel = null;
+            let dhsSortKey = "COMMON_NAME";
+            let dhsSortDir = 1;
+            let dhsRibbonEls = new Map();
+            let dhsNodeEls = new Map();
+
+            function loadSankey(rows) {
+                const species = [];
+                rows.forEach((row) => {
+                    const hab = row.HABITAT_PRIMARY,
+                        diet = row.DIET_PRIMARY;
+                    if (!hab || !diet || diet === "No Information") return;
+                    species.push({
+                        key: rowKey(row),
+                        row,
+                        name: row.COMMON_NAME || "—",
+                        hab,
+                        diet,
+                    });
+                });
+                dhsSpecies = species;
+                dhsSpeciesByKey = new Map(species.map((s) => [s.key, s]));
+
+                const coverageEl = document.getElementById("dhs-coverage");
+                coverageEl.hidden = false;
+                // One decimal place: with only 3 species excluded, Math.round
+                // would misleadingly show "100%" right next to "623 of 626".
+                const pct = ((species.length / rows.length) * 100).toFixed(1);
+                coverageEl.textContent =
+                    `Showing ${species.length} of ${rows.length} species with a recorded diet (${pct}%).`;
+
+                buildSankeyGraph(species);
+                layoutSankey();
+
+                document.getElementById("dhs-empty").hidden = true;
+                document.getElementById("dhs-svg").removeAttribute("hidden");
+                document.getElementById("dhs-toolbar").style.display = "";
+                document.getElementById("dhs-table-wrap").style.display = "";
+
+                renderSankey();
+                dhsSelection = null;
+                dhsSortKey = "COMMON_NAME";
+                dhsSortDir = 1;
+                renderDhsTable();
+            }
+
+            function buildSankeyGraph(species) {
+                const habMap = new Map(),
+                    dietMap = new Map(),
+                    pairMap = new Map();
+                species.forEach((s) => {
+                    if (!habMap.has(s.hab))
+                        habMap.set(s.hab, { name: s.hab, count: 0, species: [] });
+                    const h = habMap.get(s.hab);
+                    h.count++;
+                    h.species.push(s);
+
+                    if (!dietMap.has(s.diet))
+                        dietMap.set(s.diet, { name: s.diet, count: 0, species: [] });
+                    const d = dietMap.get(s.diet);
+                    d.count++;
+                    d.species.push(s);
+
+                    const pk = s.hab + "|" + s.diet;
+                    if (!pairMap.has(pk))
+                        pairMap.set(pk, { hab: s.hab, diet: s.diet, count: 0, species: [] });
+                    const p = pairMap.get(pk);
+                    p.count++;
+                    p.species.push(s);
+                });
+
+                dhsHabNodes = [...habMap.values()].sort(
+                    (a, b) => b.count - a.count || a.name.localeCompare(b.name),
+                );
+                dhsDietNodes = [...dietMap.values()].sort(
+                    (a, b) => b.count - a.count || a.name.localeCompare(b.name),
+                );
+                dhsHabByName = new Map(dhsHabNodes.map((n) => [n.name, n]));
+                dhsDietByName = new Map(dhsDietNodes.map((n) => [n.name, n]));
+                dhsPairs = [...pairMap.values()];
+                dhsPairByKey = new Map(dhsPairs.map((p) => [p.hab + "|" + p.diet, p]));
+            }
+
+            function layoutSankey() {
+                const total = dhsSpecies.length;
+                const nHab = dhsHabNodes.length,
+                    nDiet = dhsDietNodes.length;
+                // Shared scale computed from the tighter (more-nodes) column,
+                // applied uniformly to both columns and every ribbon, so
+                // thickness always means the same species-count everywhere —
+                // the looser column is centered in the remaining space rather
+                // than stretched to fill it.
+                const tightestN = Math.max(nHab, nDiet);
+                dhsKy = (DHS_PLOT_H - DHS_NODE_PAD * (tightestN - 1)) / total;
+
+                function place(nodes, x) {
+                    const stackH =
+                        nodes.reduce(
+                            (sum, n) => sum + Math.max(DHS_MIN_NODE_H, n.count * dhsKy),
+                            0,
+                        ) +
+                        DHS_NODE_PAD * (nodes.length - 1);
+                    let y = DHS_MARGIN.top + (DHS_PLOT_H - stackH) / 2;
+                    nodes.forEach((n) => {
+                        n.x = x;
+                        n.y0 = y;
+                        n.height = Math.max(DHS_MIN_NODE_H, n.count * dhsKy);
+                        y += n.height + DHS_NODE_PAD;
+                    });
+                }
+                place(dhsHabNodes, DHS_LEFT_X);
+                place(dhsDietNodes, DHS_RIGHT_X);
+
+                // Stack each node's ribbons in the order of the connected
+                // column's top-to-bottom rank, so ribbons cross no more than
+                // the data requires. A small per-ribbon floor keeps thin
+                // pairings visible, scaled down only if a node is packed with
+                // more distinct pairings than its own height can honestly fit.
+                const dietRank = new Map(dhsDietNodes.map((n, i) => [n.name, i]));
+                const habRank = new Map(dhsHabNodes.map((n, i) => [n.name, i]));
+                function stackNodeLinks(node, pairs, assign) {
+                    const raw = pairs.map((p) => Math.max(1.0, p.count * dhsKy));
+                    const sum = raw.reduce((a, b) => a + b, 0);
+                    const scale = sum > node.height ? node.height / sum : 1;
+                    let cursor = node.y0;
+                    pairs.forEach((p, i) => {
+                        const h = raw[i] * scale;
+                        assign(p, cursor, cursor + h);
+                        cursor += h;
+                    });
+                }
+                dhsHabNodes.forEach((hn) => {
+                    const outs = dhsPairs
+                        .filter((p) => p.hab === hn.name)
+                        .sort((a, b) => dietRank.get(a.diet) - dietRank.get(b.diet));
+                    stackNodeLinks(hn, outs, (p, y0, y1) => {
+                        p.y0h = y0;
+                        p.y1h = y1;
+                    });
+                });
+                dhsDietNodes.forEach((dn) => {
+                    const ins = dhsPairs
+                        .filter((p) => p.diet === dn.name)
+                        .sort((a, b) => habRank.get(a.hab) - habRank.get(b.hab));
+                    stackNodeLinks(dn, ins, (p, y0, y1) => {
+                        p.y0d = y0;
+                        p.y1d = y1;
+                    });
+                });
+            }
+
+            function ribbonPath(x0, y0top, y0bot, x1, y1top, y1bot) {
+                const xm = (x0 + x1) / 2;
+                return (
+                    `M${x0},${y0top} C${xm},${y0top} ${xm},${y1top} ${x1},${y1top} ` +
+                    `L${x1},${y1bot} C${xm},${y1bot} ${xm},${y0bot} ${x0},${y0bot} Z`
+                );
+            }
+
+            // ── Render ────────────────────────────────────────────────────
+            function renderSankey() {
+                const svg = document.getElementById("dhs-svg");
+                svg.innerHTML = "";
+                svg.setAttribute("viewBox", `0 0 ${DHS_VB_W} ${DHS_VB_H}`);
+                const gRibbons = groupIn(svg, "dhs-g-ribbons");
+                const gNodes = groupIn(svg, "dhs-g-nodes");
+
+                dhsRibbonEls.clear();
+                dhsPairs.forEach((p) => {
+                    const d = ribbonPath(
+                        DHS_LEFT_X + DHS_BAR_W,
+                        p.y0h,
+                        p.y1h,
+                        DHS_RIGHT_X,
+                        p.y0d,
+                        p.y1d,
+                    );
+                    const path = el("path", {
+                        d,
+                        class: "dhs-ribbon",
+                        fill: "#8a94a3",
+                        "fill-opacity": DHS_RIBBON_REST,
+                        stroke: "none",
+                    });
+                    const pk = p.hab + "|" + p.diet;
+                    path.addEventListener("mouseenter", (e) =>
+                        onDhsHover({ type: "pair", hab: p.hab, diet: p.diet }, e),
+                    );
+                    path.addEventListener("mousemove", moveDhsTip);
+                    path.addEventListener("mouseleave", onDhsHoverEnd);
+                    path.addEventListener("click", () =>
+                        onDhsClick({ type: "pair", hab: p.hab, diet: p.diet }),
+                    );
+                    gRibbons.appendChild(path);
+                    dhsRibbonEls.set(pk, path);
+                });
+
+                dhsNodeEls.clear();
+                function renderNode(n, side) {
+                    const color =
+                        side === "hab"
+                            ? HABITAT_COLORS[n.name] || "#999"
+                            : DIET_COLORS[n.name] || "#999";
+                    const rect = el("rect", {
+                        x: n.x,
+                        y: n.y0,
+                        width: DHS_BAR_W,
+                        height: n.height,
+                        fill: color,
+                        class: "dhs-node-rect",
+                        rx: 2,
+                    });
+                    const cy = n.y0 + n.height / 2;
+                    const iconSrc =
+                        side === "hab" ? habitatIconSrc(n.name) : dietIconSrc(n.name);
+                    const iconX =
+                        side === "hab" ? 20 : DHS_VB_W - 20 - DHS_ICON_SIZE;
+                    const textX =
+                        side === "hab" ? 48 : DHS_RIGHT_X + DHS_BAR_W + 10;
+                    const icon = el("image", {
+                        x: iconX,
+                        y: cy - DHS_ICON_SIZE / 2,
+                        width: DHS_ICON_SIZE,
+                        height: DHS_ICON_SIZE,
+                        class: "dhs-node-icon",
+                        preserveAspectRatio: "xMidYMid slice",
+                    });
+                    icon.setAttributeNS(
+                        "http://www.w3.org/1999/xlink",
+                        "href",
+                        iconSrc,
+                    );
+                    icon.setAttribute("href", iconSrc);
+                    const label = el("text", {
+                        x: textX,
+                        y: cy,
+                        "text-anchor": "start",
+                        "dominant-baseline": "middle",
+                        "font-size": 11,
+                        "font-family": "Inter, sans-serif",
+                        fill: "#444",
+                        class: "dhs-node-label",
+                    });
+                    label.textContent = `${n.name} (${n.count})`;
+
+                    [rect, label].forEach((elm) => {
+                        elm.addEventListener("mouseenter", (e) =>
+                            onDhsHover({ type: "node", side, name: n.name }, e),
+                        );
+                        elm.addEventListener("mousemove", moveDhsTip);
+                        elm.addEventListener("mouseleave", onDhsHoverEnd);
+                        elm.addEventListener("click", () =>
+                            onDhsClick({ type: "node", side, name: n.name }),
+                        );
+                    });
+
+                    gNodes.appendChild(rect);
+                    gNodes.appendChild(icon);
+                    gNodes.appendChild(label);
+                    dhsNodeEls.set(side + ":" + n.name, { rect, icon, label });
+                }
+                dhsHabNodes.forEach((n) => renderNode(n, "hab"));
+                dhsDietNodes.forEach((n) => renderNode(n, "diet"));
+
+                applyDhsStyles();
+            }
+
+            // ── Selection / hover styling ────────────────────────────────
+            function pairMatchesSel(pair, sel) {
+                if (!sel) return false;
+                if (sel.type === "pair")
+                    return pair.hab === sel.hab && pair.diet === sel.diet;
+                if (sel.type === "node")
+                    return sel.side === "hab"
+                        ? pair.hab === sel.name
+                        : pair.diet === sel.name;
+                return false;
+            }
+            function nodeMatchesSel(side, name, sel) {
+                if (!sel) return true;
+                if (sel.type === "node") return sel.side === side && sel.name === name;
+                if (sel.type === "pair")
+                    return (side === "hab" && sel.hab === name) ||
+                        (side === "diet" && sel.diet === name);
+                return true;
+            }
+            function applyDhsStyles() {
+                const activeSel = dhsHoverSel || dhsSelection;
+                dhsPairs.forEach((p) => {
+                    const path = dhsRibbonEls.get(p.hab + "|" + p.diet);
+                    if (!path) return;
+                    const opacity = !activeSel
+                        ? DHS_RIBBON_REST
+                        : pairMatchesSel(p, activeSel)
+                          ? DHS_RIBBON_HOT
+                          : DHS_RIBBON_DIM;
+                    path.setAttribute("fill-opacity", opacity);
+                });
+                function setNodeOpacity(side, name) {
+                    const entry = dhsNodeEls.get(side + ":" + name);
+                    if (!entry) return;
+                    const op = !activeSel
+                        ? 1
+                        : nodeMatchesSel(side, name, activeSel)
+                          ? 1
+                          : 0.35;
+                    entry.rect.setAttribute("opacity", op);
+                    entry.icon.setAttribute("opacity", op);
+                    entry.label.setAttribute("opacity", op);
+                }
+                dhsHabNodes.forEach((n) => setNodeOpacity("hab", n.name));
+                dhsDietNodes.forEach((n) => setNodeOpacity("diet", n.name));
+            }
+            function selEquals(a, b) {
+                if (!a || !b || a.type !== b.type) return false;
+                if (a.type === "pair") return a.hab === b.hab && a.diet === b.diet;
+                return a.side === b.side && a.name === b.name;
+            }
+            function onDhsHover(sel, evt) {
+                dhsHoverSel = sel;
+                applyDhsStyles();
+                showDhsTip(sel, evt);
+            }
+            function onDhsHoverEnd() {
+                dhsHoverSel = null;
+                applyDhsStyles();
+                hideDhsTip();
+            }
+            function onDhsClick(sel) {
+                dhsSelection =
+                    dhsSelection && selEquals(dhsSelection, sel) ? null : sel;
+                applyDhsStyles();
+                renderDhsTable();
+            }
+            document.getElementById("dhs-clear").addEventListener("click", () => {
+                dhsSelection = null;
+                applyDhsStyles();
+                renderDhsTable();
+            });
+
+            // ── Tooltip ───────────────────────────────────────────────────
+            function pairStatusParts(speciesList) {
+                const counts = new Map();
+                speciesList.forEach((s) => {
+                    const st = s.row.RED_LIST || "—";
+                    counts.set(st, (counts.get(st) || 0) + 1);
+                });
+                const parts = STATUS_ORDER.filter((s) => counts.has(s)).map((s) => ({
+                    status: s,
+                    n: counts.get(s),
+                }));
+                if (counts.has("—")) parts.push({ status: "—", n: counts.get("—") });
+                return parts;
+            }
+            function statusBarHTML(speciesList) {
+                const total = speciesList.length || 1;
+                return (
+                    `<div class="dhs-status-bar">` +
+                    pairStatusParts(speciesList)
+                        .map(
+                            (p) =>
+                                `<div style="width:${((p.n / total) * 100).toFixed(2)}%;background:${statusColor(p.status)}" title="${esc(STATUS_LABELS[p.status] || p.status)}: ${p.n}"></div>`,
+                        )
+                        .join("") +
+                    `</div>`
+                );
+            }
+            function showDhsTip(sel, evt) {
+                const tip = document.getElementById("dhs-tip");
+                let html;
+                if (sel.type === "pair") {
+                    const p = dhsPairByKey.get(sel.hab + "|" + sel.diet);
+                    if (!p) return;
+                    html =
+                        `<div class="dhs-tip-icons">` +
+                        `<img src="${esc(habitatIconSrc(p.hab))}" alt="">` +
+                        `<span class="dhs-tip-arrow">&rarr;</span>` +
+                        `<img src="${esc(dietIconSrc(p.diet))}" alt="">` +
+                        `</div>` +
+                        `<div class="dh-tip-name">${esc(p.hab)} &rarr; ${esc(p.diet)}</div>` +
+                        `<dl><dt>Species</dt><dd>${p.count}</dd></dl>` +
+                        statusBarHTML(p.species);
+                } else {
+                    const nodes = sel.side === "hab" ? dhsHabByName : dhsDietByName;
+                    const n = nodes.get(sel.name);
+                    if (!n) return;
+                    const iconSrc =
+                        sel.side === "hab" ? habitatIconSrc(n.name) : dietIconSrc(n.name);
+                    html =
+                        `<div class="dhs-tip-icons"><img src="${esc(iconSrc)}" alt=""></div>` +
+                        `<div class="dh-tip-name">${esc(n.name)}</div>` +
+                        `<dl><dt>Species</dt><dd>${n.count}</dd></dl>` +
+                        statusBarHTML(n.species);
+                }
+                tip.innerHTML = html;
+                tip.hidden = false;
+                moveDhsTip(evt);
+            }
+            function moveDhsTip(evt) {
+                const tip = document.getElementById("dhs-tip");
+                if (tip.hidden) return;
+                const pad = 14,
+                    w = tip.offsetWidth,
+                    h = tip.offsetHeight;
+                let x = evt.clientX + pad,
+                    y = evt.clientY + pad;
+                if (x + w > window.innerWidth) x = evt.clientX - w - pad;
+                if (y + h > window.innerHeight) y = evt.clientY - h - pad;
+                tip.style.left = x + "px";
+                tip.style.top = y + "px";
+            }
+            function hideDhsTip() {
+                document.getElementById("dhs-tip").hidden = true;
+            }
+
+            // ── Table ─────────────────────────────────────────────────────
+            const DHS_TH_LABELS = {
+                COMMON_NAME: "Species",
+                HABITAT_PRIMARY: "Habitat",
+                DIET_PRIMARY: "Diet",
+            };
+            function dhsFilteredSpecies() {
+                if (!dhsSelection) return dhsSpecies;
+                if (dhsSelection.type === "pair") {
+                    return dhsSpecies.filter(
+                        (s) =>
+                            s.hab === dhsSelection.hab && s.diet === dhsSelection.diet,
+                    );
+                }
+                return dhsSpecies.filter((s) =>
+                    dhsSelection.side === "hab"
+                        ? s.hab === dhsSelection.name
+                        : s.diet === dhsSelection.name,
+                );
+            }
+            function dhsCompare(a, b) {
+                let av, bv;
+                if (dhsSortKey === "COMMON_NAME") {
+                    av = a.name;
+                    bv = b.name;
+                } else if (dhsSortKey === "HABITAT_PRIMARY") {
+                    av = a.hab;
+                    bv = b.hab;
+                } else {
+                    av = a.diet;
+                    bv = b.diet;
+                }
+                return dhsSortDir * String(av).localeCompare(String(bv));
+            }
+            function dhsRowHTML(s) {
+                return (
+                    `<tr data-key="${esc(s.key)}">` +
+                    `<td class="dh-swatch-cell"><span class="tc-swatch" style="background:${statusColor(s.row.RED_LIST)}"></span></td>` +
+                    `<td><a href="#" class="dh-name">${esc(s.name)}</a></td>` +
+                    `<td><span class="dhs-cell-label"><img class="dhs-cell-icon" src="${esc(habitatIconSrc(s.hab))}" alt="">${esc(s.hab)}</span></td>` +
+                    `<td><span class="dhs-cell-label"><img class="dhs-cell-icon" src="${esc(dietIconSrc(s.diet))}" alt="">${esc(s.diet)}</span></td>` +
+                    `</tr>`
+                );
+            }
+            function updateDhsHeaderArrows() {
+                document
+                    .querySelectorAll("#dhs-table th.dh-sortable")
+                    .forEach((th) => {
+                        const key = th.dataset.sort;
+                        const active = key === dhsSortKey;
+                        const arrow = active ? (dhsSortDir === 1 ? " ▲" : " ▼") : "";
+                        th.textContent = DHS_TH_LABELS[key] + arrow;
+                    });
+            }
+            function renderDhsTable() {
+                const filtered = dhsFilteredSpecies();
+                const sorted = filtered.slice().sort(dhsCompare);
+                const tbody = document.getElementById("dhs-tbody");
+                tbody.innerHTML = sorted.map(dhsRowHTML).join("");
+                updateDhsHeaderArrows();
+                document.getElementById("dhs-count").textContent = dhsSelection
+                    ? `${filtered.length} of ${dhsSpecies.length} species selected`
+                    : `${dhsSpecies.length} species shown`;
+            }
+            document
+                .querySelector("#dhs-table thead")
+                .addEventListener("click", (e) => {
+                    const th = e.target.closest("th.dh-sortable");
+                    if (!th) return;
+                    const key = th.dataset.sort;
+                    if (dhsSortKey === key) dhsSortDir *= -1;
+                    else {
+                        dhsSortKey = key;
+                        dhsSortDir = 1;
+                    }
+                    renderDhsTable();
+                });
+
+            const dhsTbody = document.getElementById("dhs-tbody");
+            dhsTbody.addEventListener("mouseover", (e) => {
+                const tr = e.target.closest("tr[data-key]");
+                if (!tr) return;
+                const s = dhsSpeciesByKey.get(tr.dataset.key);
+                if (s) {
+                    tr.classList.add("dh-row-hot");
+                    dhsHoverSel = { type: "pair", hab: s.hab, diet: s.diet };
+                    applyDhsStyles();
+                }
+                const nameEl = e.target.closest(".dh-name");
+                if (nameEl && s) showBirdTip(s, e);
+            });
+            dhsTbody.addEventListener("mousemove", (e) => {
+                if (e.target.closest(".dh-name")) moveBirdTip(e);
+            });
+            dhsTbody.addEventListener("mouseout", (e) => {
+                const tr = e.target.closest("tr[data-key]");
+                if (tr && !tr.contains(e.relatedTarget)) {
+                    tr.classList.remove("dh-row-hot");
+                    dhsHoverSel = null;
+                    applyDhsStyles();
+                }
+                const nameEl = e.target.closest(".dh-name");
+                if (nameEl && !nameEl.contains(e.relatedTarget)) hideBirdTip();
+            });
+            dhsTbody.addEventListener("click", (e) => {
+                const nameEl = e.target.closest(".dh-name");
+                if (!nameEl) return;
+                e.preventDefault();
+                const tr = nameEl.closest("tr");
+                const s = dhsSpeciesByKey.get(tr.dataset.key);
+                if (s) BirdDetail.open(s.row);
+            });
+
+            // ── Tabs (Parallel Coordinates ⇄ Habitat ↔ Diet Flow) ─────────
+            let dhActiveTab = "parallel";
+            function switchDhTab(tab) {
+                if (tab === dhActiveTab) return;
+                dhActiveTab = tab;
+                document
+                    .getElementById("dh-tab-parallel")
+                    .classList.toggle("is-active", tab === "parallel");
+                document
+                    .getElementById("dh-tab-sankey")
+                    .classList.toggle("is-active", tab === "sankey");
+                document
+                    .getElementById("dh-tab-parallel")
+                    .setAttribute("aria-selected", tab === "parallel");
+                document
+                    .getElementById("dh-tab-sankey")
+                    .setAttribute("aria-selected", tab === "sankey");
+                document.getElementById("dh-panel-parallel").hidden = tab !== "parallel";
+                document.getElementById("dh-panel-sankey").hidden = tab !== "sankey";
+            }
+            document
+                .getElementById("dh-tab-parallel")
+                .addEventListener("click", () => switchDhTab("parallel"));
+            document
+                .getElementById("dh-tab-sankey")
+                .addEventListener("click", () => switchDhTab("sankey"));
+
+            // ── Help modal ──────────────────────────────────────────────────
+            (function () {
+                const modal = document.getElementById("help-modal");
+                const btn = document.getElementById("bbd-help-btn");
+                const closeBtn = modal.querySelector(".lm-close");
+                const backdrop = modal.querySelector(".lm-backdrop");
+
+                function openHelp() {
+                    modal.hidden = false;
+                    document.body.style.overflow = "hidden";
+                }
+                function closeHelp() {
+                    modal.hidden = true;
+                    document.body.style.overflow = "";
+                }
+
+                btn.addEventListener("click", openHelp);
+                closeBtn.addEventListener("click", closeHelp);
+                backdrop.addEventListener("click", closeHelp);
+                document.addEventListener("keydown", function (e) {
+                    if (e.key === "Escape" && !modal.hidden) closeHelp();
+                });
+
+                const KEY = "sowi:diet_habitat_parallel_coords:seen_help_v1";
+                if (!sessionStorage.getItem(KEY)) {
+                    openHelp();
+                    try {
+                        sessionStorage.setItem(KEY, "1");
+                    } catch {}
+                }
+            })();
+        </script>
+    </body>
+</html>
