@@ -1,0 +1,1025 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="base_res/img/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Behavioral Trait-Syndrome Network — Soaring Wild</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Public+Sans:wght@400&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="base_res/style.css" />
+        <link rel="stylesheet" href="base_res/explorer.css" />
+        <style>
+            .site-header {
+                position: sticky;
+                top: 0;
+                background: var(--dark);
+            }
+
+            /* ── Trait-Syndrome Network (page-local) ─────────────────────── */
+            .tsn-panel {
+                background: #fbfaf6;
+                border: 1px solid #ece6d4;
+                border-radius: 6px;
+                padding: 0.85rem 1rem;
+                margin-top: 1rem;
+            }
+            .tsn-panel-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 0.6rem;
+            }
+            .tsn-panel-head span {
+                font-family: "Inter", sans-serif;
+                font-size: 0.82rem;
+                font-weight: 700;
+                color: var(--dark);
+            }
+            .tsn-name {
+                color: var(--dark);
+                text-decoration: none;
+                cursor: pointer;
+            }
+            .tsn-name:hover {
+                color: var(--amber);
+                text-decoration: underline;
+            }
+            .tsn-swatch-cell {
+                width: 20px;
+            }
+            #tsn-svg {
+                cursor: default;
+            }
+            .tsn-node-circle {
+                cursor: grab;
+            }
+            .tsn-node-circle:active {
+                cursor: grabbing;
+            }
+            .tsn-node-label {
+                font-family: "Inter", sans-serif;
+                paint-order: stroke;
+                stroke: #fdfcf9;
+                stroke-width: 3px;
+                stroke-linejoin: round;
+                pointer-events: none;
+            }
+            .tsn-edge {
+                cursor: pointer;
+            }
+            #tsn-tooltip {
+                position: fixed;
+                z-index: 1200;
+                pointer-events: none;
+                background: var(--dark);
+                color: #fff;
+                border-radius: 6px;
+                padding: 0.7rem 0.85rem;
+                font-size: 0.78rem;
+                line-height: 1.45;
+                max-width: 260px;
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+            }
+            #tsn-tooltip[hidden] {
+                display: none;
+            }
+            #tsn-tooltip h4 {
+                font-family: "Inter", sans-serif;
+                font-size: 0.86rem;
+                margin: 0 0 0.1rem;
+                color: var(--amber);
+            }
+            #tsn-tooltip dl {
+                display: grid;
+                grid-template-columns: max-content 1fr;
+                gap: 0.05rem 0.6rem;
+                margin: 0.3rem 0 0;
+            }
+            #tsn-tooltip dt {
+                color: #999;
+            }
+            #tsn-tooltip dd {
+                margin: 0;
+                color: #fff;
+            }
+            .tsn-tt-note {
+                margin-top: 0.4rem;
+                color: #d7b864;
+                font-size: 0.72rem;
+                font-style: italic;
+            }
+
+            /* Range slider — no input[type=range] rule exists yet in explorer.css */
+            .tc-field input[type="range"] {
+                width: 160px;
+                padding: 0;
+                border: none;
+                background: transparent;
+                accent-color: var(--amber);
+            }
+        </style>
+    </head>
+    <body>
+        <header class="site-header">
+            <a href="/" class="logo-box"
+                ><img src="base_res/img/SoWi_title_light.png"
+            /></a>
+            <ul class="site-nav">
+                <li><a href="/#about">About Us</a></li>
+                <li><a href="/#projects">Our Projects</a></li>
+                <li><a href="resources.html">Resources</a></li>
+            </ul>
+        </header>
+
+        <main class="bbd-main">
+            <div class="bbd-header">
+                <div>
+                    <a href="data_explorer.html" class="page-back">&larr; Avian Data Explorer</a>
+                    <h1>Behavioral Trait-Syndrome Network</h1>
+                </div>
+                <div class="bbd-header-actions">
+                    <button class="btn btn--ghost" id="bbd-help-btn">About this page</button>
+                    <button class="btn btn--ghost" id="bbd-legend-btn">Legend</button>
+                    <button class="btn btn--pulse" id="bbd-load-btn">Load Data</button>
+                </div>
+            </div>
+            <p id="bbd-status"></p>
+
+            <div class="tc-controls" id="tsn-controls" style="display: none">
+                <div class="tc-field">
+                    <label for="tsn-order">Group by Order</label>
+                    <select id="tsn-order">
+                        <option value="" selected>All species</option>
+                    </select>
+                </div>
+                <div class="tc-field">
+                    <label>Metric</label>
+                    <div class="wb-tabs" id="tsn-metric-tabs" style="margin-bottom: 0">
+                        <button type="button" class="wb-tab is-active" data-metric="jaccard">Jaccard</button>
+                        <button type="button" class="wb-tab" data-metric="lift">Lift</button>
+                    </div>
+                </div>
+                <div class="tc-field">
+                    <label for="tsn-threshold" id="tsn-threshold-label">Min. Jaccard</label>
+                    <input type="range" id="tsn-threshold" min="0.05" max="0.5" step="0.01" value="0.15" />
+                    <span id="tsn-threshold-val">0.15</span>
+                </div>
+                <span id="tsn-count"></span>
+            </div>
+
+            <p class="lh-coverage" id="tsn-coverage" hidden></p>
+
+            <div class="tc-legend" id="tsn-legend"></div>
+
+            <div class="lh-chart-wrap" id="tsn-chart-wrap">
+                <p class="tc-empty" id="tsn-empty">
+                    Load the data to grow the network — every trait becomes a node, and every
+                    edge shows how often two traits show up in the same species.
+                </p>
+                <svg
+                    id="tsn-svg"
+                    class="lh-svg"
+                    viewBox="0 0 960 640"
+                    preserveAspectRatio="xMidYMid meet"
+                    hidden
+                ></svg>
+            </div>
+
+            <div class="tsn-panel" id="tsn-species-panel" hidden>
+                <div class="tsn-panel-head">
+                    <span id="tsn-panel-title"></span>
+                    <button class="btn btn--ghost" id="tsn-clear">Clear selection</button>
+                </div>
+                <div class="bbd-table-wrap" style="max-height: 260px">
+                    <table id="bbd-table">
+                        <thead>
+                            <tr>
+                                <th title="Conservation status (IUCN Red List) — see the legend above."></th>
+                                <th>Species</th>
+                                <th>Order</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tsn-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <div id="tsn-tooltip" hidden></div>
+
+        <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
+            <li><a href="/#about">About Us</a></li>
+            <li><a href="/#projects">Our Projects</a></li>
+            <li><a href="resources.html">Resources</a></li>
+        </ul>
+
+        <!-- How to use / About this page -->
+        <div id="help-modal" class="lm-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
+            <div class="lm-backdrop"></div>
+            <div class="lm-panel">
+                <div class="lm-head">
+                    <h2 id="help-title">About this page</h2>
+                    <button class="lm-close" aria-label="Close">&times;</button>
+                </div>
+                <div class="lm-body">
+                    <section class="lm-section">
+                        <h3>How to use it</h3>
+                        <p>
+                            Every <strong>node</strong> is a behavior — a social style, a mating
+                            system, a nest type, or a movement pattern. Every <strong>edge</strong>
+                            connects two behaviors that show up together in the same species more
+                            than expected — the closer two nodes cluster, the more they travel as a
+                            package. Node size is the number of species with that trait; edge
+                            thickness is the strength of the association.
+                        </p>
+                        <p>
+                            <strong>Drag</strong> a node to explore its neighborhood — it snaps back
+                            into the simulation when you let go. <strong>Double-click</strong> a node
+                            to pin it in place while you compare others. <strong>Hover</strong> a
+                            node or edge for details, or <strong>click</strong> one to list its
+                            supporting species below (click a species to open its full profile).
+                        </p>
+                        <p>
+                            <strong>Metric</strong> switches how "association" is measured:
+                            <strong>Jaccard</strong> is the share of species with either trait that
+                            have both — good for finding common pairings. <strong>Lift</strong> is
+                            how much more often two traits co-occur than pure chance would predict —
+                            better at surfacing rare, surprising pairings (a small node like
+                            <em>Lekking</em> can still light up a high-lift edge even though it only
+                            covers a handful of species). Every candidate pair is first required to
+                            share at least 5 species (3 within a single Order) before either metric
+                            is computed, so a co-occurrence of one or two species can never appear as
+                            an edge just because the <strong>Min.</strong> slider is turned all the
+                            way down.
+                        </p>
+                        <p>
+                            <strong>Group by Order</strong> recomputes every association within just
+                            that taxonomic group, so you can check whether a syndrome (e.g. the
+                            social/colonial cluster) holds dataset-wide or is really a Passeriformes
+                            thing. Only Orders with enough species to support the math are listed;
+                            smaller Orders would show almost no edges even at their loosest setting.
+                        </p>
+                    </section>
+                    <section class="lm-section">
+                        <h3>About this data</h3>
+                        <p>
+                            The species data on this page comes from
+                            <strong>BIRDBASE</strong>, a peer-reviewed global dataset of avian
+                            biogeography, conservation, ecology, and life-history traits &mdash;
+                            78 traits for 11,589 species across 254 families, synthesized from
+                            367 published sources spanning 1957&ndash;2025.
+                        </p>
+                        <p>
+                            Şekercioğlu, Ç.H., Kittelberger, K.D., Mota, F.M.M. et al.
+                            <em>BIRDBASE: A Global Dataset of Avian Biogeography, Conservation,
+                            Ecology and Life History Traits.</em> Scientific Data (2025).
+                        </p>
+                        <p style="margin-top: 0.75rem">
+                            This page is a downstream retelling of that dataset, not a
+                            replacement for the source &mdash; see the full
+                            <a
+                                href="https://www.nature.com/articles/s41597-025-05615-3"
+                                target="_blank"
+                                rel="noopener"
+                                >paper on nature.com</a
+                            >
+                            for methodology, sources, and citation details.
+                        </p>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend Modal -->
+        <div id="legend-modal" class="lm-overlay" role="dialog" aria-modal="true" aria-labelledby="lm-title" hidden>
+            <div class="lm-backdrop"></div>
+            <div class="lm-panel">
+                <div class="lm-head">
+                    <h2 id="lm-title">Bird Base Data — Legend</h2>
+                    <button class="lm-close" aria-label="Close legend">&times;</button>
+                </div>
+                <div class="lm-body">
+                    <section class="lm-section">
+                        <h3>Social Behavior</h3>
+                        <p>0 = behavior not described for the species. A species can carry more than one flag.</p>
+                        <dl>
+                            <dt>Social_1</dt><dd>1 = colonial</dd>
+                            <dt>Social_2</dt><dd>1 = social (large numbers, mixed-species flocks, seasonal flocks)</dd>
+                            <dt>Social_3</dt><dd>1 = pairs and family groups</dd>
+                            <dt>Social_4</dt><dd>1 = singly and pairs</dd>
+                            <dt>Social_5</dt><dd>1 = solitary</dd>
+                            <dt>Social_6</dt><dd>1 = lekking</dd>
+                        </dl>
+                    </section>
+                    <section class="lm-section">
+                        <h3>Monogamy</h3>
+                        <dl>
+                            <dt>Mono</dt><dd>1 = monogamous, 0 = not monogamous</dd>
+                            <dt>Poly</dt><dd>1 = polygynous, 0 = not polygynous</dd>
+                        </dl>
+                    </section>
+                    <section class="lm-section">
+                        <h3>Cooperative Breeding</h3>
+                        <p>This page treats any of 1/2/3 as a single "Cooperative breeding" node.</p>
+                        <dl>
+                            <dt>0</dt><dd>Does not breed cooperatively; solitary breeder</dd>
+                            <dt>1</dt><dd>Cooperative breeder</dd>
+                            <dt>2</dt><dd>Family member helper</dd>
+                            <dt>3</dt><dd>Occasional help</dd>
+                        </dl>
+                    </section>
+                    <section class="lm-section">
+                        <h3>Nest Type</h3>
+                        <p>
+                            A species can build more than one nest type. Sphere and Saucer are merged into one
+                            node here since each covers fewer than 10 species on its own.
+                        </p>
+                        <dl>
+                            <dt>BU</dt><dd>Burrow (in ground; also ground cavities)</dd>
+                            <dt>CP</dt><dd>Cup, bowl</dd>
+                            <dt>CR</dt><dd>Crevice</dd>
+                            <dt>CV</dt><dd>Cavity (tree)</dd>
+                            <dt>DM</dt><dd>Dome (also oven)</dd>
+                            <dt>HC</dt><dd>Half cup, shallow</dd>
+                            <dt>NO</dt><dd>No nest</dd>
+                            <dt>O</dt><dd>Other bird's nest</dd>
+                            <dt>PL</dt><dd>Platform</dd>
+                            <dt>PN</dt><dd>Pendant, bag, purse</dd>
+                            <dt>SA / SP</dt><dd>Saucer / Sphere, globular (merged)</dd>
+                            <dt>SC</dt><dd>Scrape</dd>
+                            <dt>M</dt><dd>Mound</dd>
+                        </dl>
+                    </section>
+                    <section class="lm-section">
+                        <h3>Movement</h3>
+                        <p>1 = species undertakes that type of movement.</p>
+                        <dl>
+                            <dt>Mig</dt><dd>Migration: yearly, regular, seasonal, and/or long-distance movement. 2 = partial migrant (kept as its own node here).</dd>
+                            <dt>Alt</dt><dd>Altitudinal/elevational migration: regular movements between high and low altitudes seasonally or post-breeding.</dd>
+                            <dt>Irreg</dt><dd>Nomadic, erratic, irruptive, or irregular movements due to weather, food availability, etc.</dd>
+                            <dt>Disp</dt><dd>Long-distance dispersal: usually once in a lifetime, post-fledging.</dd>
+                            <dt>Sed</dt><dd>Sedentary: largely does not migrate; typically a resident species with at most local/seasonal movements.</dd>
+                        </dl>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <script src="base_res/bird_data.js"></script>
+        <script src="base_res/bird_detail.js"></script>
+        <script>
+            // ── Load Data ───────────────────────────────────────────────────
+            const statusEl = document.getElementById("bbd-status");
+            let rows = [];
+
+            async function loadData() {
+                document.getElementById("bbd-load-btn").classList.remove("btn--pulse");
+                statusEl.textContent = "Loading…";
+                try {
+                    rows = await BirdData.load();
+                    statusEl.textContent = `${rows.length} row${rows.length !== 1 ? "s" : ""} loaded.`;
+                    initNetwork();
+                } catch (err) {
+                    statusEl.textContent = `Error: ${err.message}`;
+                    document.getElementById("bbd-load-btn").classList.add("btn--pulse");
+                }
+            }
+            document.getElementById("bbd-load-btn").addEventListener("click", loadData);
+
+            // ── Shared helpers ────────────────────────────────────────────
+            const SVG_NS = "http://www.w3.org/2000/svg";
+            function el(tag, attrs) {
+                const e = document.createElementNS(SVG_NS, tag);
+                for (const k in attrs) e.setAttribute(k, attrs[k]);
+                return e;
+            }
+            const num = (v) => (v === null || v === undefined || v === "" || isNaN(+v)) ? null : +v;
+            function esc(s) {
+                return String(s ?? "").replace(/[&<>"]/g, (c) =>
+                    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+            }
+            function rowKey(row) {
+                return row.GENUS && row.SPECIES ? `${row.GENUS}_${row.SPECIES}` : `name_${row.COMMON_NAME}`;
+            }
+            const STATUS_COLORS = {
+                EX: "#111111", EW: "#3a2a2a", "CR (PE)": "#7a0d0d", "CR (PEW)": "#7a0d0d",
+                CR: "#9b1b1b", EN: "#d1582b", VU: "#e0a52e", NT: "#b8c24a", LC: "#5aa45a", DD: "#b8bcc4",
+            };
+            function statusColor(s) { return STATUS_COLORS[s] || "#c9cdd4"; }
+
+            // ── Trait taxonomy (idea 1.3: co-occurrence of behaviors) ───────
+            // Nodes are curated trait *values*, not raw columns — e.g. NEST_TYPE
+            // is one column but 13 nodes here, one per nest form actually used
+            // by ≥10 species (Sphere+Saucer merged, the only pair below that
+            // floor). MIGRATION's full (1) and partial (2) states are kept as
+            // two separate nodes rather than merged, since full-migrant alone
+            // covers 77% of species and would dominate the radius scale the
+            // same way raw trait frequency would dominate an unweighted edge
+            // metric. NEST_TYPE is comma-joined for ~14% of species (e.g.
+            // "BU,CR") — nestCodes() below splits on comma rather than
+            // string-matching the raw column.
+            function nestCodes(row) {
+                return String(row.NEST_TYPE || "").split(",").map((s) => s.trim()).filter(Boolean);
+            }
+            const NEST_GROUPS = [
+                { codes: ["CP"], label: "Cup" },
+                { codes: ["SC"], label: "Scrape" },
+                { codes: ["CV"], label: "Cavity (tree)" },
+                { codes: ["PL"], label: "Platform" },
+                { codes: ["CR"], label: "Crevice" },
+                { codes: ["BU"], label: "Burrow" },
+                { codes: ["O"], label: "Other bird's nest" },
+                { codes: ["HC"], label: "Half-cup" },
+                { codes: ["NO"], label: "No nest" },
+                { codes: ["DM"], label: "Dome" },
+                { codes: ["M"], label: "Mound" },
+                { codes: ["PN"], label: "Pendant / bag" },
+                { codes: ["SP", "SA"], label: "Sphere / Saucer" },
+            ];
+
+            const FAMILIES = {
+                social: { label: "Social", color: "#00a99e" },
+                mating: { label: "Mating System", color: "#7b52ab" },
+                nesting: { label: "Nesting", color: "#c1662f" },
+                movement: { label: "Movement", color: "#5865b3" },
+            };
+
+            const TRAITS = [
+                { id: "social_colonial", label: "Colonial", family: "social", test: (r) => num(r.SOCIAL_1) === 1 },
+                { id: "social_flock", label: "Social / flocking", family: "social", test: (r) => num(r.SOCIAL_2) === 1 },
+                { id: "social_pairs_family", label: "Pairs & family groups", family: "social", test: (r) => num(r.SOCIAL_3) === 1 },
+                { id: "social_singly_pairs", label: "Singly & pairs", family: "social", test: (r) => num(r.SOCIAL_4) === 1 },
+                { id: "social_solitary", label: "Solitary", family: "social", test: (r) => num(r.SOCIAL_5) === 1 },
+                { id: "social_lekking", label: "Lekking", family: "social", test: (r) => num(r.SOCIAL_6) === 1, smallSample: true },
+                { id: "mating_mono", label: "Monogamous", family: "mating", test: (r) => num(r.MONOGAMOUS) === 1 },
+                { id: "mating_poly", label: "Polygynous", family: "mating", test: (r) => num(r.POLYGYNOUS) === 1 },
+                { id: "mating_coop", label: "Cooperative breeding", family: "mating", test: (r) => [1, 2, 3].includes(num(r.COOPERATIVE_BREEDER)) },
+                { id: "mig_full", label: "Migrant (full)", family: "movement", test: (r) => num(r.MIGRATION) === 1 },
+                { id: "mig_partial", label: "Partial migrant", family: "movement", test: (r) => num(r.MIGRATION) === 2 },
+                { id: "mig_elev", label: "Altitudinal migrant", family: "movement", test: (r) => num(r.MIGRATION_ELEV) === 1 },
+                { id: "mig_irreg", label: "Irregular / nomadic", family: "movement", test: (r) => num(r.MIGRATION_IRREG) === 1 },
+                { id: "mig_disp", label: "Dispersive", family: "movement", test: (r) => num(r.MIGRATION_DISP) === 1 },
+                { id: "mig_sed", label: "Sedentary", family: "movement", test: (r) => num(r.MIGRATION_SED) === 1 },
+                ...NEST_GROUPS.map((g, i) => ({
+                    id: "nest_" + i,
+                    label: g.label,
+                    family: "nesting",
+                    test: (r) => {
+                        const codes = nestCodes(r);
+                        return g.codes.some((c) => codes.includes(c));
+                    },
+                })),
+            ];
+
+            const ORDER_MIN_COUNT = 25;
+
+            // ── Data model (recomputed on load / order change) ─────────────
+            let scopeRows = [];
+            let minCooc = 5;
+            let simNodes = [];
+            let simEdgesAll = []; // every candidate pair clearing minCooc, both metrics precomputed
+            let visibleEdges = [];
+            const nodeState = new Map(); // id -> persistent physics state, survives rebuilds
+
+            const METRIC_RANGE = {
+                jaccard: { min: 0.05, max: 0.5, step: 0.01, default: 0.15, label: "Min. Jaccard" },
+                lift: { min: 1, max: 9, step: 0.25, default: 2, label: "Min. Lift" },
+            };
+            let activeMetric = "jaccard";
+            const thresholds = { jaccard: METRIC_RANGE.jaccard.default, lift: METRIC_RANGE.lift.default };
+
+            function buildNodes(subset) {
+                return TRAITS.map((t) => {
+                    const species = subset.filter(t.test);
+                    const keys = new Set(species.map(rowKey));
+                    return { ...t, species, keys, n: species.length };
+                }).filter((n) => n.n > 0);
+            }
+
+            function buildEdges(nodes, totalN, minCooc) {
+                const edges = [];
+                for (let i = 0; i < nodes.length; i++) {
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        const a = nodes[i], b = nodes[j];
+                        const [small, large] = a.keys.size <= b.keys.size ? [a.keys, b.keys] : [b.keys, a.keys];
+                        let inter = 0;
+                        small.forEach((k) => { if (large.has(k)) inter++; });
+                        if (inter < minCooc) continue;
+                        const jaccard = inter / (a.n + b.n - inter);
+                        const lift = (totalN * inter) / (a.n * b.n);
+                        edges.push({ a, b, count: inter, jaccard, lift, key: a.id + "|" + b.id });
+                    }
+                }
+                return edges;
+            }
+
+            function metricStrength(edge) {
+                const r = METRIC_RANGE[activeMetric];
+                const v = edge[activeMetric];
+                return Math.max(0, Math.min(1, (v - r.min) / (r.max - r.min)));
+            }
+
+            // ── Force simulation ─────────────────────────────────────────
+            const W = 960, H = 640;
+            const VELOCITY_DECAY = 0.85;
+            const ALPHA_DECAY = 0.99;
+            const ALPHA_STOP = 0.001;
+            const REPULSION_K = 14000;
+            const CENTER_K = 0.012;
+            const SPRING_K = 0.045;
+
+            let alpha = 0;
+            let rafId = null;
+            let draggingNode = null;
+
+            function reheat(target) {
+                alpha = Math.max(alpha, target);
+                if (!rafId) rafId = requestAnimationFrame(tick);
+            }
+
+            function tick() {
+                const nodes = simNodes;
+                // pairwise repulsion + soft collision
+                for (let i = 0; i < nodes.length; i++) {
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        const a = nodes[i], b = nodes[j];
+                        let dx = b.x - a.x, dy = b.y - a.y;
+                        let dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
+                        dx /= dist; dy /= dist;
+                        const minDist = a.r + b.r + 6;
+                        let force;
+                        if (dist < minDist) {
+                            force = (minDist - dist) * 0.6;
+                        } else {
+                            force = Math.min(REPULSION_K / (dist * dist), 40);
+                        }
+                        const fx = dx * force * alpha, fy = dy * force * alpha;
+                        if (a.fx == null) { a.vx -= fx; a.vy -= fy; }
+                        if (b.fx == null) { b.vx += fx; b.vy += fy; }
+                    }
+                }
+                // edge springs — stronger association pulls its pair closer
+                visibleEdges.forEach((e) => {
+                    const a = e.a, b = e.b;
+                    const strength = metricStrength(e);
+                    const restLength = 220 - 150 * strength;
+                    let dx = b.x - a.x, dy = b.y - a.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
+                    dx /= dist; dy /= dist;
+                    const force = (dist - restLength) * SPRING_K * alpha;
+                    const fx = dx * force, fy = dy * force;
+                    if (a.fx == null) { a.vx += fx; a.vy += fy; }
+                    if (b.fx == null) { b.vx -= fx; b.vy -= fy; }
+                });
+                // centering
+                nodes.forEach((n) => {
+                    if (n.fx != null) return;
+                    n.vx += (W / 2 - n.x) * CENTER_K * alpha;
+                    n.vy += (H / 2 - n.y) * CENTER_K * alpha;
+                });
+                // integrate
+                nodes.forEach((n) => {
+                    if (n.fx != null) {
+                        n.x = n.fx; n.y = n.fy; n.vx = 0; n.vy = 0;
+                    } else {
+                        n.vx *= VELOCITY_DECAY; n.vy *= VELOCITY_DECAY;
+                        n.x += n.vx; n.y += n.vy;
+                    }
+                    n.x = Math.max(n.r, Math.min(W - n.r, n.x));
+                    n.y = Math.max(n.r, Math.min(H - n.r, n.y));
+                });
+
+                renderPositions();
+
+                alpha *= ALPHA_DECAY;
+                if (alpha > ALPHA_STOP) {
+                    rafId = requestAnimationFrame(tick);
+                } else {
+                    rafId = null;
+                }
+            }
+
+            function renderPositions() {
+                simNodes.forEach((n) => {
+                    const ref = nodeEls.get(n.id);
+                    if (!ref) return;
+                    ref.circle.setAttribute("cx", n.x.toFixed(1));
+                    ref.circle.setAttribute("cy", n.y.toFixed(1));
+                    ref.label.setAttribute("x", n.x.toFixed(1));
+                    ref.label.setAttribute("y", (n.y + n.r + 12).toFixed(1));
+                });
+                visibleEdges.forEach((e) => {
+                    const line = edgeEls.get(e.key);
+                    if (!line) return;
+                    line.setAttribute("x1", e.a.x.toFixed(1));
+                    line.setAttribute("y1", e.a.y.toFixed(1));
+                    line.setAttribute("x2", e.b.x.toFixed(1));
+                    line.setAttribute("y2", e.b.y.toFixed(1));
+                });
+            }
+
+            // ── SVG scaffolding ─────────────────────────────────────────
+            const svg = document.getElementById("tsn-svg");
+            let gEdges, gNodes;
+            const nodeEls = new Map(); // id -> {circle, label}
+            const edgeEls = new Map(); // key -> line
+
+            function svgPoint(evt) {
+                const rect = svg.getBoundingClientRect();
+                const vb = svg.viewBox.baseVal;
+                return {
+                    x: vb.x + ((evt.clientX - rect.left) * vb.width) / rect.width,
+                    y: vb.y + ((evt.clientY - rect.top) * vb.height) / rect.height,
+                };
+            }
+
+            let hoverSel = null; // {type:'node',id} | {type:'edge',key}
+            let selection = null;
+
+            function selEquals(a, b) {
+                if (!a || !b || a.type !== b.type) return false;
+                return a.type === "node" ? a.id === b.id : a.key === b.key;
+            }
+
+            function edgeTouchesNode(e, id) { return e.a.id === id || e.b.id === id; }
+
+            function nodeIsHot(n, activeSel) {
+                if (!activeSel) return true;
+                if (activeSel.type === "node") {
+                    if (activeSel.id === n.id) return true;
+                    return visibleEdges.some((e) => edgeTouchesNode(e, activeSel.id) && edgeTouchesNode(e, n.id));
+                }
+                const e = visibleEdges.find((x) => x.key === activeSel.key);
+                return !!e && edgeTouchesNode(e, n.id);
+            }
+            function applyStyles() {
+                const activeSel = hoverSel || selection;
+                simNodes.forEach((n) => {
+                    const ref = nodeEls.get(n.id);
+                    if (!ref) return;
+                    const op = nodeIsHot(n, activeSel) ? 1 : 0.15;
+                    ref.circle.setAttribute("opacity", op);
+                    ref.label.setAttribute("opacity", op);
+                });
+                edgeEls.forEach((line, key) => {
+                    const e = visibleEdges.find((x) => x.key === key);
+                    if (!e) return;
+                    let op = 0.35;
+                    if (activeSel) {
+                        const hot =
+                            (activeSel.type === "edge" && activeSel.key === key) ||
+                            (activeSel.type === "node" && edgeTouchesNode(e, activeSel.id));
+                        op = hot ? 0.9 : 0.04;
+                    }
+                    line.setAttribute("stroke-opacity", op);
+                });
+            }
+
+            function onHover(sel, evt) {
+                hoverSel = sel;
+                applyStyles();
+                showTooltip(sel, evt);
+            }
+            function onHoverEnd() {
+                hoverSel = null;
+                applyStyles();
+                hideTooltip();
+            }
+            function onClick(sel) {
+                selection = selection && selEquals(selection, sel) ? null : sel;
+                applyStyles();
+                renderSpeciesPanel();
+            }
+            document.getElementById("tsn-clear").addEventListener("click", () => {
+                selection = null;
+                applyStyles();
+                renderSpeciesPanel();
+            });
+
+            function renderGraph() {
+                svg.innerHTML = "";
+                nodeEls.clear();
+                edgeEls.clear();
+                gEdges = el("g", { id: "tsn-g-edges" });
+                gNodes = el("g", { id: "tsn-g-nodes" });
+                svg.appendChild(gEdges);
+                svg.appendChild(gNodes);
+
+                visibleEdges.forEach((e) => {
+                    const strength = metricStrength(e);
+                    const line = el("line", {
+                        class: "tsn-edge",
+                        x1: e.a.x, y1: e.a.y, x2: e.b.x, y2: e.b.y,
+                        stroke: "#7a8291",
+                        "stroke-width": (1 + 4 * strength).toFixed(2),
+                        "stroke-opacity": 0.35,
+                        "stroke-linecap": "round",
+                    });
+                    const sel = { type: "edge", key: e.key };
+                    line.addEventListener("mouseenter", (evt) => onHover(sel, evt));
+                    line.addEventListener("mousemove", moveTooltip);
+                    line.addEventListener("mouseleave", onHoverEnd);
+                    line.addEventListener("click", () => onClick(sel));
+                    gEdges.appendChild(line);
+                    edgeEls.set(e.key, line);
+                });
+
+                simNodes.forEach((n) => {
+                    const circle = el("circle", {
+                        class: "tsn-node-circle",
+                        cx: n.x, cy: n.y, r: n.r,
+                        fill: FAMILIES[n.family].color,
+                        stroke: "#fff",
+                        "stroke-width": n.smallSample ? 1.5 : 2,
+                        "stroke-dasharray": n.smallSample ? "3,2" : "none",
+                    });
+                    const label = el("text", {
+                        class: "tsn-node-label",
+                        x: n.x, y: n.y + n.r + 12,
+                        "text-anchor": "middle",
+                        "font-size": 10.5,
+                        fill: "#333",
+                    });
+                    label.textContent = n.label;
+
+                    const sel = { type: "node", id: n.id };
+                    [circle, label].forEach((elm) => {
+                        elm.addEventListener("mouseenter", (evt) => { if (!draggingNode) onHover(sel, evt); });
+                        elm.addEventListener("mousemove", (evt) => { if (!draggingNode) moveTooltip(evt); });
+                        elm.addEventListener("mouseleave", () => { if (!draggingNode) onHoverEnd(); });
+                        elm.addEventListener("click", (evt) => { if (!dragMoved) onClick(sel); });
+                    });
+
+                    let dragMoved = false;
+                    circle.addEventListener("pointerdown", (evt) => {
+                        evt.preventDefault();
+                        draggingNode = n;
+                        dragMoved = false;
+                        const pt = svgPoint(evt);
+                        n.fx = pt.x; n.fy = pt.y;
+                        reheat(0.4);
+                        circle.setPointerCapture(evt.pointerId);
+                    });
+                    circle.addEventListener("pointermove", (evt) => {
+                        if (draggingNode !== n) return;
+                        dragMoved = true;
+                        const pt = svgPoint(evt);
+                        n.fx = pt.x; n.fy = pt.y;
+                    });
+                    circle.addEventListener("pointerup", () => {
+                        if (draggingNode !== n) return;
+                        draggingNode = null;
+                        if (!n.pinned) { n.fx = null; n.fy = null; }
+                        reheat(0.2);
+                    });
+                    circle.addEventListener("dblclick", () => {
+                        n.pinned = !n.pinned;
+                        if (n.pinned) { n.fx = n.x; n.fy = n.y; }
+                        else { n.fx = null; n.fy = null; reheat(0.2); }
+                        circle.setAttribute("stroke", n.pinned ? "#1a1a1a" : "#fff");
+                        circle.setAttribute("stroke-width", n.pinned ? 3 : (n.smallSample ? 1.5 : 2));
+                    });
+
+                    gNodes.appendChild(circle);
+                    gNodes.appendChild(label);
+                    nodeEls.set(n.id, { circle, label });
+                });
+
+                applyStyles();
+            }
+
+            // ── Tooltip ───────────────────────────────────────────────────
+            const tooltip = document.getElementById("tsn-tooltip");
+            function showTooltip(sel, evt) {
+                let html;
+                if (sel.type === "node") {
+                    const n = simNodes.find((x) => x.id === sel.id);
+                    if (!n) return;
+                    html = `<h4>${esc(n.label)}</h4>` +
+                        `<dl>` +
+                        `<dt>Family</dt><dd>${esc(FAMILIES[n.family].label)}</dd>` +
+                        `<dt>Species</dt><dd>${n.n} of ${scopeRows.length}</dd>` +
+                        `</dl>` +
+                        (n.smallSample ? `<div class="tsn-tt-note">Small sample — interpret with caution.</div>` : "");
+                } else {
+                    const e = visibleEdges.find((x) => x.key === sel.key) || simEdgesAll.find((x) => x.key === sel.key);
+                    if (!e) return;
+                    html = `<h4>${esc(e.a.label)} &harr; ${esc(e.b.label)}</h4>` +
+                        `<dl>` +
+                        `<dt>Co-occur</dt><dd>${e.count} species</dd>` +
+                        `<dt>Jaccard</dt><dd>${e.jaccard.toFixed(3)}</dd>` +
+                        `<dt>Lift</dt><dd>${e.lift.toFixed(2)}&times;</dd>` +
+                        `</dl>`;
+                }
+                tooltip.innerHTML = html;
+                tooltip.hidden = false;
+                moveTooltip(evt);
+            }
+            function moveTooltip(evt) {
+                if (tooltip.hidden) return;
+                const pad = 14, w = tooltip.offsetWidth, h = tooltip.offsetHeight;
+                let x = evt.clientX + pad, y = evt.clientY + pad;
+                if (x + w > window.innerWidth) x = evt.clientX - w - pad;
+                if (y + h > window.innerHeight) y = evt.clientY - h - pad;
+                tooltip.style.left = x + "px";
+                tooltip.style.top = y + "px";
+            }
+            function hideTooltip() { tooltip.hidden = true; }
+
+            // ── Species panel ───────────────────────────────────────────
+            function selectionSpecies() {
+                if (!selection) return null;
+                if (selection.type === "node") {
+                    const n = simNodes.find((x) => x.id === selection.id);
+                    return n ? { label: n.label, species: n.species } : null;
+                }
+                const e = visibleEdges.find((x) => x.key === selection.key) || simEdgesAll.find((x) => x.key === selection.key);
+                if (!e) return null;
+                const species = e.a.species.filter((r) => e.b.keys.has(rowKey(r)));
+                return { label: `${e.a.label} ↔ ${e.b.label}`, species };
+            }
+            function renderSpeciesPanel() {
+                const panel = document.getElementById("tsn-species-panel");
+                const sel = selectionSpecies();
+                if (!sel) { panel.hidden = true; return; }
+                panel.hidden = false;
+                document.getElementById("tsn-panel-title").textContent = `${sel.species.length} species — ${sel.label}`;
+                const sorted = sel.species.slice().sort((a, b) => String(a.COMMON_NAME || "").localeCompare(String(b.COMMON_NAME || "")));
+                document.getElementById("tsn-tbody").innerHTML = sorted.map((r) =>
+                    `<tr data-key="${esc(rowKey(r))}">` +
+                    `<td class="tsn-swatch-cell"><span class="tc-swatch" style="background:${statusColor(r.RED_LIST)}"></span></td>` +
+                    `<td><a href="#" class="tsn-name">${esc(r.COMMON_NAME || "—")}</a></td>` +
+                    `<td>${esc(r.ORDER || "—")}</td>` +
+                    `</tr>`
+                ).join("");
+                const byKey = new Map(sorted.map((r) => [rowKey(r), r]));
+                document.getElementById("tsn-tbody").querySelectorAll(".tsn-name").forEach((a) => {
+                    a.addEventListener("click", (evt) => {
+                        evt.preventDefault();
+                        const tr = a.closest("tr");
+                        const r = byKey.get(tr.dataset.key);
+                        if (r) BirdDetail.open(r);
+                    });
+                });
+            }
+
+            // ── Legend ────────────────────────────────────────────────────
+            function buildLegend() {
+                const legendEl = document.getElementById("tsn-legend");
+                let html = `<div class="tc-legend-title">Trait family</div>`;
+                Object.values(FAMILIES).forEach((f) => {
+                    html += `<span class="tc-legend-item"><span class="tc-swatch" style="background:${f.color}"></span>${esc(f.label)}</span>`;
+                });
+                html += `<div class="tc-legend-note">Node size = species with that trait &middot; edge width = association strength &middot; dashed ring = small-sample trait (fewer than 10 species). Drag a node to explore its neighborhood; double-click to pin it.</div>`;
+                legendEl.innerHTML = html;
+            }
+
+            // ── Rebuild / recompute ─────────────────────────────────────
+            function currentScopeRows() {
+                const orderVal = document.getElementById("tsn-order").value;
+                return orderVal ? rows.filter((r) => r.ORDER === orderVal) : rows;
+            }
+
+            function rebuildNodesAndEdges() {
+                scopeRows = currentScopeRows();
+                minCooc = document.getElementById("tsn-order").value ? 3 : 5;
+
+                const built = buildNodes(scopeRows);
+                const maxN = Math.max(...built.map((n) => n.n), 1);
+
+                simNodes = built.map((n, i) => {
+                    let state = nodeState.get(n.id);
+                    if (!state) {
+                        const famIdx = Object.keys(FAMILIES).indexOf(n.family);
+                        const angle = (famIdx / 4) * Math.PI * 2 + Math.random() * 0.8;
+                        state = {
+                            x: W / 2 + Math.cos(angle) * 180 + (Math.random() - 0.5) * 40,
+                            y: H / 2 + Math.sin(angle) * 180 + (Math.random() - 0.5) * 40,
+                            vx: 0, vy: 0, fx: null, fy: null, pinned: false,
+                        };
+                        nodeState.set(n.id, state);
+                    }
+                    state.r = 8 + 26 * Math.sqrt(n.n / maxN);
+                    return Object.assign(state, n);
+                });
+
+                const totalN = scopeRows.length;
+                simEdgesAll = buildEdges(simNodes, totalN, minCooc);
+                applyThreshold();
+                renderGraph();
+                reheat(0.6);
+                updateCoverageCaption();
+            }
+
+            function updateCoverageCaption() {
+                const orderVal = document.getElementById("tsn-order").value;
+                const scopeLabel = orderVal || "";
+                const covered = scopeRows.filter((r) => TRAITS.some((t) => t.test(r))).length;
+                const pct = ((covered / scopeRows.length) * 100).toFixed(1);
+                document.getElementById("tsn-coverage").textContent = scopeLabel
+                    ? `Showing ${covered} of ${scopeRows.length} ${scopeLabel} species with at least one recorded trait (${pct}%).`
+                    : `Showing ${covered} of ${scopeRows.length} species with at least one recorded trait (${pct}%).`;
+            }
+
+            function applyThreshold() {
+                const t = thresholds[activeMetric];
+                visibleEdges = simEdgesAll.filter((e) => e[activeMetric] >= t);
+                document.getElementById("tsn-count").textContent = `${visibleEdges.length} edges shown`;
+            }
+
+            function refreshEdgesOnly() {
+                applyThreshold();
+                renderGraph();
+                reheat(0.3);
+            }
+
+            // ── Controls wiring ──────────────────────────────────────────
+            document.getElementById("tsn-order").addEventListener("change", rebuildNodesAndEdges);
+
+            document.getElementById("tsn-metric-tabs").addEventListener("click", (evt) => {
+                const btn = evt.target.closest(".wb-tab");
+                if (!btn) return;
+                activeMetric = btn.dataset.metric;
+                document.querySelectorAll("#tsn-metric-tabs .wb-tab").forEach((b) => b.classList.toggle("is-active", b === btn));
+                const r = METRIC_RANGE[activeMetric];
+                const slider = document.getElementById("tsn-threshold");
+                slider.min = r.min; slider.max = r.max; slider.step = r.step; slider.value = thresholds[activeMetric];
+                document.getElementById("tsn-threshold-label").textContent = r.label;
+                document.getElementById("tsn-threshold-val").textContent = thresholds[activeMetric];
+                refreshEdgesOnly();
+            });
+
+            document.getElementById("tsn-threshold").addEventListener("input", (evt) => {
+                thresholds[activeMetric] = +evt.target.value;
+                document.getElementById("tsn-threshold-val").textContent = (+evt.target.value).toFixed(activeMetric === "jaccard" ? 2 : 2);
+                refreshEdgesOnly();
+            });
+
+            // ── Init ──────────────────────────────────────────────────────
+            function initNetwork() {
+                document.getElementById("tsn-empty").hidden = true;
+                svg.removeAttribute("hidden");
+                document.getElementById("tsn-controls").style.display = "";
+                document.getElementById("tsn-coverage").hidden = false;
+
+                const orderCounts = new Map();
+                rows.forEach((r) => {
+                    if (!r.ORDER) return;
+                    orderCounts.set(r.ORDER, (orderCounts.get(r.ORDER) || 0) + 1);
+                });
+                const orderSel = document.getElementById("tsn-order");
+                [...orderCounts.entries()]
+                    .filter(([, n]) => n >= ORDER_MIN_COUNT)
+                    .sort((a, b) => b[1] - a[1])
+                    .forEach(([name, n]) => {
+                        const opt = document.createElement("option");
+                        opt.value = name;
+                        opt.textContent = `${name} (${n})`;
+                        orderSel.appendChild(opt);
+                    });
+
+                buildLegend();
+                rebuildNodesAndEdges();
+            }
+
+            // ── Legend modal ────────────────────────────────────────────
+            (function () {
+                const modal = document.getElementById("legend-modal");
+                const btn = document.getElementById("bbd-legend-btn");
+                const closeBtn = modal.querySelector(".lm-close");
+                const backdrop = modal.querySelector(".lm-backdrop");
+                function openLegend() { modal.hidden = false; document.body.style.overflow = "hidden"; }
+                function closeLegend() { modal.hidden = true; document.body.style.overflow = ""; }
+                btn.addEventListener("click", openLegend);
+                closeBtn.addEventListener("click", closeLegend);
+                backdrop.addEventListener("click", closeLegend);
+                document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.hidden) closeLegend(); });
+            })();
+
+            // ── Help modal ───────────────────────────────────────────────
+            (function () {
+                const modal = document.getElementById("help-modal");
+                const btn = document.getElementById("bbd-help-btn");
+                const closeBtn = modal.querySelector(".lm-close");
+                const backdrop = modal.querySelector(".lm-backdrop");
+                function openHelp() { modal.hidden = false; document.body.style.overflow = "hidden"; }
+                function closeHelp() { modal.hidden = true; document.body.style.overflow = ""; }
+                btn.addEventListener("click", openHelp);
+                closeBtn.addEventListener("click", closeHelp);
+                backdrop.addEventListener("click", closeHelp);
+                document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.hidden) closeHelp(); });
+
+                const KEY = "sowi:trait_syndrome_network:seen_help_v1";
+                if (!sessionStorage.getItem(KEY)) {
+                    openHelp();
+                    try { sessionStorage.setItem(KEY, "1"); } catch {}
+                }
+            })();
+        </script>
+    </body>
+</html>

@@ -10,3 +10,4 @@ service/.secrets.json
 service/*.log
 service/test*.mjs
 .DS_Store
+.playwright-cli/

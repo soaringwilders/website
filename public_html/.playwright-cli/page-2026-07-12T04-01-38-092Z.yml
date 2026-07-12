@@ -1,0 +1,62 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link [ref=e3] [cursor=pointer]:
+      - /url: /
+      - img [ref=e4]
+    - list [ref=e5]:
+      - listitem [ref=e6]:
+        - link "About Us" [ref=e7] [cursor=pointer]:
+          - /url: /#about
+      - listitem [ref=e8]:
+        - link "Our Projects" [ref=e9] [cursor=pointer]:
+          - /url: /#projects
+      - listitem [ref=e10]:
+        - link "Resources" [ref=e11] [cursor=pointer]:
+          - /url: resources.html
+  - main [ref=e12]:
+    - generic [ref=e13]:
+      - heading "Avian Data Explorer" [level=1] [ref=e14]
+      - paragraph [ref=e15]: Learn about the wonderful and fascinating lives of birds by exploring our datasets
+    - generic [ref=e16]:
+      - link "Preview of the Browse the Dataset table Browse the Dataset Explore every record and field in the BIRDS_BASE_DATA table. Open →" [ref=e17] [cursor=pointer]:
+        - /url: bird_base_data.html
+        - img "Preview of the Browse the Dataset table" [ref=e18]
+        - generic [ref=e19]: Browse the Dataset
+        - generic [ref=e20]: Explore every record and field in the BIRDS_BASE_DATA table.
+        - generic [ref=e21]: Open →
+      - link "Preview of the Traits Constellation visualization Traits Constellation A radial visualization of diet, habitat, body mass, and conservation status for every species. Open →" [ref=e22] [cursor=pointer]:
+        - /url: traits_constellation.html
+        - img "Preview of the Traits Constellation visualization" [ref=e23]
+        - generic [ref=e24]: Traits Constellation
+        - generic [ref=e25]: A radial visualization of diet, habitat, body mass, and conservation status for every species.
+        - generic [ref=e26]: Open →
+      - link "Preview of the Weights of Birds chart Weights of Birds Compare the relative mass of every species with min–max weight bars for females, males, and unsexed birds — then switch to the Sexual Dimorphism tab to see how, and by how much, males and females diverge in size. Open →" [ref=e27] [cursor=pointer]:
+        - /url: weights_of_birds.html
+        - img "Preview of the Weights of Birds chart" [ref=e28]
+        - generic [ref=e29]: Weights of Birds
+        - generic [ref=e30]: Compare the relative mass of every species with min–max weight bars for females, males, and unsexed birds — then switch to the Sexual Dimorphism tab to see how, and by how much, males and females diverge in size.
+        - generic [ref=e31]: Open →
+      - link "Preview of the Size & Life-History Scaling chart Size & Life-History Scaling See how body mass shapes a bird's breeding life — clutch size, incubation, fledging, broods, and productivity — with a brushable scatter plot. Open →" [ref=e32] [cursor=pointer]:
+        - /url: life_history_scaling.html
+        - img "Preview of the Size & Life-History Scaling chart" [ref=e33]
+        - generic [ref=e34]: Size & Life-History Scaling
+        - generic [ref=e35]: See how body mass shapes a bird's breeding life — clutch size, incubation, fledging, broods, and productivity — with a brushable scatter plot.
+        - generic [ref=e36]: Open →
+      - link "Preview of the Migration Trends chart Migration Trends Watch 25 years of fall raptor counts from a real hawk-watch site (Illinois Beach State Park Hawkwatch) unfold season by season, in an animated Gapminder-style trend chart. Open →" [ref=e37] [cursor=pointer]:
+        - /url: migration_trends.html
+        - img "Preview of the Migration Trends chart" [ref=e38]
+        - generic [ref=e39]: Migration Trends
+        - generic [ref=e40]: Watch 25 years of fall raptor counts from a real hawk-watch site (Illinois Beach State Park Hawkwatch) unfold season by season, in an animated Gapminder-style trend chart.
+        - generic [ref=e41]: Open →
+      - link "Preview of the Diet & Habitat Explorer Diet & Habitat Explorer Brush across body mass, habitat breadth, diet breadth, and specialization (ESI) to see how generalists and specialists trace different paths through every species' ecological profile — then switch to the Habitat ↔ Diet Flow tab for an illustrated Sankey diagram of which habitats and diets pair up most. Open →" [ref=e42] [cursor=pointer]:
+        - /url: diet_habitat_parallel_coords.html
+        - img "Preview of the Diet & Habitat Explorer" [ref=e43]
+        - generic [ref=e44]: Diet & Habitat Explorer
+        - generic [ref=e45]: Brush across body mass, habitat breadth, diet breadth, and specialization (ESI) to see how generalists and specialists trace different paths through every species' ecological profile — then switch to the Habitat ↔ Diet Flow tab for an illustrated Sankey diagram of which habitats and diets pair up most.
+        - generic [ref=e46]: Open →
+      - link "Preview of the Behavioral Trait-Syndrome Network Behavioral Trait-Syndrome Network A force-directed graph of how social, mating, nesting, and movement behaviors cluster together across species — drag a node to explore its neighborhood and see which traits travel as a package. Open →" [ref=e47] [cursor=pointer]:
+        - /url: trait_syndrome_network.html
+        - img "Preview of the Behavioral Trait-Syndrome Network" [ref=e48]
+        - generic [ref=e49]: Behavioral Trait-Syndrome Network
+        - generic [ref=e50]: A force-directed graph of how social, mating, nesting, and movement behaviors cluster together across species — drag a node to explore its neighborhood and see which traits travel as a package.
+        - generic [ref=e51]: Open →

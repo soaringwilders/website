@@ -537,7 +537,13 @@
                     [row.MIGRATION_SED, "sedentary"],
                 ].filter(([v]) => num(v) >= 1).map(([, l]) => l).join(", ") || "—";
 
+                const imgSrc = (row.GENUS && row.SPECIES)
+                    ? `base_res/img/birds/${row.GENUS}_${row.SPECIES}.jpg`
+                    : "base_res/img/birds/_generic.jpg";
+
                 tooltip.innerHTML =
+                    `<img class="tt-img" src="${esc(imgSrc)}" alt="" ` +
+                    `onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'">` +
                     `<h4>${esc(row.COMMON_NAME || "—")}</h4>` +
                     (sci ? `<div class="tt-sci">${esc(sci)}</div>` : "") +
                     `<dl>` +
@@ -557,6 +563,10 @@
                 let x = evt.clientX + pad, y = evt.clientY + pad;
                 if (x + w > window.innerWidth) x = evt.clientX - w - pad;
                 if (y + h > window.innerHeight) y = evt.clientY - h - pad;
+                // Clamp — flipping alone isn't enough near the top/left edge,
+                // where the flipped position can still land off-screen.
+                x = Math.max(pad, Math.min(x, window.innerWidth - w - pad));
+                y = Math.max(pad, Math.min(y, window.innerHeight - h - pad));
                 tooltip.style.left = x + "px";
                 tooltip.style.top = y + "px";
             }

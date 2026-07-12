@@ -1,0 +1,88 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link [ref=e3] [cursor=pointer]:
+      - /url: /
+      - img [ref=e4]
+    - list [ref=e5]:
+      - listitem [ref=e6]:
+        - link "About Us" [ref=e7] [cursor=pointer]:
+          - /url: /#about
+      - listitem [ref=e8]:
+        - link "Our Projects" [ref=e9] [cursor=pointer]:
+          - /url: /#projects
+      - listitem [ref=e10]:
+        - link "Resources" [ref=e11] [cursor=pointer]:
+          - /url: resources.html
+  - main [ref=e12]:
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - link "← Avian Data Explorer" [ref=e15] [cursor=pointer]:
+          - /url: data_explorer.html
+        - heading "Traits Constellation" [level=1] [ref=e16]
+      - generic [ref=e17]:
+        - button "About this page" [ref=e18] [cursor=pointer]
+        - button "Legend" [ref=e19] [cursor=pointer]
+        - button "Load Data" [ref=e20] [cursor=pointer]
+    - paragraph [ref=e21]
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e24]: Group by
+        - combobox "Group by" [ref=e25]:
+          - option "Order" [selected]
+          - option "Family"
+          - option "Primary diet"
+          - option "None"
+      - generic [ref=e26]:
+        - generic [ref=e27]: Sort by
+        - combobox "Sort by" [ref=e28]:
+          - option "Name" [selected]
+          - option "Body mass"
+          - option "Specialization (ESI)"
+          - option "Diet breadth"
+          - option "Habitat breadth"
+          - option "Conservation status"
+      - generic [ref=e29]:
+        - generic [ref=e30]: Find
+        - searchbox "Find" [ref=e31]
+    - paragraph [ref=e34]: Load the data to grow the constellation.
+  - dialog "About this page" [ref=e35]:
+    - generic [ref=e37]:
+      - generic [ref=e38]:
+        - heading "About this page" [level=2] [ref=e39]
+        - button "Close" [ref=e40] [cursor=pointer]: ×
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - heading "How to use it" [level=3] [ref=e43]
+          - paragraph [ref=e44]:
+            - text: Click
+            - strong [ref=e45]: Load Data
+            - text: "to grow the constellation — every species becomes a small radial glyph: wedge color and length show its diet mix, the center dot's size shows habitat breadth, and the outer ring color shows conservation status. Overall glyph size scales with body mass."
+          - paragraph [ref=e46]:
+            - text: Use
+            - strong [ref=e47]: Group by
+            - text: and
+            - strong [ref=e48]: Sort by
+            - text: to organize the glyphs, and
+            - strong [ref=e49]: Find
+            - text: to search by name, family, or genus.
+            - strong [ref=e50]: Hover
+            - text: a glyph for a quick summary, or
+            - strong [ref=e51]: click
+            - text: it to open the full species profile. Click
+            - strong [ref=e52]: Legend
+            - text: to look up field codes.
+        - generic [ref=e53]:
+          - heading "About this data" [level=3] [ref=e54]
+          - paragraph [ref=e55]:
+            - text: The species data on this page comes from
+            - strong [ref=e56]: BIRDBASE
+            - text: ", a peer-reviewed global dataset of avian biogeography, conservation, ecology, and life-history traits — 78 traits for 11,589 species across 254 families, synthesized from 367 published sources spanning 1957–2025."
+          - paragraph [ref=e57]:
+            - text: Şekercioğlu, Ç.H., Kittelberger, K.D., Mota, F.M.M. et al.
+            - emphasis [ref=e58]: "BIRDBASE: A Global Dataset of Avian Biogeography, Conservation, Ecology and Life History Traits."
+            - text: Scientific Data (2025).
+          - paragraph [ref=e59]:
+            - text: This page is a downstream retelling of that dataset, not a replacement for the source — see the full
+            - link "paper on nature.com" [ref=e60] [cursor=pointer]:
+              - /url: https://www.nature.com/articles/s41597-025-05615-3
+            - text: for methodology, sources, and citation details.

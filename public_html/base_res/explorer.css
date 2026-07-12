@@ -122,6 +122,74 @@
     background: #fafafa;
 }
 
+#bbd-table th.is-sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+#bbd-table th.is-sortable:hover {
+    color: var(--dark);
+}
+
+#bbd-table th .bbd-sort-arrow {
+    display: inline-block;
+    margin-left: 0.3rem;
+    color: var(--amber);
+    font-size: 0.65rem;
+}
+
+#bbd-table td.bbd-name-cell {
+    cursor: pointer;
+    color: var(--dark);
+    font-weight: 600;
+}
+
+#bbd-table td.bbd-name-cell:hover {
+    color: var(--amber);
+    text-decoration: underline;
+}
+
+#bbd-table tbody tr.bbd-row-selected td {
+    background: #fbe9c6;
+}
+
+#bbd-table tbody tr.bbd-row-selected:hover td {
+    background: #f7dfa8;
+}
+
+/* Common-name hover tooltip (photo preview) */
+#bbd-name-tooltip {
+    position: fixed;
+    z-index: 1200;
+    pointer-events: none;
+    background: var(--dark);
+    border-radius: 6px;
+    padding: 0.5rem;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+#bbd-name-tooltip[hidden] {
+    display: none;
+}
+
+#bbd-name-tooltip img {
+    display: block;
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    border-radius: 4px;
+    background: var(--dark);
+}
+
+#bbd-name-tooltip .bbd-tt-name {
+    color: #fff;
+    font-family: "Inter", sans-serif;
+    font-size: 0.74rem;
+    text-align: center;
+    margin-top: 0.35rem;
+    max-width: 120px;
+}
+
 /* ── Header action group ─────────────────────────── */
 .bbd-header-actions {
     display: flex;
@@ -473,6 +541,16 @@
 
 #tc-tooltip[hidden] {
     display: none;
+}
+
+#tc-tooltip .tt-img {
+    display: block;
+    width: 100%;
+    height: 130px;
+    object-fit: contain;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    background: var(--dark);
 }
 
 #tc-tooltip h4 {

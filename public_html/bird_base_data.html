@@ -52,6 +52,11 @@
             </div>
         </main>
 
+        <div id="bbd-name-tooltip" hidden>
+            <img id="bbd-name-tooltip-img" src="" alt="" />
+            <div class="bbd-tt-name" id="bbd-name-tooltip-label"></div>
+        </div>
+
         <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
             <li><a href="/#about">About Us</a></li>
             <li><a href="/#projects">Our Projects</a></li>
@@ -75,6 +80,13 @@
                             horizontally to see all columns and vertically through every
                             species. Click <strong>Legend</strong> to look up what each column
                             code and abbreviation means.
+                        </p>
+                        <p>
+                            Click a column header to sort by that field (click again to
+                            reverse). <strong>Hover</strong> a species' common name for a quick
+                            photo, or <strong>click</strong> it to open the full species profile.
+                            Click anywhere else in a row to highlight it, which helps keep your
+                            place while scrolling horizontally.
                         </p>
                     </section>
                     <section class="lm-section">
@@ -344,6 +356,7 @@
         </div>
 
         <script src="base_res/bird_data.js"></script>
+        <script src="base_res/bird_detail.js"></script>
         <script>
             // ── Load Data ───────────────────────────────────────────────────
             const statusEl = document.getElementById("bbd-status");
@@ -448,36 +461,172 @@
             };
 
             // ── Data Table ──────────────────────────────────────────────────
+            let cols = [];
+            let sortState = { col: null, dir: 1 };
+            let displayRows = [];
+
+            function sortRows(list, col, dir) {
+                if (!col) return list.slice();
+                return list.slice().sort((r1, r2) => {
+                    const av = r1[col], bv = r2[col];
+                    const aEmpty = av === null || av === undefined || av === "";
+                    const bEmpty = bv === null || bv === undefined || bv === "";
+                    if (aEmpty && bEmpty) return 0;
+                    if (aEmpty) return 1;      // blanks always sort to the bottom
+                    if (bEmpty) return -1;
+                    const an = Number(av), bn = Number(bv);
+                    if (!isNaN(an) && !isNaN(bn)) return dir * (an - bn);
+                    return dir * String(av).localeCompare(String(bv));
+                });
+            }
+
+            function updateSortIndicators(theadRow) {
+                theadRow.querySelectorAll("th").forEach(th => {
+                    const arrow = th.querySelector(".bbd-sort-arrow");
+                    if (!arrow) return;
+                    arrow.textContent = th.dataset.col === sortState.col
+                        ? (sortState.dir === 1 ? "▲" : "▼")
+                        : "";
+                });
+            }
+
             function renderTable() {
                 if (tableRendered) return;            // data is immutable once loaded
                 const table = document.getElementById("bbd-table");
                 table.innerHTML = "";
                 if (!rows.length) return;
 
-                const cols = Object.keys(rows[0]);
+                cols = Object.keys(rows[0]);
                 const thead = document.createElement("thead");
                 const hr = document.createElement("tr");
                 cols.forEach(c => {
                     const th = document.createElement("th");
-                    th.textContent = c;
+                    th.classList.add("is-sortable");
+                    th.dataset.col = c;
                     if (COLUMN_TOOLTIPS[c]) th.title = COLUMN_TOOLTIPS[c];
+                    const label = document.createElement("span");
+                    label.textContent = c;
+                    th.appendChild(label);
+                    const arrow = document.createElement("span");
+                    arrow.className = "bbd-sort-arrow";
+                    th.appendChild(arrow);
+                    th.addEventListener("click", () => {
+                        if (sortState.col === c) sortState.dir *= -1;
+                        else { sortState.col = c; sortState.dir = 1; }
+                        updateSortIndicators(hr);
+                        renderBody();
+                    });
                     hr.appendChild(th);
                 });
                 thead.appendChild(hr);
                 table.appendChild(thead);
 
                 const tbody = document.createElement("tbody");
-                rows.forEach(row => {
+                table.appendChild(tbody);
+
+                renderBody();
+                wireBodyDelegation(tbody);
+                tableRendered = true;
+            }
+
+            function renderBody() {
+                const tbody = document.querySelector("#bbd-table tbody");
+                displayRows = sortRows(rows, sortState.col, sortState.dir);
+                tbody.innerHTML = "";
+                const frag = document.createDocumentFragment();
+                displayRows.forEach((row, i) => {
                     const tr = document.createElement("tr");
+                    tr.dataset.idx = i;
                     cols.forEach(c => {
                         const td = document.createElement("td");
                         td.textContent = row[c] ?? "";
+                        if (c === "COMMON_NAME") td.classList.add("bbd-name-cell");
                         tr.appendChild(td);
                     });
-                    tbody.appendChild(tr);
+                    frag.appendChild(tr);
                 });
-                table.appendChild(tbody);
-                tableRendered = true;
+                tbody.appendChild(frag);
+            }
+
+            // ── Row highlight, name hover tooltip & click-to-detail ────────────
+            // Delegated on the tbody so we don't attach a listener per row/cell
+            // (the table can hold thousands of rows).
+            function wireBodyDelegation(tbody) {
+                const tooltip = document.getElementById("bbd-name-tooltip");
+                const tooltipImg = document.getElementById("bbd-name-tooltip-img");
+                const tooltipLabel = document.getElementById("bbd-name-tooltip-label");
+
+                function rowForEvent(e) {
+                    const tr = e.target.closest("tr");
+                    if (!tr) return null;
+                    return displayRows[+tr.dataset.idx];
+                }
+
+                function showNameTooltip(row, evt) {
+                    const imgSrc = (row.GENUS && row.SPECIES)
+                        ? `base_res/img/birds/${row.GENUS}_${row.SPECIES}.jpg`
+                        : "base_res/img/birds/_generic.jpg";
+                    tooltipImg.onerror = () => {
+                        tooltipImg.onerror = null;
+                        tooltipImg.src = "base_res/img/birds/_generic.jpg";
+                    };
+                    tooltipImg.src = imgSrc;
+                    tooltipImg.alt = row.COMMON_NAME || "";
+                    tooltipLabel.textContent = row.COMMON_NAME || "";
+                    tooltip.hidden = false;
+                    moveNameTooltip(evt);
+                }
+
+                function moveNameTooltip(evt) {
+                    if (tooltip.hidden) return;
+                    const pad = 14, w = tooltip.offsetWidth, h = tooltip.offsetHeight;
+                    let x = evt.clientX + pad, y = evt.clientY + pad;
+                    if (x + w > window.innerWidth) x = evt.clientX - w - pad;
+                    if (y + h > window.innerHeight) y = evt.clientY - h - pad;
+                    // Clamp — flipping alone isn't enough near the top/left edge,
+                    // where the flipped position can still land off-screen.
+                    x = Math.max(pad, Math.min(x, window.innerWidth - w - pad));
+                    y = Math.max(pad, Math.min(y, window.innerHeight - h - pad));
+                    tooltip.style.left = x + "px";
+                    tooltip.style.top = y + "px";
+                }
+
+                function hideNameTooltip() {
+                    tooltip.hidden = true;
+                }
+
+                tbody.addEventListener("mouseover", e => {
+                    const cell = e.target.closest(".bbd-name-cell");
+                    if (!cell) return;
+                    const row = rowForEvent(e);
+                    if (row) showNameTooltip(row, e);
+                });
+                tbody.addEventListener("mousemove", e => {
+                    if (e.target.closest(".bbd-name-cell")) moveNameTooltip(e);
+                });
+                tbody.addEventListener("mouseout", e => {
+                    if (e.target.closest(".bbd-name-cell") && !e.relatedTarget?.closest(".bbd-name-cell")) {
+                        hideNameTooltip();
+                    }
+                });
+
+                tbody.addEventListener("click", e => {
+                    const tr = e.target.closest("tr");
+                    if (!tr) return;
+
+                    // Row highlight — toggle selection to help orient during
+                    // horizontal scrolling.
+                    const wasSelected = tr.classList.contains("bbd-row-selected");
+                    tbody.querySelectorAll("tr.bbd-row-selected").forEach(r => r.classList.remove("bbd-row-selected"));
+                    if (!wasSelected) tr.classList.add("bbd-row-selected");
+
+                    // Click on the common name opens the full species detail.
+                    if (e.target.closest(".bbd-name-cell")) {
+                        hideNameTooltip();
+                        const row = rowForEvent(e);
+                        if (row) BirdDetail.open(row);
+                    }
+                });
             }
 
             // ── Legend modal ────────────────────────────────────────────────
