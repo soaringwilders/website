@@ -41,7 +41,7 @@
                 </div>
                 <div class="bbd-header-actions">
                     <button class="btn btn--ghost" id="bbd-help-btn">About this page</button>
-                    <button class="btn" id="bbd-load-btn">Load Data</button>
+                    <button class="btn btn--pulse" id="bbd-load-btn">Load Data</button>
                 </div>
             </div>
             <p id="bbd-status"></p>
@@ -181,6 +181,7 @@
             let dimorphismByKey = new Map();
 
             async function loadData() {
+                document.getElementById("bbd-load-btn").classList.remove("btn--pulse");
                 statusEl.textContent = "Loading…";
                 try {
                     rows = await BirdData.load();
@@ -203,6 +204,7 @@
                     renderList();
                 } catch (err) {
                     statusEl.textContent = `Error: ${err.message}`;
+                    document.getElementById("bbd-load-btn").classList.add("btn--pulse");
                 }
             }
 

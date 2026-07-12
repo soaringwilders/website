@@ -140,6 +140,31 @@
     opacity: 1;
 }
 
+/* ── Load Data call-to-action pulse ──────────────── */
+.btn--pulse {
+    animation: bbd-pulse 2.2s ease-in-out infinite;
+}
+
+.btn--pulse:hover {
+    animation: none;
+}
+
+@keyframes bbd-pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(215, 184, 100, 0.55);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(215, 184, 100, 0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn--pulse {
+        animation: none;
+    }
+}
+
 /* ── Legend modal ────────────────────────────────── */
 .lm-overlay {
     position: fixed;

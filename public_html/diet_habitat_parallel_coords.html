@@ -191,7 +191,7 @@
                     <button class="btn btn--ghost" id="bbd-help-btn">
                         About this page
                     </button>
-                    <button class="btn" id="bbd-load-btn">Load Data</button>
+                    <button class="btn btn--pulse" id="bbd-load-btn">Load Data</button>
                 </div>
             </div>
             <p id="bbd-status"></p>
@@ -762,6 +762,7 @@
             // ── Load Data ─────────────────────────────────────────────────
             const statusEl = document.getElementById("bbd-status");
             async function loadData() {
+                document.getElementById("bbd-load-btn").classList.remove("btn--pulse");
                 statusEl.textContent = "Loading…";
                 try {
                     const rows = await BirdData.load();
@@ -812,6 +813,7 @@
                     loadSankey(rows);
                 } catch (err) {
                     statusEl.textContent = `Error: ${err.message}`;
+                    document.getElementById("bbd-load-btn").classList.add("btn--pulse");
                 }
             }
             document
