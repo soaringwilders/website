@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Migration Quest — a bird migration game</title>
+    <meta
+      name="description"
+      content="Explore five real fall migrations across the Americas on the Migration Map, then fly a flock through the hazards of one — and become the human steward who makes the route safe. A Soaring Wild project."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E🕊️%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- shared Soaring Wild bird data + fact-card modal -->
+    <link rel="stylesheet" href="../base_res/explorer.css" />
+    <link rel="stylesheet" href="css/flyway.css" />
+  </head>
+  <body>
+    <div id="game">
+      <canvas id="world"></canvas>
+
+      <!-- ── Flight HUD ─────────────────────────────────────────── -->
+      <div id="hud" class="hidden" aria-hidden="true">
+        <div class="hud-top">
+          <div class="hud-leg">
+            <span id="hud-leg-title">Leg</span>
+            <span id="hud-leg-sub" class="muted"></span>
+          </div>
+          <div class="hud-progress">
+            <div id="hud-progress-fill"></div>
+            <div class="hud-progress-icon" id="hud-progress-icon">🕊️</div>
+          </div>
+        </div>
+        <div class="hud-bottom">
+          <div class="stat">
+            <div class="stat-label">Flock</div>
+            <div class="stat-val"><span id="hud-flock">15</span> <span class="muted">birds</span></div>
+          </div>
+          <div class="stat stat-stam">
+            <div class="stat-label">Fat reserves</div>
+            <div class="bar"><div id="hud-stamina" class="bar-fill"></div></div>
+          </div>
+          <div class="stat stat-rescue">
+            <div class="stat-label">Rescues</div>
+            <div id="hud-rescues" class="pips"></div>
+          </div>
+        </div>
+        <div id="rescue-hint" class="rescue-hint hidden">
+          <kbd>Space</kbd> Rescue
+        </div>
+      </div>
+
+      <!-- ── Title screen ──────────────────────────────────────── -->
+      <section id="screen-title" class="screen">
+        <div class="screen-inner title-inner">
+          <div class="kicker">A Soaring Wild project</div>
+          <h1 class="title-word">Migration Quest</h1>
+          <p class="lede">
+            Every fall, billions of birds funnel down the Americas. Meet five
+            real migrations on the map, choose one to fly through the
+            gauntlet of a human-shaped world — and become the steward who
+            makes the route survivable.
+          </p>
+          <div class="title-actions">
+            <button id="btn-begin" class="btn btn-primary">Open the Migration Map</button>
+            <button id="btn-how" class="btn btn-ghost">How to play</button>
+          </div>
+          <div id="title-standing" class="standing"></div>
+        </div>
+      </section>
+
+      <!-- ── Migration Map (roster select) ─────────────────────── -->
+      <section id="screen-map" class="screen hidden">
+        <div class="screen-inner map-shell">
+          <div class="map-layout">
+            <div class="map-col-info">
+              <div class="kicker">Migration Map</div>
+              <h2 class="screen-h">Choose your migration</h2>
+              <p class="lede map-lede">
+                Five real fall migrations across the Americas. Hover a bird or
+                a route to trace its story.
+              </p>
+              <div class="map-callout" id="map-callout">
+                <div class="map-callout-empty">Hover or select a bird on the map to learn its migration story.</div>
+              </div>
+              <div class="screen-actions">
+                <button id="btn-map-back" class="btn btn-ghost">Back to title</button>
+              </div>
+            </div>
+            <div class="map-col-visual">
+              <div class="map-svg-wrap">
+                <img
+                  class="map-bg-img"
+                  src="img/americas_map.png"
+                  alt="Map of the Americas"
+                />
+                <svg
+                  id="americas-map"
+                  viewBox="0 0 1100 1649"
+                  preserveAspectRatio="xMidYMid meet"
+                  role="img"
+                  aria-label="Map of the Americas showing five fall bird migration routes"
+                >
+                  <g id="map-routes"></g>
+                  <g id="map-markers"></g>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Journey Brief (per-bird launchpad) ────────────────── -->
+      <section id="screen-brief" class="screen hidden">
+        <div class="screen-inner">
+          <div class="kicker" id="brief-kicker">Flyway · Fall passage</div>
+          <h2 class="screen-h">Journey Brief</h2>
+          <div class="species-card" id="species-card">
+            <div class="species-art" id="species-art">🐦</div>
+            <div class="species-body">
+              <div class="species-name" id="species-name">Bird</div>
+              <div class="species-tag" id="species-tag"></div>
+              <div class="species-stats" id="species-stats"></div>
+              <button id="btn-guide" class="btn btn-ghost btn-sm">
+                Open field guide
+              </button>
+            </div>
+          </div>
+          <div class="route-preview" id="route-preview"></div>
+          <div id="brief-comingsoon" class="brief-comingsoon hidden">
+            This bird's journey isn't playable yet — you can still explore its
+            story on the map. The Ruby-throated Hummingbird's Gulf Marathon is
+            playable today.
+          </div>
+          <div class="screen-actions">
+            <button id="btn-start" class="btn btn-primary">Take flight</button>
+            <button id="btn-brief-back" class="btn btn-ghost">Back to map</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Stopover / Steward ────────────────────────────────── -->
+      <section id="screen-stopover" class="screen hidden">
+        <div class="screen-inner wide">
+          <div class="kicker" id="stopover-kicker">Stopover</div>
+          <h2 class="screen-h" id="stopover-h">The flock rests</h2>
+          <p class="stopover-sum" id="stopover-sum"></p>
+
+          <div class="steward-head">
+            <span class="steward-badge">Steward Mode</span>
+            <span class="muted">Do the human work that makes this hazard safe for good.</span>
+          </div>
+          <div id="campaign-list" class="campaign-list"></div>
+
+          <div class="screen-actions">
+            <button id="btn-continue" class="btn btn-primary">Fly on →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Migration report (failure) ────────────────────────── -->
+      <section id="screen-report" class="screen hidden dark">
+        <div class="screen-inner">
+          <div class="kicker">Migration report</div>
+          <h2 class="screen-h" id="report-h">The flock was lost</h2>
+          <p class="report-cause" id="report-cause"></p>
+          <div class="report-fact" id="report-fact"></div>
+          <div class="report-meta" id="report-meta"></div>
+          <div class="screen-actions">
+            <button id="btn-retry" class="btn btn-primary">Fly the flyway again</button>
+            <button id="btn-report-title" class="btn btn-ghost">Title</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Arrival (win) ─────────────────────────────────────── -->
+      <section id="screen-arrival" class="screen hidden">
+        <div class="screen-inner">
+          <div class="kicker">Landfall</div>
+          <h2 class="screen-h">The flock made it</h2>
+          <p class="lede" id="arrival-sum"></p>
+          <div class="report-meta" id="arrival-meta"></div>
+          <div class="screen-actions">
+            <button id="btn-again" class="btn btn-primary">Guide another migration</button>
+            <button id="btn-arrival-title" class="btn btn-ghost">Title</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── How to play ───────────────────────────────────────── -->
+      <div id="how-overlay" class="overlay hidden">
+        <div class="overlay-card">
+          <h3>How to play</h3>
+          <ul class="how-list">
+            <li><b>Steer the flock</b> — move the mouse (or ↑ / ↓) to guide your lead bird. The flock follows.</li>
+            <li><b>Read the sky</b> — climb over glass towers, rise above the city's light-trap, thread between turbine blades.</li>
+            <li><b>Rescue</b> — press <kbd>Space</kbd> as a hazard nears to slow time and pull the flock through safely. Rescues are limited and refill at each stopover.</li>
+            <li><b>Fat reserves</b> drain as you fly and refill when you rest. Empty reserves start to cost you birds.</li>
+            <li><b>Stopovers</b> — between legs, step into <b>Steward Mode</b> and advance a real conservation <b>Campaign</b>. Finishing one makes that hazard <b>permanently safe</b> for every future flock.</li>
+          </ul>
+          <button id="btn-how-close" class="btn btn-primary btn-sm">Got it</button>
+        </div>
+      </div>
+
+      <!-- ── Warg overlay ──────────────────────────────────────── -->
+      <div id="warg-overlay" class="overlay warg hidden">
+        <canvas id="warg-canvas"></canvas>
+        <div class="warg-ui">
+          <div class="warg-kicker">Warg Mode · through the migrant's senses</div>
+          <div id="warg-caption" class="warg-caption"></div>
+          <div class="warg-hint"><kbd>←</kbd> <kbd>→</kbd> or move the mouse to hold your heading</div>
+        </div>
+      </div>
+
+      <div id="toast" class="toast hidden"></div>
+    </div>
+
+    <script src="../base_res/bird_data.js"></script>
+    <script src="../base_res/bird_detail.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/warg.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>

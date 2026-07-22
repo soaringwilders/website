@@ -3,7 +3,10 @@
 // after the first fetch. Every Data Explorer page can call BirdData.load()
 // and will get the cached copy instead of hitting the service again.
 (function () {
-    const CACHE_KEY = "sowi:bird_base_data:v1";
+    // Bump the version suffix whenever the DB schema/columns change — the cache
+    // never expires on its own, so stale clients would otherwise keep serving
+    // old field values (e.g. columns shifted) indefinitely.
+    const CACHE_KEY = "sowi:bird_base_data:v2";
 
     function serviceUrl(path) {
         const local = location.hostname === "localhost" || location.hostname === "127.0.0.1";

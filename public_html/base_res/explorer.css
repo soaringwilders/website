@@ -172,7 +172,7 @@
     display: none;
 }
 
-#bbd-name-tooltip img {
+#bbd-name-tooltip .ht-mini-img {
     display: block;
     width: 120px;
     height: 120px;
@@ -181,7 +181,7 @@
     background: var(--dark);
 }
 
-#bbd-name-tooltip .bbd-tt-name {
+#bbd-name-tooltip .ht-mini-name {
     color: #fff;
     font-family: "Inter", sans-serif;
     font-size: 0.74rem;
@@ -230,6 +230,89 @@
 @media (prefers-reduced-motion: reduce) {
     .btn--pulse {
         animation: none;
+    }
+}
+
+/* ── Load Data loading state ─────────────────────── */
+.btn--loading {
+    position: relative;
+    color: transparent;
+    pointer-events: none;
+}
+
+.btn--loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.9em;
+    height: 0.9em;
+    margin: -0.45em 0 0 -0.45em;
+    border: 2px solid var(--dark);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: bbd-spin 0.7s linear infinite;
+}
+
+@keyframes bbd-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn--loading::after {
+        animation: none;
+    }
+}
+
+/* ── Floating scroll-to-top button ───────────────── */
+.scroll-top-btn {
+    position: fixed;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    z-index: 900;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    border: none;
+    background: var(--dark);
+    color: var(--light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease, background 0.2s;
+}
+
+.scroll-top-btn.is-visible {
+    opacity: 0.8;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.scroll-top-btn:hover {
+    opacity: 1;
+    background: var(--amber);
+    color: var(--dark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .scroll-top-btn {
+        transition: opacity 0.15s;
+    }
+}
+
+@media (max-width: 640px) {
+    .scroll-top-btn {
+        right: 1rem;
+        bottom: 1rem;
+        width: 2.4rem;
+        height: 2.4rem;
     }
 }
 
@@ -1301,4 +1384,416 @@
 #wb-tooltip dd {
     margin: 0;
     color: #fff;
+}
+
+/* ── Bubble Explorer (bx-) ──────────────────────────────────────────── */
+
+.bx-presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem;
+    margin-bottom: 1rem;
+}
+
+.bx-presets-label {
+    font-family: "Inter", sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+    margin-right: 0.15rem;
+}
+
+.bx-preset-btn {
+    font-family: "Public Sans", sans-serif;
+    font-size: 0.82rem;
+    padding: 0.4rem 0.85rem;
+    border: 1px solid #d6dbe4;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--dark);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s;
+}
+
+.bx-preset-btn:hover {
+    border-color: var(--amber, #d7b864);
+    color: var(--amber, #a08a4a);
+    transform: translateY(-1px);
+}
+
+.bx-preset-btn.is-active {
+    background: var(--dark);
+    border-color: var(--dark);
+    color: #fff;
+}
+
+.tc-field select:disabled,
+.bx-preset-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* Bubbles — the transition is the whole point: cx/cy/r/fill animate on any
+   attribute change (SVG2 geometry properties are CSS-animatable in modern
+   browsers), so switching axes or color just glides. */
+.bx-bubble {
+    transition:
+        cx 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+        cy 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+        r 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+        fill 0.5s ease,
+        stroke 0.3s ease,
+        opacity 0.45s ease;
+    stroke: rgba(255, 255, 255, 0.55);
+    stroke-width: 0.75;
+    cursor: pointer;
+}
+
+.bx-bubble:hover {
+    stroke: var(--dark);
+    stroke-width: 1.5;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+}
+
+.bx-axis-label {
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    fill: #555;
+}
+
+.bx-axis-cat-label {
+    font-family: "Public Sans", sans-serif;
+    font-size: 11px;
+    fill: #5c6270;
+}
+
+.bx-axis-tick-label {
+    font-family: "Public Sans", sans-serif;
+    font-size: 11px;
+    fill: #8a8f99;
+}
+
+.bx-gridline {
+    stroke: #f0f2f6;
+}
+
+.bx-cell-divider {
+    stroke: #e1e5ec;
+    stroke-dasharray: 2 3;
+}
+
+.bx-ref-line {
+    stroke: #c9a24a;
+    stroke-width: 1.25;
+    stroke-dasharray: 4 3;
+    opacity: 0.75;
+}
+
+.bx-ref-label {
+    font-family: "Public Sans", sans-serif;
+    font-size: 10px;
+    fill: #a08a4a;
+}
+
+#bx-tooltip {
+    position: fixed;
+    z-index: 1200;
+    pointer-events: none;
+    background: var(--dark);
+    color: #fff;
+    border-radius: 6px;
+    padding: 0.7rem 0.85rem;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    max-width: 260px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+#bx-tooltip[hidden] {
+    display: none;
+}
+
+#bx-tooltip dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.05rem 0.6rem;
+    margin: 0;
+}
+
+#bx-tooltip dt {
+    color: #999;
+}
+
+#bx-tooltip dd {
+    margin: 0;
+    color: #fff;
+}
+
+.bx-note {
+    font-size: 0.74rem;
+    color: #998b66;
+    margin: -0.35rem 0 1rem;
+}
+
+/* ── Species search + side panel (shared: Bubble Explorer, ─────────────
+   Size & Life-History Scaling) — locate one species among many plotted
+   points instead of hovering blindly, see a persistent detail card, and
+   get a name-only hover tooltip everywhere else on the chart. */
+
+#lh-tooltip {
+    position: fixed;
+    z-index: 1200;
+    pointer-events: none;
+    background: var(--dark);
+    color: #fff;
+    border-radius: 6px;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.82rem;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+#lh-tooltip[hidden] {
+    display: none;
+}
+
+.sp-tip-name {
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+}
+
+.sp-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+
+.sp-layout .lh-chart-wrap {
+    flex: 1;
+    min-width: 0;
+}
+
+.sp-side {
+    width: 260px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+    .sp-layout {
+        flex-direction: column;
+    }
+    .sp-side {
+        width: 100%;
+    }
+}
+
+.sp-search {
+    position: relative;
+    margin-bottom: 0.9rem;
+}
+
+.sp-search-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.sp-search-input-row input {
+    flex: 1;
+    width: auto;
+    font-family: "Public Sans", sans-serif;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid #d6dbe4;
+    border-radius: 4px;
+    background: #fff;
+    color: var(--dark);
+}
+
+.sp-search-clear {
+    border: none;
+    background: none;
+    color: #999;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+}
+
+.sp-search-clear:hover {
+    color: #555;
+}
+
+.sp-search-list {
+    position: absolute;
+    top: calc(100% + 3px);
+    left: 0;
+    right: 0;
+    z-index: 60;
+    background: #fff;
+    border: 1px solid #d6dbe4;
+    border-radius: 4px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    max-height: 240px;
+    overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    padding: 0.25rem 0;
+}
+
+.sp-search-list[hidden] {
+    display: none;
+}
+
+.sp-search-item {
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.sp-search-item.is-active,
+.sp-search-item:hover {
+    background: #f2ede0;
+}
+
+.sp-item-name {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--dark);
+}
+
+.sp-item-sci {
+    font-style: italic;
+    font-size: 0.72rem;
+    color: #999;
+}
+
+.sp-panel {
+    border: 1px solid #e0e5ed;
+    border-radius: 6px;
+    padding: 0.85rem;
+    background: #fff;
+    min-height: 120px;
+}
+
+.sp-panel-placeholder {
+    font-size: 0.82rem;
+    color: #888;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.sp-panel-img {
+    display: block;
+    width: 100%;
+    height: 140px;
+    object-fit: contain;
+    object-position: center;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    background: #f2ede0;
+}
+
+.sp-panel-name {
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--dark);
+}
+
+.sp-panel-img,
+.sp-panel-name {
+    cursor: pointer;
+}
+
+.sp-panel-sci {
+    font-style: italic;
+    font-size: 0.78rem;
+    color: #888;
+    margin-bottom: 0.4rem;
+}
+
+.sp-panel dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.2rem 0.6rem;
+    margin: 0.5rem 0 0;
+}
+
+.sp-panel dt {
+    font-size: 0.78rem;
+    color: #999;
+}
+
+.sp-panel dd {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--dark);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.sp-ring-halo,
+.sp-ring-core {
+    fill: none;
+    pointer-events: none;
+    /* Visibility is driven entirely by the JS-set `opacity` presentation
+       attribute (updateSelectionRing() sets 0/0.9/1) — a CSS `opacity`
+       property here would permanently win over that attribute and hide
+       the ring regardless of what JS sets, so it's deliberately absent.
+       Starting r="0" (see the initial el() call) is what keeps the ring
+       invisible before a selection exists. */
+    /* Same cx/cy/r as each other (see updateSelectionRing()) — only the
+       stroke-width differs, so the wider halo peeks out as a light margin
+       on both sides of the darker core. Scale-pulse needs its origin fixed
+       at the circle's own center regardless of position/radius. */
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+}
+
+.sp-ring-halo {
+    stroke: #fff;
+    stroke-width: 8;
+}
+
+.sp-ring-core {
+    stroke: #1a1a1a;
+    stroke-width: 4;
+}
+
+/* Plays 3 times when a species is newly selected via search, so the user's
+   eye can find the ring even in a dense cluster of bubbles/dots. Pure
+   transform scale (not opacity or r) so it never fights the persistent
+   opacity/position set by updateSelectionRing(). */
+.sp-ring-pulse {
+    animation: sp-ring-pulse-kf 0.5s ease-in-out 3;
+}
+
+@keyframes sp-ring-pulse-kf {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.5); }
+}
+
+/* Glide in sync with each page's own point-transition timing (see .bx-bubble
+   / .lh-point) rather than snapping straight to the new position. */
+#bx-svg .sp-ring-halo,
+#bx-svg .sp-ring-core {
+    transition:
+        cx 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+        cy 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+        r 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.3s ease;
+}
+
+#lh-svg .sp-ring-halo,
+#lh-svg .sp-ring-core {
+    transition:
+        cy 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s ease;
 }

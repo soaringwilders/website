@@ -84,6 +84,12 @@
 
         <div id="tc-tooltip" hidden></div>
 
+        <button id="scroll-top-btn" class="scroll-top-btn" type="button" aria-label="Scroll to top">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
         <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
             <li><a href="/#about">About Us</a></li>
             <li><a href="/#projects">Our Projects</a></li>
@@ -384,13 +390,18 @@
 
         <script src="base_res/bird_data.js"></script>
         <script src="base_res/bird_detail.js"></script>
+        <script src="base_res/hover_tooltip.js"></script>
+        <script src="base_res/scroll_top.js"></script>
         <script>
             // ── Load Data ───────────────────────────────────────────────────
             const statusEl = document.getElementById("bbd-status");
             let rows = [];
 
             async function loadData() {
-                document.getElementById("bbd-load-btn").classList.remove("btn--pulse");
+                const loadBtn = document.getElementById("bbd-load-btn");
+                loadBtn.classList.remove("btn--pulse");
+                loadBtn.classList.add("btn--loading");
+                loadBtn.disabled = true;
                 statusEl.textContent = "Loading…";
                 try {
                     rows = await BirdData.load();
@@ -398,7 +409,10 @@
                     renderConstellation();
                 } catch (err) {
                     statusEl.textContent = `Error: ${err.message}`;
-                    document.getElementById("bbd-load-btn").classList.add("btn--pulse");
+                    loadBtn.classList.add("btn--pulse");
+                } finally {
+                    loadBtn.classList.remove("btn--loading");
+                    loadBtn.disabled = false;
                 }
             }
 
@@ -516,7 +530,8 @@
             }
 
             // ── Tooltip ─────────────────────────────────────────────────────
-            const tooltip = document.getElementById("tc-tooltip");
+            const tt = HoverTooltip.create("tc-tooltip");
+            const esc = HoverTooltip.esc;
             function showTooltip(row, evt) {
                 const sci = [row.GENUS, row.SPECIES].filter(Boolean).join(" ");
                 const topDiet = DIETS
@@ -541,7 +556,7 @@
                     ? `base_res/img/birds/${row.GENUS}_${row.SPECIES}.jpg`
                     : "base_res/img/birds/_generic.jpg";
 
-                tooltip.innerHTML =
+                const html =
                     `<img class="tt-img" src="${esc(imgSrc)}" alt="" ` +
                     `onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'">` +
                     `<h4>${esc(row.COMMON_NAME || "—")}</h4>` +
@@ -555,26 +570,7 @@
                     `<dt>Social</dt><dd>${esc(social)}</dd>` +
                     `<dt>Movement</dt><dd>${esc(moves)}</dd>` +
                     `</dl>`;
-                tooltip.hidden = false;
-                moveTooltip(evt);
-            }
-            function moveTooltip(evt) {
-                const pad = 14, w = tooltip.offsetWidth, h = tooltip.offsetHeight;
-                let x = evt.clientX + pad, y = evt.clientY + pad;
-                if (x + w > window.innerWidth) x = evt.clientX - w - pad;
-                if (y + h > window.innerHeight) y = evt.clientY - h - pad;
-                // Clamp — flipping alone isn't enough near the top/left edge,
-                // where the flipped position can still land off-screen.
-                x = Math.max(pad, Math.min(x, window.innerWidth - w - pad));
-                y = Math.max(pad, Math.min(y, window.innerHeight - h - pad));
-                tooltip.style.left = x + "px";
-                tooltip.style.top = y + "px";
-            }
-            function hideTooltip() { tooltip.hidden = true; }
-
-            function esc(s) {
-                return String(s).replace(/[&<>"]/g, c =>
-                    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+                tt.show(html, evt);
             }
 
             // ── Render constellation ────────────────────────────────────────
@@ -671,10 +667,10 @@
                         cell.appendChild(name);
 
                         cell.addEventListener("mouseenter", e => showTooltip(row, e));
-                        cell.addEventListener("mousemove", moveTooltip);
-                        cell.addEventListener("mouseleave", hideTooltip);
+                        cell.addEventListener("mousemove", tt.move);
+                        cell.addEventListener("mouseleave", tt.hide);
                         cell.addEventListener("click", () => {
-                            hideTooltip();
+                            tt.hide();
                             BirdDetail.open(row);
                         });
                         grid.appendChild(cell);
@@ -731,9 +727,14 @@
                     document.body.style.overflow = "hidden";
                 }
 
+                let autoLoadOnClose = true;
                 function closeHelp() {
                     modal.hidden = true;
                     document.body.style.overflow = "";
+                    if (autoLoadOnClose) {
+                        autoLoadOnClose = false;
+                        loadData();
+                    }
                 }
 
                 btn.addEventListener("click", openHelp);
@@ -743,13 +744,7 @@
                     if (e.key === "Escape" && !modal.hidden) closeHelp();
                 });
 
-                const KEY = "sowi:traits_constellation:seen_help_v1";
-                if (!sessionStorage.getItem(KEY)) {
-                    openHelp();
-                    try {
-                        sessionStorage.setItem(KEY, "1");
-                    } catch {}
-                }
+                openHelp();
             })();
         </script>
     </body>

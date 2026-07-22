@@ -68,9 +68,23 @@
 
             <div class="tc-legend" id="lh-legend" style="display:none"></div>
 
-            <div class="lh-chart-wrap" id="lh-chart-wrap">
-                <p class="tc-empty" id="lh-empty">Load the data to explore how body size shapes a bird's breeding life.</p>
-                <svg id="lh-svg" class="lh-svg" viewBox="0 0 960 620" preserveAspectRatio="xMidYMid meet" hidden></svg>
+            <div class="sp-layout">
+                <div class="lh-chart-wrap" id="lh-chart-wrap">
+                    <p class="tc-empty" id="lh-empty">Load the data to explore how body size shapes a bird's breeding life.</p>
+                    <svg id="lh-svg" class="lh-svg" viewBox="0 0 960 620" preserveAspectRatio="xMidYMid meet" hidden></svg>
+                </div>
+                <aside class="sp-side">
+                    <div class="sp-search">
+                        <div class="sp-search-input-row">
+                            <input type="search" id="lh-species-search" placeholder="Find a species…" autocomplete="off" disabled />
+                            <button type="button" class="sp-search-clear" id="lh-species-clear" aria-label="Clear search" disabled>&times;</button>
+                        </div>
+                        <ul class="sp-search-list" id="lh-species-list" hidden></ul>
+                    </div>
+                    <div class="sp-panel" id="lh-species-panel">
+                        <p class="sp-panel-placeholder">Search for a species above to locate and inspect its dot.</p>
+                    </div>
+                </aside>
             </div>
 
             <div class="lh-brush-panel" id="lh-brush-panel" hidden>
@@ -83,6 +97,12 @@
         </main>
 
         <div id="lh-tooltip" hidden></div>
+
+        <button id="scroll-top-btn" class="scroll-top-btn" type="button" aria-label="Scroll to top">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
 
         <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
             <li><a href="/#about">About Us</a></li>
@@ -102,17 +122,22 @@
                     <section class="lm-section">
                         <h3>How to use it</h3>
                         <p>
-                            Click <strong>Load Data</strong>, then choose which life-history
-                            trait to compare against body mass in
+                            The dataset loads automatically once you close this panel, so choose
+                            which life-history trait to compare against body mass in
                             <strong>Compare body mass against</strong>. Each dot is a species,
                             plotted on a log mass scale; the shaded band and line trace the
                             median and interquartile range across the dataset.
                         </p>
                         <p>
                             <strong>Drag</strong> across the chart to brush a mass range and
-                            list the species in it, <strong>hover</strong> a dot for details, or
-                            <strong>click</strong> it to open the species profile. Switch
-                            <strong>Color by</strong> to highlight conservation status.
+                            list the species in it. Hovering a dot shows its name — to find a
+                            specific species, type its common or scientific name into the
+                            <strong>search box</strong> beside the chart; picking a match
+                            highlights its dot with a ring and opens a detail card below the
+                            search box with its mass, chosen trait value, and conservation
+                            status. Click a dot, or the photo/name in its detail card, to open
+                            the full species profile. Switch <strong>Color by</strong> to
+                            highlight conservation status.
                         </p>
                     </section>
                     <section class="lm-section">
@@ -147,6 +172,9 @@
 
         <script src="base_res/bird_data.js"></script>
         <script src="base_res/bird_detail.js"></script>
+        <script src="base_res/hover_tooltip.js"></script>
+        <script src="base_res/species_search.js"></script>
+        <script src="base_res/scroll_top.js"></script>
         <script>
             // ── Load Data ───────────────────────────────────────────────────
             const statusEl = document.getElementById("bbd-status");
@@ -154,7 +182,10 @@
             let rowByKey = new Map();
 
             async function loadData() {
-                document.getElementById("bbd-load-btn").classList.remove("btn--pulse");
+                const loadBtn = document.getElementById("bbd-load-btn");
+                loadBtn.classList.remove("btn--pulse");
+                loadBtn.classList.add("btn--loading");
+                loadBtn.disabled = true;
                 statusEl.textContent = "Loading…";
                 try {
                     rows = await BirdData.load();
@@ -163,17 +194,17 @@
                     init();
                 } catch (err) {
                     statusEl.textContent = `Error: ${err.message}`;
-                    document.getElementById("bbd-load-btn").classList.add("btn--pulse");
+                    loadBtn.classList.add("btn--pulse");
+                } finally {
+                    loadBtn.classList.remove("btn--loading");
+                    loadBtn.disabled = false;
                 }
             }
             document.getElementById("bbd-load-btn").addEventListener("click", loadData);
 
             // ── Helpers ─────────────────────────────────────────────────────
             const num = v => (v === null || v === undefined || v === "" || isNaN(+v)) ? null : +v;
-            function esc(s) {
-                return String(s ?? "").replace(/[&<>"]/g, c =>
-                    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-            }
+            const esc = HoverTooltip.esc;
             function rowKey(row) {
                 return (row.GENUS && row.SPECIES) ? `${row.GENUS}_${row.SPECIES}` : `name_${row.COMMON_NAME}`;
             }
@@ -387,6 +418,8 @@
                 svg.appendChild(g);
                 return g;
             }
+            const selectRingHalo = el("circle", { class: "sp-ring-halo", r: 0 });
+            const selectRingCore = el("circle", { class: "sp-ring-core", r: 0 });
             function buildScaffold() {
                 svg.innerHTML = "";
                 group("lh-g-hist-top");
@@ -394,7 +427,6 @@
                 group("lh-g-trend");
                 group("lh-g-axis-x");
                 group("lh-g-axis-y");
-                group("lh-g-points");
                 svg.appendChild(el("rect", {
                     id: "lh-brush-rect", x: 0, y: plot.y0, width: 0, height: plot.y1 - plot.y0,
                     fill: "rgba(215,184,100,0.18)", stroke: "#d7b864", "stroke-dasharray": "3 2", visibility: "hidden",
@@ -406,6 +438,13 @@
                 });
                 svg.appendChild(capture);
                 wireBrush(capture);
+                // Points must render above the brush-capture overlay so hover
+                // reaches individual circles instead of being swallowed by it.
+                group("lh-g-points");
+                // Rendered last so the ring always sits on top of every point.
+                const gSelect = group("lh-g-select");
+                gSelect.appendChild(selectRingHalo);
+                gSelect.appendChild(selectRingCore);
             }
 
             // ── Axes ──────────────────────────────────────────────────────
@@ -539,10 +578,10 @@
                     fill: pointColor(p.row), opacity: 0,
                 });
                 c.dataset.key = p.key;
-                c.addEventListener("mouseenter", e => showTooltip(p, e));
-                c.addEventListener("mousemove", moveTooltip);
-                c.addEventListener("mouseleave", hideTooltip);
-                c.addEventListener("click", () => { hideTooltip(); BirdDetail.open(p.row); });
+                c.addEventListener("mouseenter", e => { showTooltip(p, e); renderPanelRow(p.row); });
+                c.addEventListener("mousemove", tt.move);
+                c.addEventListener("mouseleave", () => { tt.hide(); renderSpeciesPanel(); });
+                c.addEventListener("click", () => { tt.hide(); BirdDetail.open(p.row); });
                 return c;
             }
 
@@ -583,42 +622,96 @@
                 });
             }
 
-            // ── Tooltip ───────────────────────────────────────────────────
-            const tooltip = document.getElementById("lh-tooltip");
+            // ── Tooltip (name only — full detail lives in the side panel) ──
+            const tt = HoverTooltip.create("lh-tooltip");
             function showTooltip(p, evt) {
-                const row = p.row;
+                tt.show(`<div class="sp-tip-name">${esc(p.row.COMMON_NAME || "—")}</div>`, evt);
+            }
+
+            // ── Species search: selection ring + side panel ────────────────
+            let selectedKey = null;
+            function updateSelectionRing() {
+                const c = selectedKey ? circleEls.get(selectedKey) : null;
+                if (!c) {
+                    selectRingHalo.setAttribute("opacity", 0);
+                    selectRingCore.setAttribute("opacity", 0);
+                    return;
+                }
+                const cx = c.getAttribute("cx"), cy = c.getAttribute("cy");
+                const r = parseFloat(c.getAttribute("r")) || 3.4;
+                const ringR = r + 6;
+                [selectRingHalo, selectRingCore].forEach(ring => {
+                    ring.setAttribute("cx", cx);
+                    ring.setAttribute("cy", cy);
+                    ring.setAttribute("r", ringR);
+                });
+                selectRingHalo.setAttribute("opacity", 0.9);
+                selectRingCore.setAttribute("opacity", 1);
+            }
+
+            function buildSpeciesCardHTML(row) {
                 const sci = [row.GENUS, row.SPECIES].filter(Boolean).join(" ");
-                const imgSrc = (row.GENUS && row.SPECIES)
-                    ? `base_res/img/birds/${row.GENUS}_${row.SPECIES}.jpg`
-                    : "base_res/img/birds/_generic.jpg";
+                const imgSrc = HoverTooltip.birdImgSrc(row);
                 const m = METRICS[currentMetricIdx];
+                const val = metricValue(row, m);
+                const mass = num(row.MASS_AVG);
                 const statusLabel = STATUS_LABELS[row.RED_LIST] || row.RED_LIST || "—";
-                tooltip.innerHTML =
-                    `<div class="wb-tt-head">
-                        <img class="wb-tt-img" src="${esc(imgSrc)}"
-                             onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'" alt="">
-                        <div>
-                            <h4>${esc(row.COMMON_NAME || "—")}</h4>
-                            ${sci ? `<div class="tt-sci">${esc(sci)}</div>` : ""}
-                        </div>
-                     </div>
-                     <dl>
-                        <dt>Mass</dt><dd>${fmtMass(p.mass)}</dd>
-                        <dt>${esc(m.label)}</dt><dd>${fmtNum(p.val)} ${esc(m.unit)}</dd>
-                        <dt>Status</dt><dd>${esc(statusLabel)}</dd>
-                     </dl>`;
-                tooltip.hidden = false;
-                moveTooltip(evt);
+                return `<img class="sp-panel-img" src="${esc(imgSrc)}" alt=""
+                            onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'">` +
+                    `<div class="sp-panel-name">${esc(row.COMMON_NAME || "—")}</div>` +
+                    (sci ? `<div class="sp-panel-sci">${esc(sci)}</div>` : "") +
+                    `<dl>` +
+                    `<dt>Mass</dt><dd>${mass === null ? "—" : fmtMass(mass)}</dd>` +
+                    `<dt>${esc(m.label)}</dt><dd>${val === null ? "—" : `${fmtNum(val)} ${esc(m.unit)}`}</dd>` +
+                    `<dt>Status</dt><dd>${esc(statusLabel)}</dd>` +
+                    `</dl>`;
             }
-            function moveTooltip(evt) {
-                const pad = 14, w = tooltip.offsetWidth, h = tooltip.offsetHeight;
-                let x = evt.clientX + pad, y = evt.clientY + pad;
-                if (x + w > window.innerWidth) x = evt.clientX - w - pad;
-                if (y + h > window.innerHeight) y = evt.clientY - h - pad;
-                tooltip.style.left = x + "px";
-                tooltip.style.top = y + "px";
+
+            function renderPanelRow(row) {
+                const panelEl = document.getElementById("lh-species-panel");
+                panelEl.innerHTML = row
+                    ? buildSpeciesCardHTML(row)
+                    : `<p class="sp-panel-placeholder">Search for a species above to locate and inspect its dot.</p>`;
             }
-            function hideTooltip() { tooltip.hidden = true; }
+            // Shows the *selected* species (search result), i.e. what the panel
+            // reverts to once a transient hover ends. Called after render()/search.
+            function renderSpeciesPanel() {
+                renderPanelRow(selectedKey ? rowByKey.get(selectedKey) : null);
+            }
+
+            function pulseSelectionRing() {
+                [selectRingHalo, selectRingCore].forEach(ring => {
+                    ring.classList.remove("sp-ring-pulse");
+                    void ring.getBoundingClientRect(); // force reflow to restart the animation
+                    ring.classList.add("sp-ring-pulse");
+                });
+            }
+
+            const speciesSearch = SpeciesSearch.create({
+                input: document.getElementById("lh-species-search"),
+                list: document.getElementById("lh-species-list"),
+                clearBtn: document.getElementById("lh-species-clear"),
+                getRows: () => rows,
+                onSelect: row => {
+                    selectedKey = rowKey(row);
+                    updateSelectionRing();
+                    renderSpeciesPanel();
+                    pulseSelectionRing();
+                },
+                onClear: () => {
+                    selectedKey = null;
+                    updateSelectionRing();
+                    renderSpeciesPanel();
+                },
+            });
+
+            // Clicking the panel's photo or name opens the same species-detail
+            // modal as clicking the dot itself.
+            document.getElementById("lh-species-panel").addEventListener("click", e => {
+                if (!e.target.closest(".sp-panel-img, .sp-panel-name")) return;
+                const row = selectedKey ? rowByKey.get(selectedKey) : null;
+                if (row) BirdDetail.open(row);
+            });
 
             // ── Brush (drag a mass range) ─────────────────────────────────
             function svgPoint(evt) {
@@ -736,6 +829,8 @@
                 }).join("");
                 sel.value = currentMetricIdx;
                 document.getElementById("lh-color").disabled = false;
+                document.getElementById("lh-species-search").disabled = false;
+                document.getElementById("lh-species-clear").disabled = false;
             }
 
             // ── Main render for a metric ──────────────────────────────────
@@ -753,12 +848,16 @@
                 renderPoints(currentPoints, animate);
                 renderCoverage(m, currentPoints);
                 if (brush.active) renderBrushPanel();
+                updateSelectionRing();
+                renderSpeciesPanel();
             }
 
             // ── Init ──────────────────────────────────────────────────────
             function init() {
                 document.getElementById("lh-empty").hidden = true;
                 svg.removeAttribute("hidden");
+                selectedKey = null;
+                speciesSearch.clear();
                 buildMassDomain(rows);
                 buildScaffold();
                 populateMetricSelect();
@@ -790,9 +889,14 @@
                     document.body.style.overflow = "hidden";
                 }
 
+                let autoLoadOnClose = true;
                 function closeHelp() {
                     modal.hidden = true;
                     document.body.style.overflow = "";
+                    if (autoLoadOnClose) {
+                        autoLoadOnClose = false;
+                        loadData();
+                    }
                 }
 
                 btn.addEventListener("click", openHelp);
@@ -802,13 +906,7 @@
                     if (e.key === "Escape" && !modal.hidden) closeHelp();
                 });
 
-                const KEY = "sowi:life_history_scaling:seen_help_v1";
-                if (!sessionStorage.getItem(KEY)) {
-                    openHelp();
-                    try {
-                        sessionStorage.setItem(KEY, "1");
-                    } catch {}
-                }
+                openHelp();
             })();
         </script>
     </body>

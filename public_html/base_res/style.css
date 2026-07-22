@@ -59,11 +59,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.25rem 2.5rem;
+    padding: 0.8rem 2.5rem;
 }
 
 .logo-box img {
-    width: clamp(2rem, 16vw, 12rem);
+    width: clamp(2rem, 16vw, 8rem);
 }
 
 .site-nav {
@@ -250,6 +250,13 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 2.5rem;
+    overflow: hidden;
+}
+
+.card-img-placeholder img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .card-icon {

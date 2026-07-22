@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="base_res/img/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Species Bubble Explorer — Soaring Wild</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Public+Sans:wght@400&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="base_res/style.css" />
+        <link rel="stylesheet" href="base_res/explorer.css" />
+        <style>
+            .site-header {
+                position: sticky;
+                top: 0;
+                background: var(--dark);
+            }
+        </style>
+    </head>
+    <body>
+        <header class="site-header">
+            <a href="/" class="logo-box"
+                ><img src="base_res/img/SoWi_title_light.png"
+            /></a>
+            <ul class="site-nav">
+                <li><a href="/#about">About Us</a></li>
+                <li><a href="/#projects">Our Projects</a></li>
+                <li><a href="resources.html">Resources</a></li>
+            </ul>
+        </header>
+
+        <main class="bbd-main">
+            <div class="bbd-header">
+                <div>
+                    <a href="data_explorer.html" class="page-back">&larr; Avian Data Explorer</a>
+                    <h1>Species Bubble Explorer</h1>
+                </div>
+                <div class="bbd-header-actions">
+                    <button class="btn btn--ghost" id="bx-help-btn">About this page</button>
+                    <button class="btn btn--pulse" id="bx-load-btn">Load Data</button>
+                </div>
+            </div>
+            <p id="bbd-status"></p>
+
+            <div class="bx-presets" id="bx-presets">
+                <span class="bx-presets-label">Try a story:</span>
+                <button type="button" class="bx-preset-btn" data-preset="allometry" disabled>Fast vs. Slow</button>
+                <button type="button" class="bx-preset-btn" data-preset="guild" disabled>Meat vs. Plants</button>
+                <button type="button" class="bx-preset-btn" data-preset="dimorphism" disabled>Battle of the Sexes</button>
+                <button type="button" class="bx-preset-btn" data-preset="matrix" disabled>Habitat &times; Diet</button>
+            </div>
+
+            <div class="tc-controls">
+                <div class="tc-field">
+                    <label for="bx-x">X axis</label>
+                    <select id="bx-x" disabled><option>Load data to choose…</option></select>
+                </div>
+                <div class="tc-field">
+                    <label for="bx-y">Y axis</label>
+                    <select id="bx-y" disabled><option>Load data to choose…</option></select>
+                </div>
+                <div class="tc-field">
+                    <label for="bx-color">Color by</label>
+                    <select id="bx-color" disabled><option>Load data to choose…</option></select>
+                </div>
+                <span id="bx-count"></span>
+            </div>
+
+            <p class="lh-coverage" id="bx-coverage"></p>
+            <p class="bx-note" id="bx-note" hidden></p>
+
+            <div class="tc-legend" id="bx-legend" style="display:none"></div>
+
+            <div class="sp-layout">
+                <div class="lh-chart-wrap" id="bx-chart-wrap">
+                    <p class="tc-empty" id="bx-empty">Load the data, then choose what to compare — bubble size is always body mass.</p>
+                    <svg id="bx-svg" class="lh-svg" viewBox="0 0 960 660" preserveAspectRatio="xMidYMid meet" hidden></svg>
+                </div>
+                <aside class="sp-side">
+                    <div class="sp-search">
+                        <div class="sp-search-input-row">
+                            <input type="search" id="bx-species-search" placeholder="Find a species…" autocomplete="off" disabled />
+                            <button type="button" class="sp-search-clear" id="bx-species-clear" aria-label="Clear search" disabled>&times;</button>
+                        </div>
+                        <ul class="sp-search-list" id="bx-species-list" hidden></ul>
+                    </div>
+                    <div class="sp-panel" id="bx-species-panel">
+                        <p class="sp-panel-placeholder">Search for a species above to locate and inspect its bubble.</p>
+                    </div>
+                </aside>
+            </div>
+        </main>
+
+        <div id="bx-tooltip" hidden></div>
+
+        <button id="scroll-top-btn" class="scroll-top-btn" type="button" aria-label="Scroll to top">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
+        <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
+            <li><a href="/#about">About Us</a></li>
+            <li><a href="/#projects">Our Projects</a></li>
+            <li><a href="resources.html">Resources</a></li>
+        </ul>
+
+        <!-- How to use / About this page -->
+        <div id="help-modal" class="lm-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
+            <div class="lm-backdrop"></div>
+            <div class="lm-panel">
+                <div class="lm-head">
+                    <h2 id="help-title">About this page</h2>
+                    <button class="lm-close" aria-label="Close">&times;</button>
+                </div>
+                <div class="lm-body">
+                    <section class="lm-section">
+                        <h3>How to use it</h3>
+                        <p>
+                            The dataset loads automatically once you close this panel. Every
+                            bubble is a species — <strong>size is always body mass</strong>
+                            (larger = heavier bird, on an area-proportional scale). Choose what
+                            <strong>X axis</strong>, <strong>Y axis</strong>, and
+                            <strong>Color by</strong> mean, or click one of the
+                            <strong>story presets</strong> above the controls for a hand-picked
+                            view.
+                        </p>
+                        <p>
+                            Hovering a bubble shows its name. To find a specific species, type
+                            its common or scientific name into the <strong>search box</strong>
+                            beside the chart — picking a match highlights its bubble with a ring
+                            and opens a detail card below the search box with its current X/Y/
+                            color values. Click a bubble, or the photo/name in its detail card,
+                            to open the full species profile.
+                        </p>
+                        <p>
+                            Some axes are categorical (primary diet, habitat, taxonomic order,
+                            migration status). Pick a categorical field for <em>both</em> axes
+                            and bubbles pack into a grid of cells — a "who eats what, and
+                            where" matrix. Pick one categorical and one numeric field for a
+                            beeswarm-style column layout. Two numeric fields give a classic
+                            scatter. Bubbles gently push apart when they'd overlap, so a
+                            crowded cluster can spill slightly past its exact position — that's
+                            expected, not an error.
+                        </p>
+                        <p>
+                            Species missing the data needed for the current X or Y are hidden,
+                            with a count shown above the chart. To keep colors readable, diet,
+                            habitat, and order are grouped into their four most common values
+                            plus "Other" — search for a species and check its detail card to see
+                            its exact value regardless of how it's grouped.
+                        </p>
+                    </section>
+                    <section class="lm-section">
+                        <h3>About this data</h3>
+                        <p>
+                            The species data on this page comes from
+                            <strong>BIRDBASE</strong>, a peer-reviewed global dataset of avian
+                            biogeography, conservation, ecology, and life-history traits &mdash;
+                            78 traits for 11,589 species across 254 families, synthesized from
+                            367 published sources spanning 1957&ndash;2025.
+                        </p>
+                        <p>
+                            Şekercioğlu, Ç.H., Kittelberger, K.D., Mota, F.M.M. et al.
+                            <em>BIRDBASE: A Global Dataset of Avian Biogeography, Conservation,
+                            Ecology and Life History Traits.</em> Scientific Data (2025).
+                        </p>
+                        <p style="margin-top: 0.75rem">
+                            This page is a downstream retelling of that dataset, not a
+                            replacement for the source &mdash; see the full
+                            <a
+                                href="https://www.nature.com/articles/s41597-025-05615-3"
+                                target="_blank"
+                                rel="noopener"
+                                >paper on nature.com</a
+                            >
+                            for methodology, sources, and citation details.
+                        </p>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <script src="base_res/bird_data.js"></script>
+        <script src="base_res/bird_detail.js"></script>
+        <script src="base_res/hover_tooltip.js"></script>
+        <script src="base_res/species_search.js"></script>
+        <script src="base_res/scroll_top.js"></script>
+        <script>
+            // ── Load Data ───────────────────────────────────────────────────
+            const statusEl = document.getElementById("bbd-status");
+            let rows = [];
+            let plottableRows = []; // rows with a usable MASS_AVG (size is always mass)
+            let rowByKey = new Map();
+
+            async function loadData() {
+                const loadBtn = document.getElementById("bx-load-btn");
+                loadBtn.classList.remove("btn--pulse");
+                loadBtn.classList.add("btn--loading");
+                loadBtn.disabled = true;
+                statusEl.textContent = "Loading…";
+                try {
+                    rows = await BirdData.load();
+                    rowByKey = new Map(rows.map(r => [rowKey(r), r]));
+                    plottableRows = rows.filter(r => num(r.MASS_AVG) > 0);
+                    statusEl.textContent = `${rows.length} row${rows.length !== 1 ? "s" : ""} loaded.`;
+                    init();
+                } catch (err) {
+                    statusEl.textContent = `Error: ${err.message}`;
+                    loadBtn.classList.add("btn--pulse");
+                } finally {
+                    loadBtn.classList.remove("btn--loading");
+                    loadBtn.disabled = false;
+                }
+            }
+            document.getElementById("bx-load-btn").addEventListener("click", loadData);
+
+            // ── Helpers ─────────────────────────────────────────────────────
+            const num = v => (v === null || v === undefined || v === "" || isNaN(+v)) ? null : +v;
+            const esc = HoverTooltip.esc;
+            function rowKey(row) {
+                return (row.GENUS && row.SPECIES) ? `${row.GENUS}_${row.SPECIES}` : `name_${row.COMMON_NAME}`;
+            }
+            function fmtNum(v, digits) {
+                const d = digits === undefined ? 1 : digits;
+                const r = Math.round(v * Math.pow(10, d)) / Math.pow(10, d);
+                return Number.isInteger(r) ? String(r) : r.toFixed(d);
+            }
+            function fmtMass(v) {
+                return v >= 1000
+                    ? (v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + "kg"
+                    : Math.round(v).toLocaleString() + "g";
+            }
+
+            // IUCN Red List → color (shared convention with other Data Explorer pages).
+            const STATUS_COLORS = {
+                "EX": "#111111", "EW": "#3a2a2a",
+                "CR (PE)": "#7a0d0d", "CR (PEW)": "#7a0d0d", "CR": "#9b1b1b",
+                "EN": "#d1582b", "VU": "#e0a52e", "NT": "#b8c24a",
+                "LC": "#5aa45a", "DD": "#b8bcc4",
+            };
+            const STATUS_LABELS = {
+                "EX": "Extinct", "EW": "Extinct in the Wild",
+                "CR (PE)": "Critically Endangered (Possibly Extinct)",
+                "CR (PEW)": "Critically Endangered (Possibly Extinct in Wild)",
+                "CR": "Critically Endangered", "EN": "Endangered", "VU": "Vulnerable",
+                "NT": "Near-threatened", "LC": "Least Concern", "DD": "Data Deficient",
+            };
+            const STATUS_ORDER = ["EX", "EW", "CR (PE)", "CR (PEW)", "CR", "EN", "VU", "NT", "LC", "DD"];
+            // Threat-severity rank for the numeric axis use of RED_LIST (DD excluded — it isn't a point on the continuum).
+            const RED_RANK_ORDER = ["LC", "NT", "VU", "EN", "CR", "CR (PEW)", "CR (PE)", "EW", "EX"];
+
+            const LAT_LABELS = {
+                1: "Tropical", 2: "Tropical–Temperate", 3: "Temperate",
+                4: "Temperate–Polar", 5: "Tropical–Polar",
+            };
+            const COOP_LABELS = {
+                0: "Solitary breeder", 1: "Cooperative breeder",
+                2: "Family helper", 3: "Occasional help",
+            };
+
+            // Validated 4-hue categorical set (all-pairs CVD-safe — see ref/design_bubble_chart.md)
+            // plus a neutral "Other" gray for everything past the top four.
+            const CAT_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#4a3aa7"];
+            const OTHER_COLOR = "#9a978d";
+            const NEUTRAL_COLOR = "#5b7a9e";
+            // Ordinal blue ramp (light→dark = tropical→polar), reused for LAT_RANGE color.
+            const LAT_RAMP = { 1: "#86b6ef", 2: "#5598e7", 3: "#2a78d6", 4: "#1c5cab", 5: "#104281" };
+            const SEQ_BLUE_LO = [205, 226, 251]; // #cde2fb
+            const SEQ_BLUE_HI = [13, 54, 107];   // #0d366b
+            const DIV_LO = [42, 120, 214];  // #2a78d6 blue (herbivore)
+            const DIV_MID = [240, 239, 236]; // #f0efec neutral gray (balanced)
+            const DIV_HI = [227, 73, 72];   // #e34948 red (carnivore)
+
+            function lerpHex(c0, c1, t) {
+                const r = Math.round(c0[0] + (c1[0] - c0[0]) * t);
+                const g = Math.round(c0[1] + (c1[1] - c0[1]) * t);
+                const b = Math.round(c0[2] + (c1[2] - c0[2]) * t);
+                return `rgb(${r},${g},${b})`;
+            }
+            function seqBlue(t) { return lerpHex(SEQ_BLUE_LO, SEQ_BLUE_HI, Math.max(0, Math.min(1, t))); }
+            function divergeBR(t) {
+                // t in [-1, 1]; 0 = neutral midpoint
+                if (t <= 0) return lerpHex(DIV_LO, DIV_MID, 1 + t);
+                return lerpHex(DIV_MID, DIV_HI, t);
+            }
+
+            // ── Derived metrics ────────────────────────────────────────────
+            function carnivoryScore(row) {
+                const IN = num(row.DIET_IN) || 0, VE = num(row.DIET_VE) || 0, FI = num(row.DIET_FI) || 0, SC = num(row.DIET_SC) || 0;
+                const FR = num(row.DIET_FR) || 0, NE = num(row.DIET_NE) || 0, SE = num(row.DIET_SE) || 0, PL = num(row.DIET_PL) || 0;
+                if (row.DIET_PRIMARY === "No Information") return null;
+                return (IN + VE + FI + SC) - (FR + NE + SE + PL);
+            }
+            function dimorphismRatio(row) {
+                const mVals = [num(row.MASS_MIN_M), num(row.MASS_MAX_M)].filter(v => v !== null);
+                const fVals = [num(row.MASS_MIN_F), num(row.MASS_MAX_F)].filter(v => v !== null);
+                if (!mVals.length || !fVals.length) return null;
+                const m = mVals.reduce((a, b) => a + b, 0) / mVals.length;
+                const f = fVals.reduce((a, b) => a + b, 0) / fVals.length;
+                return f > 0 ? m / f : null;
+            }
+            function reproductiveInvestment(row) {
+                const cMin = num(row.CLUTCH_MIN), cMax = num(row.CLUTCH_MAX);
+                const bMin = num(row.BROODS_MIN), bMax = num(row.BROODS_MAX);
+                const clutch = (cMin !== null && cMax !== null) ? (cMin + cMax) / 2 : (cMin ?? cMax);
+                const broods = (bMin !== null && bMax !== null) ? (bMin + bMax) / 2 : (bMin ?? bMax);
+                return (clutch === null || clutch === undefined || broods === null || broods === undefined) ? null : clutch * broods;
+            }
+            function migrationStatus(row) {
+                if (num(row.MIGRATION) === 1) return "Migrant";
+                if (num(row.MIGRATION) === 2) return "Partial migrant";
+                if (num(row.MIGRATION_ELEV) === 1) return "Altitudinal";
+                return "Sedentary";
+            }
+            function matingSystem(row) {
+                if (num(row.SOCIAL_6) === 1) return "Lekking";
+                if (num(row.POLYGYNOUS) === 1) return "Polygynous";
+                if (num(row.MONOGAMOUS) === 1) return "Monogamous";
+                return "Unknown";
+            }
+            function redListRank(row) {
+                const idx = RED_RANK_ORDER.indexOf(row.RED_LIST);
+                return idx < 0 ? null : idx;
+            }
+
+            // ── Top-4 + Other grouping (computed once data is loaded) ──────
+            function computeTopSet(getter) {
+                const counts = new Map();
+                plottableRows.forEach(r => {
+                    const v = (getter(r) || "").trim();
+                    if (v) counts.set(v, (counts.get(v) || 0) + 1);
+                });
+                const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+                const top = sorted.slice(0, 4);
+                const hasOther = sorted.length > 4;
+                return { top, order: hasOther ? [...top, "Other"] : top, hasOther };
+            }
+            let TOP_SETS = {};
+            function makeGroupedGetter(rawKey, topSetKey) {
+                return function (row) {
+                    const raw = (row[rawKey] || "").trim();
+                    if (!raw) return null;
+                    return TOP_SETS[topSetKey].top.includes(raw) ? raw : "Other";
+                };
+            }
+            function catColor(order, val) {
+                if (val === "Other") return OTHER_COLOR;
+                const idx = order.indexOf(val);
+                return idx >= 0 && idx < CAT_COLORS.length ? CAT_COLORS[idx] : OTHER_COLOR;
+            }
+
+            // ── Scales ──────────────────────────────────────────────────────
+            function niceNum(range, round) {
+                const exponent = Math.floor(Math.log10(range || 1));
+                const fraction = range / Math.pow(10, exponent);
+                let nf;
+                if (round) nf = fraction < 1.5 ? 1 : fraction < 3 ? 2 : fraction < 7 ? 5 : 10;
+                else nf = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
+                return nf * Math.pow(10, exponent);
+            }
+            function niceTicks(lo, hi, count) {
+                const range = niceNum(hi - lo, false);
+                const step = niceNum(range / (count - 1), true) || 1;
+                const niceLo = Math.floor(lo / step) * step;
+                const niceHi = Math.ceil(hi / step) * step;
+                const ticks = [];
+                for (let v = niceLo; v <= niceHi + step * 1e-6; v += step) ticks.push(+v.toFixed(6));
+                return ticks;
+            }
+            function niceLogTicks(lo, hi) {
+                const ticks = [];
+                const startExp = Math.floor(Math.log10(lo));
+                const endExp = Math.ceil(Math.log10(hi));
+                for (let e = startExp; e <= endExp; e++) {
+                    [1, 2, 5].forEach(m => {
+                        const v = m * Math.pow(10, e);
+                        if (v >= lo * 0.999 && v <= hi * 1.001) ticks.push(v);
+                    });
+                }
+                return [...new Set(ticks)].sort((a, b) => a - b);
+            }
+            function makeLinearScale(lo, hi, r0, r1) {
+                const span = (hi - lo) || 1;
+                return {
+                    pos: v => r0 + ((v - lo) / span) * (r1 - r0),
+                    ticks: () => niceTicks(lo, hi, 6),
+                };
+            }
+            function makeLogScale(lo, hi, r0, r1) {
+                const l0 = Math.log10(lo), l1 = Math.log10(hi);
+                const span = (l1 - l0) || 1;
+                return {
+                    pos: v => r0 + ((Math.log10(v) - l0) / span) * (r1 - r0),
+                    ticks: () => niceLogTicks(lo, hi),
+                };
+            }
+            function makeBandScale(categories, r0, r1) {
+                const n = categories.length || 1;
+                const step = (r1 - r0) / n;
+                const centers = {};
+                categories.forEach((c, i) => { centers[c] = r0 + step * (i + 0.5); });
+                return { band: c => centers[c], step, categories };
+            }
+
+            // ── Field registry ─────────────────────────────────────────────
+            // Built after data loads (categorical grouping depends on the data).
+            let AXIS_FIELDS = {};
+            let AXIS_ORDER = [];
+            let COLOR_MODES = {};
+            let COLOR_ORDER = [];
+
+            function buildFieldRegistries() {
+                TOP_SETS = {
+                    dietPrimary: computeTopSet(r => r.DIET_PRIMARY),
+                    habitatPrimary: computeTopSet(r => r.HABITAT_PRIMARY),
+                    orderGroup: computeTopSet(r => r.ORDER),
+                };
+                const dietGet = makeGroupedGetter("DIET_PRIMARY", "dietPrimary");
+                const habGet = makeGroupedGetter("HABITAT_PRIMARY", "habitatPrimary");
+                const ordGet = makeGroupedGetter("ORDER", "orderGroup");
+
+                AXIS_FIELDS = {
+                    mass: { id: "mass", label: "Body mass", group: "Numeric", type: "numeric", log: true,
+                        get: r => num(r.MASS_AVG), fmt: v => fmtMass(v) },
+                    carnivory: { id: "carnivory", label: "Carnivory score (plant ↔ meat)", group: "Numeric", type: "numeric",
+                        domain: [-10, 10], refValue: 0, refLabel: "Balanced",
+                        get: carnivoryScore, fmt: v => fmtNum(v, 0) },
+                    dimorphism: { id: "dimorphism", label: "Sexual dimorphism (male ÷ female mass)", group: "Numeric", type: "numeric",
+                        domain: [0.5, 2.1], refValue: 1, refLabel: "Equal size",
+                        get: dimorphismRatio, fmt: v => fmtNum(v, 2) + "×" },
+                    esi: { id: "esi", label: "Ecological specialization (ESI)", group: "Numeric", type: "numeric",
+                        domain: [0.3, 2.05],
+                        get: r => num(r.DIET_ESI), fmt: v => fmtNum(v, 2) },
+                    habBreadth: { id: "habBreadth", label: "Habitat breadth", group: "Numeric", type: "numeric",
+                        get: r => num(r.HABITAT_BREADTH), fmt: v => fmtNum(v, 0) },
+                    dietBreadth: { id: "dietBreadth", label: "Diet breadth", group: "Numeric", type: "numeric",
+                        get: r => num(r.DIET_BREADTH), fmt: v => fmtNum(v, 0) },
+                    invest: { id: "invest", label: "Reproductive investment (clutch × broods/yr)", group: "Numeric", type: "numeric",
+                        get: reproductiveInvestment, fmt: v => fmtNum(v, 1) },
+                    clutch: { id: "clutch", label: "Clutch size (max eggs)", group: "Numeric", type: "numeric",
+                        get: r => num(r.CLUTCH_MAX), fmt: v => fmtNum(v, 0) },
+                    incubation: { id: "incubation", label: "Incubation period (days, max) ⚠ sparse", group: "Numeric", type: "numeric",
+                        get: r => num(r.INCUBATION_MAX), fmt: v => fmtNum(v, 0) },
+                    fledging: { id: "fledging", label: "Fledging period (days, max) ⚠ sparse", group: "Numeric", type: "numeric",
+                        get: r => num(r.FLEDGLING_MAX), fmt: v => fmtNum(v, 0) },
+                    latRange: { id: "latRange", label: "Latitudinal range", group: "Ordinal", type: "numeric",
+                        domain: [1, 5], tickLabels: LAT_LABELS,
+                        get: r => num(r.LAT_RANGE), fmt: v => LAT_LABELS[Math.round(v)] || v },
+                    redListRank: { id: "redListRank", label: "Conservation threat level", group: "Ordinal", type: "numeric",
+                        domain: [0, RED_RANK_ORDER.length - 1], tickLabels: RED_RANK_ORDER.reduce((m, s, i) => (m[i] = s, m), {}),
+                        get: redListRank, fmt: v => STATUS_LABELS[RED_RANK_ORDER[Math.round(v)]] || "—" },
+                    coop: { id: "coop", label: "Cooperative breeding", group: "Ordinal", type: "numeric",
+                        domain: [0, 3], tickLabels: COOP_LABELS,
+                        get: r => num(r.COOPERATIVE_BREEDER), fmt: v => COOP_LABELS[Math.round(v)] || v },
+                    dietPrimary: { id: "dietPrimary", label: "Primary diet", group: "Categorical", type: "categorical",
+                        get: dietGet, order: () => TOP_SETS.dietPrimary.order, fmt: v => v },
+                    habitatPrimary: { id: "habitatPrimary", label: "Primary habitat", group: "Categorical", type: "categorical",
+                        get: habGet, order: () => TOP_SETS.habitatPrimary.order, fmt: v => v },
+                    orderGroup: { id: "orderGroup", label: "Taxonomic order", group: "Categorical", type: "categorical",
+                        get: ordGet, order: () => TOP_SETS.orderGroup.order, fmt: v => v },
+                    migration: { id: "migration", label: "Migration status", group: "Categorical", type: "categorical",
+                        get: migrationStatus, order: () => ["Migrant", "Partial migrant", "Altitudinal", "Sedentary"], fmt: v => v },
+                };
+                AXIS_ORDER = ["mass", "carnivory", "dimorphism", "esi", "habBreadth", "dietBreadth", "invest",
+                    "clutch", "incubation", "fledging", "latRange", "redListRank", "coop",
+                    "dietPrimary", "habitatPrimary", "orderGroup", "migration"];
+
+                COLOR_MODES = {
+                    none: { id: "none", label: "None", type: "none" },
+                    redlist: { id: "redlist", label: "Conservation status", type: "status",
+                        get: r => r.RED_LIST || null, color: v => STATUS_COLORS[v] || OTHER_COLOR,
+                        legend: () => STATUS_ORDER.filter(s => plottableRows.some(r => r.RED_LIST === s)).map(s => ({ label: STATUS_LABELS[s], color: STATUS_COLORS[s] })) },
+                    latRange: { id: "latRange", label: "Latitudinal range", type: "seq-fixed",
+                        get: r => num(r.LAT_RANGE), color: v => LAT_RAMP[v] || OTHER_COLOR,
+                        legend: () => [1, 2, 3, 4, 5].map(v => ({ label: LAT_LABELS[v], color: LAT_RAMP[v] })) },
+                    dietPrimary: { id: "dietPrimary", label: "Primary diet", type: "categorical",
+                        get: dietGet, order: () => TOP_SETS.dietPrimary.order,
+                        color: v => catColor(TOP_SETS.dietPrimary.order, v),
+                        legend: () => TOP_SETS.dietPrimary.order.map(v => ({ label: v, color: catColor(TOP_SETS.dietPrimary.order, v) })) },
+                    habitatPrimary: { id: "habitatPrimary", label: "Primary habitat", type: "categorical",
+                        get: habGet, order: () => TOP_SETS.habitatPrimary.order,
+                        color: v => catColor(TOP_SETS.habitatPrimary.order, v),
+                        legend: () => TOP_SETS.habitatPrimary.order.map(v => ({ label: v, color: catColor(TOP_SETS.habitatPrimary.order, v) })) },
+                    orderGroup: { id: "orderGroup", label: "Taxonomic order", type: "categorical",
+                        get: ordGet, order: () => TOP_SETS.orderGroup.order,
+                        color: v => catColor(TOP_SETS.orderGroup.order, v),
+                        legend: () => TOP_SETS.orderGroup.order.map(v => ({ label: v, color: catColor(TOP_SETS.orderGroup.order, v) })) },
+                    migration: { id: "migration", label: "Migration status", type: "categorical-fixed",
+                        get: migrationStatus,
+                        map: { "Migrant": CAT_COLORS[0], "Partial migrant": CAT_COLORS[1], "Altitudinal": CAT_COLORS[3], "Sedentary": CAT_COLORS[2] },
+                        color: function (v) { return this.map[v] || OTHER_COLOR; },
+                        legend: function () { return Object.entries(this.map).map(([label, color]) => ({ label, color })); } },
+                    matingSystem: { id: "matingSystem", label: "Mating system", type: "categorical-fixed",
+                        get: matingSystem,
+                        map: { "Monogamous": CAT_COLORS[0], "Polygynous": CAT_COLORS[1], "Lekking": CAT_COLORS[2], "Unknown": OTHER_COLOR },
+                        color: function (v) { return this.map[v] || OTHER_COLOR; },
+                        legend: function () { return Object.entries(this.map).map(([label, color]) => ({ label, color })); } },
+                    carnivory: { id: "carnivory", label: "Carnivory score", type: "diverging",
+                        get: carnivoryScore, color: v => divergeBR(Math.max(-1, Math.min(1, v / 10))),
+                        legend: () => [{ label: "Plant-eater", color: divergeBR(-1) }, { label: "Balanced", color: divergeBR(0) }, { label: "Meat-eater", color: divergeBR(1) }] },
+                    esi: { id: "esi", label: "Specialization (ESI)", type: "sequential",
+                        get: r => num(r.DIET_ESI), color: v => seqBlue((v - 0.3) / (2.0 - 0.3)),
+                        legend: () => [{ label: "Generalist", color: seqBlue(0) }, { label: "Specialist", color: seqBlue(1) }] },
+                };
+                COLOR_ORDER = ["none", "redlist", "latRange", "carnivory", "esi", "dietPrimary", "habitatPrimary", "orderGroup", "migration", "matingSystem"];
+            }
+
+            // ── Radius scale (fixed across all views — always body mass) ────
+            const R_MIN = 2.5, R_MAX = 26;
+            let massLo = 1, massHi = 10;
+            function buildRadiusScale() {
+                let lo = Infinity, hi = -Infinity;
+                plottableRows.forEach(r => { const v = num(r.MASS_AVG); if (v < lo) lo = v; if (v > hi) hi = v; });
+                massLo = lo; massHi = hi;
+            }
+            function radiusFor(mass) {
+                const t = (Math.sqrt(mass) - Math.sqrt(massLo)) / (Math.sqrt(massHi) - Math.sqrt(massLo));
+                return R_MIN + Math.max(0, Math.min(1, t)) * (R_MAX - R_MIN);
+            }
+
+            // ── Geometry ──────────────────────────────────────────────────
+            const VB_W = 960, VB_H = 660;
+            const MARGIN = { left: 78, right: 34, top: 30, bottom: 88 };
+            const plot = { x0: MARGIN.left, x1: VB_W - MARGIN.right, y0: MARGIN.top, y1: VB_H - MARGIN.bottom };
+
+            function buildAxisScale(field, orientation) {
+                const values = [];
+                plottableRows.forEach(r => { const v = field.get(r); if (v !== null && v !== undefined) values.push(v); });
+                const range = orientation === "x" ? [plot.x0, plot.x1] : [plot.y1, plot.y0];
+                if (field.type === "categorical") {
+                    const cats = field.order();
+                    return { kind: "categorical", scale: makeBandScale(cats, range[0], range[1]), categories: cats };
+                }
+                let lo, hi;
+                if (field.domain) { [lo, hi] = field.domain; }
+                else {
+                    lo = Math.min(...values); hi = Math.max(...values);
+                    if (!isFinite(lo) || !isFinite(hi) || lo === hi) { lo = 0; hi = 1; }
+                    const pad = (hi - lo) * 0.08 || Math.max(Math.abs(hi) * 0.1, 1);
+                    if (!field.log) { lo -= pad; hi += pad; }
+                }
+                const s = field.log ? makeLogScale(lo, hi, range[0], range[1]) : makeLinearScale(lo, hi, range[0], range[1]);
+                return { kind: "numeric", scale: s, lo, hi };
+            }
+
+            // ── SVG scaffolding ───────────────────────────────────────────
+            const SVG_NS = "http://www.w3.org/2000/svg";
+            const svg = document.getElementById("bx-svg");
+            function el(tag, attrs) {
+                const e = document.createElementNS(SVG_NS, tag);
+                for (const k in attrs) {
+                    if (k === "class") e.setAttribute("class", attrs[k]);
+                    else e.setAttribute(k, attrs[k]);
+                }
+                return e;
+            }
+            function group(id) { const g = el("g", { id }); svg.appendChild(g); return g; }
+            const selectRingHalo = el("circle", { class: "sp-ring-halo", r: 0 });
+            const selectRingCore = el("circle", { class: "sp-ring-core", r: 0 });
+            function buildScaffold() {
+                svg.innerHTML = "";
+                group("bx-g-grid");
+                group("bx-g-ref");
+                group("bx-g-axis-x");
+                group("bx-g-axis-y");
+                group("bx-g-points");
+                // Rendered after bx-g-points so the ring always sits on top
+                // of every bubble, however many are (re)appended over time.
+                const gSelect = group("bx-g-select");
+                gSelect.appendChild(selectRingHalo);
+                gSelect.appendChild(selectRingCore);
+            }
+
+            function wrapLabel(label) {
+                if (label.length <= 13) return [label];
+                let idx = label.lastIndexOf(" ", Math.ceil(label.length / 2));
+                if (idx < 0) idx = label.indexOf(" ");
+                if (idx < 0) return [label];
+                return [label.slice(0, idx), label.slice(idx + 1)];
+            }
+            function appendCatLabel(g, x, yBase, label) {
+                const lines = wrapLabel(label);
+                const t = el("text", { x, y: yBase, "text-anchor": "middle", class: "bx-axis-cat-label" });
+                lines.forEach((line, i) => {
+                    const ts = el("tspan", { x, dy: i === 0 ? 0 : 12 });
+                    ts.textContent = line;
+                    t.appendChild(ts);
+                });
+                g.appendChild(t);
+            }
+
+            // ── Axes ──────────────────────────────────────────────────────
+            function renderAxisX(field, axisScale) {
+                const g = document.getElementById("bx-g-axis-x");
+                g.innerHTML = "";
+                g.appendChild(el("line", { x1: plot.x0, x2: plot.x1, y1: plot.y1, y2: plot.y1, stroke: "#c9cdd4" }));
+                if (axisScale.kind === "categorical") {
+                    axisScale.categories.forEach(cat => {
+                        const x = axisScale.scale.band(cat);
+                        appendCatLabel(g, x, plot.y1 + 22, field.fmt ? field.fmt(cat) : cat);
+                    });
+                } else {
+                    axisScale.scale.ticks().forEach(v => {
+                        const x = axisScale.scale.pos(v);
+                        g.appendChild(el("line", { x1: x, x2: x, y1: plot.y1, y2: plot.y1 + 6, stroke: "#c9cdd4" }));
+                        const label = field.tickLabels ? (field.tickLabels[Math.round(v)] || "") : fmtNum(v);
+                        const t = el("text", { x, y: plot.y1 + 20, "text-anchor": "middle", class: "bx-axis-tick-label" });
+                        t.textContent = label;
+                        g.appendChild(t);
+                    });
+                }
+                const title = el("text", { x: (plot.x0 + plot.x1) / 2, y: VB_H - 14, "text-anchor": "middle", class: "bx-axis-label" });
+                title.textContent = field.label;
+                g.appendChild(title);
+            }
+            function renderAxisY(field, axisScale) {
+                const g = document.getElementById("bx-g-axis-y");
+                g.innerHTML = "";
+                g.appendChild(el("line", { x1: plot.x0, x2: plot.x0, y1: plot.y0, y2: plot.y1, stroke: "#c9cdd4" }));
+                if (axisScale.kind === "categorical") {
+                    axisScale.categories.forEach(cat => {
+                        const y = axisScale.scale.band(cat);
+                        const label = field.fmt ? field.fmt(cat) : cat;
+                        const lines = wrapLabel(label);
+                        const t = el("text", { x: plot.x0 - 10, y: y + 4 - (lines.length - 1) * 6, "text-anchor": "end", class: "bx-axis-cat-label" });
+                        lines.forEach((line, i) => {
+                            const ts = el("tspan", { x: plot.x0 - 10, dy: i === 0 ? 0 : 12 });
+                            ts.textContent = line;
+                            t.appendChild(ts);
+                        });
+                        g.appendChild(t);
+                    });
+                } else {
+                    axisScale.scale.ticks().forEach(v => {
+                        const y = axisScale.scale.pos(v);
+                        g.appendChild(el("line", { x1: plot.x0 - 6, x2: plot.x0, y1: y, y2: y, stroke: "#c9cdd4" }));
+                        g.appendChild(el("line", { x1: plot.x0, x2: plot.x1, y1: y, y2: y, class: "bx-gridline" }));
+                        const label = field.tickLabels ? (field.tickLabels[Math.round(v)] || "") : fmtNum(v);
+                        const t = el("text", { x: plot.x0 - 10, y: y + 4, "text-anchor": "end", class: "bx-axis-tick-label" });
+                        t.textContent = label;
+                        g.appendChild(t);
+                    });
+                }
+                const title = el("text", {
+                    x: 16, y: (plot.y0 + plot.y1) / 2, "text-anchor": "middle", class: "bx-axis-label",
+                    transform: `rotate(-90 16 ${(plot.y0 + plot.y1) / 2})`,
+                });
+                title.textContent = field.label;
+                g.appendChild(title);
+            }
+            function renderGrid(xAxisScale, yAxisScale) {
+                const g = document.getElementById("bx-g-grid");
+                g.innerHTML = "";
+                if (xAxisScale.kind === "categorical") {
+                    const cats = xAxisScale.categories;
+                    for (let i = 1; i < cats.length; i++) {
+                        const x = xAxisScale.scale.band(cats[i]) - xAxisScale.scale.step / 2;
+                        g.appendChild(el("line", { x1: x, x2: x, y1: plot.y0, y2: plot.y1, class: "bx-cell-divider" }));
+                    }
+                }
+                if (yAxisScale.kind === "categorical") {
+                    const cats = yAxisScale.categories;
+                    for (let i = 1; i < cats.length; i++) {
+                        const y = yAxisScale.scale.band(cats[i]) + yAxisScale.scale.step / 2;
+                        g.appendChild(el("line", { x1: plot.x0, x2: plot.x1, y1: y, y2: y, class: "bx-cell-divider" }));
+                    }
+                }
+            }
+            function renderRefLines(xField, xAxisScale, yField, yAxisScale) {
+                const g = document.getElementById("bx-g-ref");
+                g.innerHTML = "";
+                if (xAxisScale.kind === "numeric" && xField.refValue !== undefined && xField.refValue >= xAxisScale.lo && xField.refValue <= xAxisScale.hi) {
+                    const x = xAxisScale.scale.pos(xField.refValue);
+                    g.appendChild(el("line", { x1: x, x2: x, y1: plot.y0, y2: plot.y1, class: "bx-ref-line" }));
+                    const t = el("text", { x: x + 4, y: plot.y0 + 12, class: "bx-ref-label" });
+                    t.textContent = xField.refLabel;
+                    g.appendChild(t);
+                }
+                if (yAxisScale.kind === "numeric" && yField.refValue !== undefined && yField.refValue >= yAxisScale.lo && yField.refValue <= yAxisScale.hi) {
+                    const y = yAxisScale.scale.pos(yField.refValue);
+                    g.appendChild(el("line", { x1: plot.x0, x2: plot.x1, y1: y, y2: y, class: "bx-ref-line" }));
+                    const t = el("text", { x: plot.x1 - 4, y: y - 4, "text-anchor": "end", class: "bx-ref-label" });
+                    t.textContent = yField.refLabel;
+                    g.appendChild(t);
+                }
+            }
+
+            // ── Layout: anchor + collision relaxation ───────────────────────
+            const layoutPos = new Map(); // rowKey -> {x, y}  (persists across renders for smooth continuity)
+            function computeLayout(points, xAxisScale, yAxisScale) {
+                points.forEach(p => {
+                    p.tx = xAxisScale.kind === "categorical" ? xAxisScale.scale.band(p.xRaw) : xAxisScale.scale.pos(p.xRaw);
+                    p.ty = yAxisScale.kind === "categorical" ? yAxisScale.scale.band(p.yRaw) : yAxisScale.scale.pos(p.yRaw);
+                    const prev = layoutPos.get(p.key);
+                    p.x = prev ? prev.x : p.tx;
+                    p.y = prev ? prev.y : p.ty;
+                });
+                const ITER = 90, SPRING = 0.16, PAD = 1.1;
+                for (let iter = 0; iter < ITER; iter++) {
+                    for (let i = 0; i < points.length; i++) {
+                        points[i].x += (points[i].tx - points[i].x) * SPRING;
+                        points[i].y += (points[i].ty - points[i].y) * SPRING;
+                    }
+                    for (let a = 0; a < points.length; a++) {
+                        const A = points[a];
+                        for (let b = a + 1; b < points.length; b++) {
+                            const B = points[b];
+                            const dx = B.x - A.x, dy = B.y - A.y;
+                            const minDist = A.r + B.r + PAD;
+                            let dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < minDist) {
+                                if (dist < 0.01) { dist = 0.01; }
+                                const overlap = (minDist - dist) / 2;
+                                const ux = dx / dist, uy = dy / dist;
+                                A.x -= ux * overlap; A.y -= uy * overlap;
+                                B.x += ux * overlap; B.y += uy * overlap;
+                            }
+                        }
+                    }
+                }
+                points.forEach(p => {
+                    p.x = Math.max(plot.x0 + p.r, Math.min(plot.x1 - p.r, p.x));
+                    p.y = Math.max(plot.y0 + p.r, Math.min(plot.y1 - p.r, p.y));
+                    layoutPos.set(p.key, { x: p.x, y: p.y });
+                });
+            }
+
+            // ── Tooltip (name only — full detail lives in the side panel) ──
+            const tt = HoverTooltip.create("bx-tooltip");
+            function showTooltip(p, evt) {
+                tt.show(`<div class="sp-tip-name">${esc(p.row.COMMON_NAME || "—")}</div>`, evt);
+            }
+
+            // ── Species search: selection ring + side panel ────────────────
+            let selectedKey = null;
+            function updateSelectionRing() {
+                const c = selectedKey ? circleEls.get(selectedKey) : null;
+                if (!c) {
+                    selectRingHalo.setAttribute("opacity", 0);
+                    selectRingCore.setAttribute("opacity", 0);
+                    return;
+                }
+                const cx = c.getAttribute("cx"), cy = c.getAttribute("cy");
+                const r = parseFloat(c.getAttribute("r")) || 2.5;
+                const ringR = r + 6;
+                [selectRingHalo, selectRingCore].forEach(ring => {
+                    ring.setAttribute("cx", cx);
+                    ring.setAttribute("cy", cy);
+                    ring.setAttribute("r", ringR);
+                });
+                selectRingHalo.setAttribute("opacity", 0.9);
+                selectRingCore.setAttribute("opacity", 1);
+            }
+
+            function buildSpeciesCardHTML(row) {
+                const sci = [row.GENUS, row.SPECIES].filter(Boolean).join(" ");
+                const imgSrc = HoverTooltip.birdImgSrc(row);
+                const xRaw = xField.get(row), yRaw = yField.get(row);
+                let colorLine = "";
+                if (colorMode.id !== "none") {
+                    const raw = colorMode.get(row);
+                    const cLabel = raw === null || raw === undefined ? "—" : (colorMode.id === "redlist" ? (STATUS_LABELS[raw] || raw) : raw);
+                    colorLine = `<dt>${esc(colorMode.label)}</dt><dd>${esc(cLabel)}</dd>`;
+                }
+                const massLine = (xField.id === "mass" || yField.id === "mass")
+                    ? "" // already shown via the X or Y field line below
+                    : `<dt>Body mass</dt><dd>${fmtMass(num(row.MASS_AVG))}</dd>`;
+                return `<img class="sp-panel-img" src="${esc(imgSrc)}" alt=""
+                            onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'">` +
+                    `<div class="sp-panel-name">${esc(row.COMMON_NAME || "—")}</div>` +
+                    (sci ? `<div class="sp-panel-sci">${esc(sci)}</div>` : "") +
+                    `<dl>` +
+                    `<dt>${esc(xField.label.split(" (")[0])}</dt><dd>${(xRaw === null || xRaw === undefined) ? "—" : esc(String(xField.fmt(xRaw)))}</dd>` +
+                    `<dt>${esc(yField.label.split(" (")[0])}</dt><dd>${(yRaw === null || yRaw === undefined) ? "—" : esc(String(yField.fmt(yRaw)))}</dd>` +
+                    massLine +
+                    colorLine +
+                    `</dl>`;
+            }
+
+            function renderPanelRow(row) {
+                const panelEl = document.getElementById("bx-species-panel");
+                panelEl.innerHTML = row
+                    ? buildSpeciesCardHTML(row)
+                    : `<p class="sp-panel-placeholder">Search for a species above to locate and inspect its bubble.</p>`;
+            }
+            // Shows the *selected* species (search result), i.e. what the panel
+            // reverts to once a transient hover ends. Called after render()/search.
+            function renderSpeciesPanel() {
+                renderPanelRow(selectedKey ? rowByKey.get(selectedKey) : null);
+            }
+
+            function pulseSelectionRing() {
+                [selectRingHalo, selectRingCore].forEach(ring => {
+                    ring.classList.remove("sp-ring-pulse");
+                    void ring.getBoundingClientRect(); // force reflow to restart the animation
+                    ring.classList.add("sp-ring-pulse");
+                });
+            }
+
+            const speciesSearch = SpeciesSearch.create({
+                input: document.getElementById("bx-species-search"),
+                list: document.getElementById("bx-species-list"),
+                clearBtn: document.getElementById("bx-species-clear"),
+                getRows: () => rows,
+                onSelect: row => {
+                    selectedKey = rowKey(row);
+                    updateSelectionRing();
+                    renderSpeciesPanel();
+                    pulseSelectionRing();
+                },
+                onClear: () => {
+                    selectedKey = null;
+                    updateSelectionRing();
+                    renderSpeciesPanel();
+                },
+            });
+
+            // Clicking the panel's photo or name opens the same species-detail
+            // modal as clicking the bubble itself.
+            document.getElementById("bx-species-panel").addEventListener("click", e => {
+                if (!e.target.closest(".sp-panel-img, .sp-panel-name")) return;
+                const row = selectedKey ? rowByKey.get(selectedKey) : null;
+                if (row) BirdDetail.open(row);
+            });
+
+            // ── Points (persisted + CSS-transitioned across selection changes) ─
+            const circleEls = new Map();
+            let pointsByKey = new Map(); // rowKey -> latest point data (hover/click always read live values, not the object from creation time)
+            function createBubble(p) {
+                const c = el("circle", { class: "bx-bubble", r: 0, cx: p.x, cy: p.y, fill: p.fill, opacity: 0 });
+                c.dataset.key = p.key;
+                c.addEventListener("mouseenter", e => {
+                    showTooltip(pointsByKey.get(c.dataset.key), e);
+                    renderPanelRow(pointsByKey.get(c.dataset.key).row);
+                });
+                c.addEventListener("mousemove", tt.move);
+                c.addEventListener("mouseleave", () => { tt.hide(); renderSpeciesPanel(); });
+                c.addEventListener("click", () => { tt.hide(); BirdDetail.open(pointsByKey.get(c.dataset.key).row); });
+                return c;
+            }
+            function renderPoints(points) {
+                const gPoints = document.getElementById("bx-g-points");
+                const newByKey = new Map(points.map(p => [p.key, p]));
+                pointsByKey = newByKey;
+
+                circleEls.forEach((elx, key) => {
+                    if (!newByKey.has(key)) {
+                        elx.setAttribute("opacity", 0);
+                        elx.setAttribute("r", 0);
+                        circleEls.delete(key);
+                        setTimeout(() => elx.remove(), 500);
+                    }
+                });
+
+                // Sort so larger bubbles render first (small ones stay clickable on top).
+                const ordered = points.slice().sort((a, b) => b.r - a.r);
+
+                ordered.forEach(p => {
+                    let c = circleEls.get(p.key);
+                    if (!c) {
+                        c = createBubble(p);
+                        gPoints.appendChild(c);
+                        circleEls.set(p.key, c);
+                        requestAnimationFrame(() => {
+                            c.setAttribute("cx", p.x); c.setAttribute("cy", p.y);
+                            c.setAttribute("r", p.r); c.setAttribute("fill", p.fill);
+                            c.setAttribute("opacity", 0.88);
+                        });
+                    } else {
+                        c.setAttribute("cx", p.x); c.setAttribute("cy", p.y);
+                        c.setAttribute("r", p.r); c.setAttribute("fill", p.fill);
+                        c.setAttribute("opacity", 0.88);
+                    }
+                });
+            }
+
+            // ── Legend & coverage ───────────────────────────────────────────
+            function renderLegend() {
+                const legendEl = document.getElementById("bx-legend");
+                if (colorMode.id === "none") { legendEl.style.display = "none"; return; }
+                const items = colorMode.legend();
+                legendEl.innerHTML = `<div class="tc-legend-title">${esc(colorMode.label)}</div>` +
+                    items.map(it => `<span class="tc-legend-item"><span class="tc-swatch" style="background:${it.color}"></span>${esc(it.label)}</span>`).join("");
+                legendEl.style.display = "";
+            }
+            function renderNote() {
+                const noteEl = document.getElementById("bx-note");
+                const notes = [];
+                [xField, yField].forEach((f, i) => {
+                    if (f.type === "categorical" && TOP_SETS[f.id] && TOP_SETS[f.id].hasOther) {
+                        notes.push(`${i === 0 ? "X" : "Y"} groups the 4 most common ${f.label.toLowerCase()} values — everything else is "Other."`);
+                    }
+                });
+                if (colorMode.type === "categorical" && TOP_SETS[colorMode.id] && TOP_SETS[colorMode.id].hasOther) {
+                    notes.push(`Color groups the 4 most common values — everything else is "Other." Hover any bubble for its exact value.`);
+                }
+                if (notes.length) { noteEl.hidden = false; noteEl.textContent = notes.join(" "); }
+                else { noteEl.hidden = true; }
+            }
+            function renderCoverage(points) {
+                const el2 = document.getElementById("bx-coverage");
+                const pct = (points.length / plottableRows.length) * 100;
+                el2.textContent = `Showing ${points.length} of ${plottableRows.length} species with both ${xField.label.toLowerCase().split(" (")[0]} and ${yField.label.toLowerCase().split(" (")[0]} recorded (${pct.toFixed(0)}%).` +
+                    (pct < 30 ? " Sparse sample — read the pattern as a hint, not a rule." : "");
+                el2.classList.toggle("lh-coverage--sparse", pct < 30);
+                document.getElementById("bx-count").textContent = `${points.length} species plotted`;
+            }
+
+            // ── Main render ──────────────────────────────────────────────
+            let xField, yField, colorMode;
+            function render(animate) {
+                const xAxisScale = buildAxisScale(xField, "x");
+                const yAxisScale = buildAxisScale(yField, "y");
+
+                const points = [];
+                plottableRows.forEach(row => {
+                    const xRaw = xField.get(row);
+                    const yRaw = yField.get(row);
+                    if (xRaw === null || xRaw === undefined || yRaw === null || yRaw === undefined) return;
+                    const mass = num(row.MASS_AVG);
+                    let fill = NEUTRAL_COLOR;
+                    if (colorMode.id !== "none") {
+                        const cRaw = colorMode.get(row);
+                        fill = (cRaw === null || cRaw === undefined) ? OTHER_COLOR : colorMode.color(cRaw);
+                    }
+                    points.push({ row, key: rowKey(row), xRaw, yRaw, mass, r: radiusFor(mass), fill });
+                });
+
+                computeLayout(points, xAxisScale, yAxisScale);
+
+                renderAxisX(xField, xAxisScale);
+                renderAxisY(yField, yAxisScale);
+                renderGrid(xAxisScale, yAxisScale);
+                renderRefLines(xField, xAxisScale, yField, yAxisScale);
+                renderPoints(points);
+                renderLegend();
+                renderNote();
+                renderCoverage(points);
+                updateSelectionRing();
+                renderSpeciesPanel();
+            }
+
+            // ── Select population ──────────────────────────────────────────
+            function populateSelects() {
+                const groups = {};
+                AXIS_ORDER.forEach(id => {
+                    const f = AXIS_FIELDS[id];
+                    (groups[f.group] = groups[f.group] || []).push(f);
+                });
+                const optHtml = Object.entries(groups).map(([g, fields]) =>
+                    `<optgroup label="${esc(g)}">${fields.map(f => `<option value="${f.id}">${esc(f.label)}</option>`).join("")}</optgroup>`
+                ).join("");
+                const xSel = document.getElementById("bx-x"), ySel = document.getElementById("bx-y");
+                xSel.innerHTML = optHtml; ySel.innerHTML = optHtml;
+                xSel.disabled = false; ySel.disabled = false;
+
+                const colorSel = document.getElementById("bx-color");
+                colorSel.innerHTML = COLOR_ORDER.map(id => `<option value="${id}">${esc(COLOR_MODES[id].label)}</option>`).join("");
+                colorSel.disabled = false;
+
+                document.querySelectorAll(".bx-preset-btn").forEach(b => b.disabled = false);
+
+                document.getElementById("bx-species-search").disabled = false;
+                document.getElementById("bx-species-clear").disabled = false;
+            }
+
+            // ── Presets ─────────────────────────────────────────────────────
+            const PRESETS = {
+                allometry: { x: "mass", y: "clutch", color: "redlist" },
+                guild: { x: "carnivory", y: "esi", color: "habitatPrimary" },
+                dimorphism: { x: "mass", y: "dimorphism", color: "matingSystem" },
+                matrix: { x: "habitatPrimary", y: "dietPrimary", color: "redlist" },
+            };
+            function applyPreset(name) {
+                const p = PRESETS[name];
+                if (!p) return;
+                document.getElementById("bx-x").value = p.x;
+                document.getElementById("bx-y").value = p.y;
+                document.getElementById("bx-color").value = p.color;
+                xField = AXIS_FIELDS[p.x]; yField = AXIS_FIELDS[p.y]; colorMode = COLOR_MODES[p.color];
+                document.querySelectorAll(".bx-preset-btn").forEach(b => b.classList.toggle("is-active", b.dataset.preset === name));
+                render(true);
+            }
+            document.getElementById("bx-presets").addEventListener("click", e => {
+                const btn = e.target.closest(".bx-preset-btn");
+                if (btn && !btn.disabled) applyPreset(btn.dataset.preset);
+            });
+            function clearPresetActive() {
+                document.querySelectorAll(".bx-preset-btn").forEach(b => b.classList.remove("is-active"));
+            }
+            document.getElementById("bx-x").addEventListener("change", e => { clearPresetActive(); xField = AXIS_FIELDS[e.target.value]; render(true); });
+            document.getElementById("bx-y").addEventListener("change", e => { clearPresetActive(); yField = AXIS_FIELDS[e.target.value]; render(true); });
+            document.getElementById("bx-color").addEventListener("change", e => { clearPresetActive(); colorMode = COLOR_MODES[e.target.value]; render(true); });
+
+            // ── Init ──────────────────────────────────────────────────────
+            function init() {
+                document.getElementById("bx-empty").hidden = true;
+                svg.removeAttribute("hidden");
+                selectedKey = null;
+                speciesSearch.clear();
+                buildRadiusScale();
+                buildFieldRegistries();
+                buildScaffold();
+                populateSelects();
+                xField = AXIS_FIELDS.mass;
+                yField = AXIS_FIELDS.clutch;
+                colorMode = COLOR_MODES.redlist;
+                document.getElementById("bx-x").value = "mass";
+                document.getElementById("bx-y").value = "clutch";
+                document.getElementById("bx-color").value = "redlist";
+                document.querySelectorAll(".bx-preset-btn").forEach(b => b.classList.toggle("is-active", b.dataset.preset === "allometry"));
+                render(false);
+            }
+
+            // ── Help modal ──────────────────────────────────────────────────
+            (function () {
+                const modal = document.getElementById("help-modal");
+                const btn = document.getElementById("bx-help-btn");
+                const closeBtn = modal.querySelector(".lm-close");
+                const backdrop = modal.querySelector(".lm-backdrop");
+
+                let autoLoadOnClose = true;
+                function openHelp() { modal.hidden = false; document.body.style.overflow = "hidden"; }
+                function closeHelp() {
+                    modal.hidden = true;
+                    document.body.style.overflow = "";
+                    if (autoLoadOnClose) {
+                        autoLoadOnClose = false;
+                        loadData();
+                    }
+                }
+
+                btn.addEventListener("click", openHelp);
+                closeBtn.addEventListener("click", closeHelp);
+                backdrop.addEventListener("click", closeHelp);
+                document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !modal.hidden) closeHelp(); });
+
+                openHelp();
+            })();
+        </script>
+    </body>
+</html>

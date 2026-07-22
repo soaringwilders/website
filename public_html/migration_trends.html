@@ -526,6 +526,22 @@
                 <div
                     class="mt-scale-toggle"
                     role="group"
+                    aria-label="Data view"
+                >
+                    <button
+                        id="mt-view-counts"
+                        class="is-active"
+                        data-view="counts"
+                    >
+                        Counts
+                    </button>
+                    <button id="mt-view-trends" data-view="trends">
+                        Trends
+                    </button>
+                </div>
+                <div
+                    class="mt-scale-toggle"
+                    role="group"
                     aria-label="Y-axis scale"
                 >
                     <button
@@ -673,6 +689,15 @@
                             Aug&ndash;Nov monthly breakdown.
                         </p>
                         <p>
+                            By default the chart plots each season's
+                            <strong>raw counts</strong>, which can be noisy
+                            year to year. Switch the toggle above the chart to
+                            <strong>Trends</strong> to replace those lines with
+                            a straight best-fit line per species — a quick way
+                            to see whether a species is trending up, down, or
+                            flat over the full 2000&ndash;2025 record.
+                        </p>
+                        <p>
                             Counts span four orders of magnitude between
                             species, so the chart defaults to a
                             <strong>log scale</strong> — this keeps rare species
@@ -737,6 +762,12 @@
             </div>
         </div>
 
+        <button id="scroll-top-btn" class="scroll-top-btn" type="button" aria-label="Scroll to top">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
         <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
             <li><a href="/#about">About Us</a></li>
             <li><a href="/#projects">Our Projects</a></li>
@@ -745,6 +776,8 @@
 
         <script src="base_res/bird_data.js"></script>
         <script src="base_res/bird_detail.js"></script>
+        <script src="base_res/hover_tooltip.js"></script>
+        <script src="base_res/scroll_top.js"></script>
         <script>
             const GROUP_COLOR = {
                 Vultures: "var(--mt-vultures)",
@@ -789,23 +822,14 @@
             let selected = new Set(DEFAULT_SELECTED);
             let collapsedGroups = new Set();
             let scaleMode = "log";
+            let viewMode = "counts"; // "counts" | "trends"
             let currentIndex = 0; // season index, 0..N-1
             let playing = false;
             let playTimer = null;
             let drillIndex = null; // season index currently drilled into, or null
             let dragging = false;
 
-            const esc = (s) =>
-                String(s ?? "").replace(
-                    /[&<>"]/g,
-                    (c) =>
-                        ({
-                            "&": "&amp;",
-                            "<": "&lt;",
-                            ">": "&gt;",
-                            '"': "&quot;",
-                        })[c],
-                );
+            const esc = HoverTooltip.esc;
 
             function speciesRank(code) {
                 // index within its group, by descending totalCount (already sorted that way in the data file)
@@ -816,6 +840,34 @@
             }
             function colorFor(code) {
                 return GROUP_COLOR[speciesByCode.get(code).group];
+            }
+            // straight-line (ordinary least squares) fit of raw season
+            // counts vs. season index — shows overall direction rather
+            // than year-to-year noise
+            function computeTrends() {
+                migData.species.forEach((s) => {
+                    const n = s.seasons.length;
+                    let sumX = 0,
+                        sumY = 0,
+                        sumXY = 0,
+                        sumXX = 0;
+                    s.seasons.forEach((v, i) => {
+                        sumX += i;
+                        sumY += v;
+                        sumXY += i * v;
+                        sumXX += i * i;
+                    });
+                    const denom = n * sumXX - sumX * sumX;
+                    const slope = denom ? (n * sumXY - sumX * sumY) / denom : 0;
+                    const intercept = (sumY - slope * sumX) / n;
+                    s.trend = s.seasons.map((_, i) =>
+                        Math.max(0, intercept + slope * i),
+                    );
+                });
+            }
+            function seriesFor(code) {
+                const s = speciesByCode.get(code);
+                return viewMode === "trends" ? s.trend : s.seasons;
             }
             function colorHexFor(code) {
                 return GROUP_COLOR_HEX[speciesByCode.get(code).group];
@@ -833,6 +885,7 @@
                 ]);
                 migData = mig;
                 migData.species.forEach((s) => speciesByCode.set(s.code, s));
+                computeTrends();
                 csvRows.forEach((row) => {
                     if (row.GENUS && row.SPECIES)
                         csvRowByKey.set(`${row.GENUS}_${row.SPECIES}`, row);
@@ -856,7 +909,7 @@
             function globalMax() {
                 let max = 1;
                 migData.species.forEach((s) =>
-                    s.seasons.forEach((v) => {
+                    seriesFor(s.code).forEach((v) => {
                         if (v > max) max = v;
                     }),
                 );
@@ -1005,8 +1058,7 @@
 
                 // ghost full-range preview lines
                 selectedCodes.forEach((code) => {
-                    const s = speciesByCode.get(code);
-                    const d = s.seasons
+                    const d = seriesFor(code)
                         .map(
                             (v, i) =>
                                 `${i === 0 ? "M" : "L"}${xFor(i)},${yFor(v)}`,
@@ -1023,8 +1075,7 @@
 
                 // revealed bold lines up to currentIndex
                 selectedCodes.forEach((code) => {
-                    const s = speciesByCode.get(code);
-                    const pts = s.seasons.slice(0, currentIndex + 1);
+                    const pts = seriesFor(code).slice(0, currentIndex + 1);
                     const d = pts
                         .map(
                             (v, i) =>
@@ -1048,12 +1099,12 @@
                     .slice()
                     .sort(
                         (a, b) =>
-                            speciesByCode.get(b).seasons[currentIndex] -
-                            speciesByCode.get(a).seasons[currentIndex],
+                            seriesFor(b)[currentIndex] -
+                            seriesFor(a)[currentIndex],
                     )
                     .forEach((code) => {
                         const s = speciesByCode.get(code);
-                        const v = s.seasons[currentIndex];
+                        const v = seriesFor(code)[currentIndex];
                         const x = xFor(currentIndex),
                             y0 = yFor(v);
                         svg.appendChild(
@@ -1152,11 +1203,11 @@
             // ── Chart hover crosshair + tooltip (wired once; reads live selection) ──
             function wireChartHover() {
                 const svg = document.getElementById("mt-svg");
-                const tip = document.getElementById("mt-chart-tip");
+                const tip = HoverTooltip.create("mt-chart-tip");
                 let crosshair = null;
                 svg.addEventListener("mousemove", (e) => {
                     if (dragging) {
-                        tip.hidden = true;
+                        tip.hide();
                         return;
                     }
                     const selectedCodes = [...selected];
@@ -1166,7 +1217,7 @@
                         Math.min(currentIndex, migData.meta.years.length - 1),
                     );
                     if (!selectedCodes.length) {
-                        tip.hidden = true;
+                        tip.hide();
                         return;
                     }
                     if (crosshair) crosshair.remove();
@@ -1182,25 +1233,18 @@
                     const rows = selectedCodes
                         .map((code) => ({
                             code,
-                            v: speciesByCode.get(code).seasons[nearest],
+                            v: seriesFor(code)[nearest],
                         }))
                         .sort((a, b) => b.v - a.v)
                         .map(
                             (r) =>
-                                `<dt><span class="mt-ct-swatch" style="background:${colorHexFor(r.code)}"></span>${esc(speciesByCode.get(r.code).name)}</dt><dd>${r.v.toLocaleString()}</dd>`,
+                                `<dt><span class="mt-ct-swatch" style="background:${colorHexFor(r.code)}"></span>${esc(speciesByCode.get(r.code).name)}</dt><dd>${Math.round(r.v).toLocaleString()}</dd>`,
                         )
                         .join("");
-                    tip.innerHTML = `<div class="mt-ct-year">${migData.meta.years[nearest]}</div><dl>${rows}</dl>`;
-                    tip.hidden = false;
-                    const pad = 14;
-                    let x = e.clientX + pad,
-                        y = e.clientY + pad;
-                    if (x + 220 > window.innerWidth) x = e.clientX - 220 - pad;
-                    tip.style.left = x + "px";
-                    tip.style.top = y + "px";
+                    tip.show(`<div class="mt-ct-year">${migData.meta.years[nearest]}</div><dl>${rows}</dl>`, e);
                 });
                 svg.addEventListener("mouseleave", () => {
-                    tip.hidden = true;
+                    tip.hide();
                     if (crosshair) {
                         crosshair.remove();
                         crosshair = null;
@@ -1501,33 +1545,25 @@
                 container.addEventListener("mouseout", (e) => {
                     const item = e.target.closest(".mt-leg-item");
                     if (item && !item.contains(e.relatedTarget))
-                        document.getElementById("mt-bird-tip").hidden = true;
+                        birdTip.hide();
                 });
             }
 
+            const birdTip = HoverTooltip.create("mt-bird-tip");
             function showBirdTip(s, evt) {
-                const tip = document.getElementById("mt-bird-tip");
                 const imgSrc = s.imageFile
                     ? `base_res/img/birds/${s.imageFile}`
                     : "base_res/img/birds/_generic.jpg";
-                tip.innerHTML =
+                const html =
                     `<img src="${esc(imgSrc)}" onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'" alt="">` +
                     `<div class="mt-tip-name">${esc(s.name)}</div>` +
                     (s.hasTraitRow
                         ? ""
                         : `<div class="mt-tip-note">No species profile in this dataset yet.</div>`);
-                tip.hidden = false;
-                moveBirdTip(evt);
+                birdTip.show(html, evt);
             }
             function moveBirdTip(evt) {
-                const tip = document.getElementById("mt-bird-tip");
-                const pad = 14;
-                let x = evt.clientX + pad,
-                    y = evt.clientY + pad;
-                if (x + 200 > window.innerWidth) x = evt.clientX - 200 - pad;
-                if (y + 160 > window.innerHeight) y = evt.clientY - 160 - pad;
-                tip.style.left = x + "px";
-                tip.style.top = y + "px";
+                birdTip.move(evt);
             }
 
             function setAllSelected(on) {
@@ -1561,6 +1597,13 @@
                 document
                     .getElementById("mt-scale-linear")
                     .addEventListener("click", () => setScale("linear"));
+
+                document
+                    .getElementById("mt-view-counts")
+                    .addEventListener("click", () => setView("counts"));
+                document
+                    .getElementById("mt-view-trends")
+                    .addEventListener("click", () => setView("trends"));
 
                 document
                     .getElementById("mt-select-all")
@@ -1608,14 +1651,19 @@
                 renderChart();
             }
 
+            function setView(mode) {
+                viewMode = mode;
+                document
+                    .getElementById("mt-view-counts")
+                    .classList.toggle("is-active", mode === "counts");
+                document
+                    .getElementById("mt-view-trends")
+                    .classList.toggle("is-active", mode === "trends");
+                renderChart();
+            }
+
             function maybeShowHelpOnFirstLoad() {
-                const KEY = "sowi:migration_trends:seen_help_v1";
-                if (!sessionStorage.getItem(KEY)) {
-                    window.mtOpenHelp();
-                    try {
-                        sessionStorage.setItem(KEY, "1");
-                    } catch {}
-                }
+                window.mtOpenHelp();
             }
 
             init();

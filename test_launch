@@ -4,12 +4,45 @@ import sys
 import os
 import signal
 import atexit
+import time
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PUBLIC_HTML = os.path.join(SCRIPT_DIR, "public_html")
 SERVICE_DIR = os.path.join(SCRIPT_DIR, "service")
 
+STATIC_PORT = 60193
+SERVICE_PORT = 3000
+
 processes = []
+
+def pids_on_port(port):
+    try:
+        out = subprocess.run(
+            ["lsof", "-ti", f"tcp:{port}"],
+            capture_output=True, text=True, check=False,
+        ).stdout.strip()
+    except FileNotFoundError:
+        return []
+    return [int(pid) for pid in out.splitlines() if pid]
+
+def free_port(port, label):
+    pids = pids_on_port(port)
+    if not pids:
+        return
+    print(f"Port {port} ({label}) already in use by PID(s) {', '.join(map(str, pids))} — killing.")
+    for pid in pids:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+    deadline = time.time() + 5
+    while time.time() < deadline and pids_on_port(port):
+        time.sleep(0.2)
+    for pid in pids_on_port(port):
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
 
 def cleanup():
     for p in processes:
@@ -32,13 +65,16 @@ atexit.register(cleanup)
 signal.signal(signal.SIGINT, handle_signal)
 signal.signal(signal.SIGTERM, handle_signal)
 
-print(f"Starting static file server on http://localhost:60193 (serving {PUBLIC_HTML})")
+free_port(STATIC_PORT, "static file server")
+free_port(SERVICE_PORT, "Node.js service")
+
+print(f"Starting static file server on http://localhost:{STATIC_PORT} (serving {PUBLIC_HTML})")
 static_server = subprocess.Popen(
-    [sys.executable, "-m", "http.server", "60193", "--directory", PUBLIC_HTML],
+    [sys.executable, "-m", "http.server", str(STATIC_PORT), "--directory", PUBLIC_HTML],
 )
 processes.append(static_server)
 
-print(f"Starting Node.js service on port 3000 (serving /service from {SERVICE_DIR})")
+print(f"Starting Node.js service on port {SERVICE_PORT} (serving /service from {SERVICE_DIR})")
 node_proc = subprocess.Popen(
     ["node", "app.js"],
     cwd=SERVICE_DIR,
@@ -46,8 +82,8 @@ node_proc = subprocess.Popen(
 processes.append(node_proc)
 
 print("Both servers running. Press Ctrl+C to stop.")
-print("  Static pages: http://localhost:60193")
-print("  Node service: http://localhost:3000/service")
+print(f"  Static pages: http://localhost:{STATIC_PORT}")
+print(f"  Node service: http://localhost:{SERVICE_PORT}/service")
 
 # Wait for either process to exit
 try:
@@ -58,7 +94,6 @@ try:
                 name = "Static server" if p == static_server else "Node service"
                 print(f"{name} exited with code {ret}. Shutting down.")
                 sys.exit(ret)
-        import time
         time.sleep(1)
 except KeyboardInterrupt:
     pass

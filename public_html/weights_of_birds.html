@@ -107,6 +107,12 @@
 
         <div id="wb-tooltip" hidden></div>
 
+        <button id="scroll-top-btn" class="scroll-top-btn" type="button" aria-label="Scroll to top">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
         <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
             <li><a href="/#about">About Us</a></li>
             <li><a href="/#projects">Our Projects</a></li>
@@ -172,6 +178,8 @@
 
         <script src="base_res/bird_data.js"></script>
         <script src="base_res/bird_detail.js"></script>
+        <script src="base_res/hover_tooltip.js"></script>
+        <script src="base_res/scroll_top.js"></script>
         <script>
             // ── Load Data ───────────────────────────────────────────────────
             const statusEl = document.getElementById("bbd-status");
@@ -181,7 +189,10 @@
             let dimorphismByKey = new Map();
 
             async function loadData() {
-                document.getElementById("bbd-load-btn").classList.remove("btn--pulse");
+                const loadBtn = document.getElementById("bbd-load-btn");
+                loadBtn.classList.remove("btn--pulse");
+                loadBtn.classList.add("btn--loading");
+                loadBtn.disabled = true;
                 statusEl.textContent = "Loading…";
                 try {
                     rows = await BirdData.load();
@@ -204,7 +215,10 @@
                     renderList();
                 } catch (err) {
                     statusEl.textContent = `Error: ${err.message}`;
-                    document.getElementById("bbd-load-btn").classList.add("btn--pulse");
+                    loadBtn.classList.add("btn--pulse");
+                } finally {
+                    loadBtn.classList.remove("btn--loading");
+                    loadBtn.disabled = false;
                 }
             }
 
@@ -212,10 +226,7 @@
 
             // ── Helpers ─────────────────────────────────────────────────────
             const num = v => (v === null || v === undefined || v === "" || isNaN(+v)) ? null : +v;
-            function esc(s) {
-                return String(s ?? "").replace(/[&<>"]/g, c =>
-                    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-            }
+            const esc = HoverTooltip.esc;
             function rowKey(row) {
                 return (row.GENUS && row.SPECIES) ? `${row.GENUS}_${row.SPECIES}` : `name_${row.COMMON_NAME}`;
             }
@@ -362,7 +373,7 @@
             }
 
             // ── Tooltip ─────────────────────────────────────────────────────
-            const tooltip = document.getElementById("wb-tooltip");
+            const tt = HoverTooltip.create("wb-tooltip");
             function massLine(label, minV, maxV) {
                 const a = num(minV), b = num(maxV);
                 if (a === null && b === null) return "";
@@ -373,12 +384,10 @@
             }
             function showTooltip(row, evt) {
                 const sci = [row.GENUS, row.SPECIES].filter(Boolean).join(" ");
-                const imgSrc = (row.GENUS && row.SPECIES)
-                    ? `base_res/img/birds/${row.GENUS}_${row.SPECIES}.jpg`
-                    : "base_res/img/birds/_generic.jpg";
+                const imgSrc = HoverTooltip.birdImgSrc(row);
                 const avg = num(row.MASS_AVG);
 
-                tooltip.innerHTML =
+                const html =
                     `<div class="wb-tt-head">
                         <img class="wb-tt-img" src="${esc(imgSrc)}"
                              onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'" alt="">
@@ -393,17 +402,14 @@
                         ${massLine("Unsexed", row.MASS_MIN, row.MASS_MAX)}
                         <dt>Average</dt><dd>${avg !== null ? avg.toLocaleString() + " g" : "—"}</dd>
                      </dl>`;
-                tooltip.hidden = false;
-                moveTooltip(evt);
+                tt.show(html, evt);
             }
             function showDimTooltip(rec, evt) {
                 const row = rec.row;
                 const sci = [row.GENUS, row.SPECIES].filter(Boolean).join(" ");
-                const imgSrc = (row.GENUS && row.SPECIES)
-                    ? `base_res/img/birds/${row.GENUS}_${row.SPECIES}.jpg`
-                    : "base_res/img/birds/_generic.jpg";
+                const imgSrc = HoverTooltip.birdImgSrc(row);
 
-                tooltip.innerHTML =
+                const html =
                     `<div class="wb-tt-head">
                         <img class="wb-tt-img" src="${esc(imgSrc)}"
                              onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'" alt="">
@@ -419,18 +425,8 @@
                         <dt>Order</dt><dd>${esc(row.ORDER || "—")}</dd>
                         <dt>Mating system</dt><dd>${esc(matingLabel(row))}</dd>
                      </dl>`;
-                tooltip.hidden = false;
-                moveTooltip(evt);
+                tt.show(html, evt);
             }
-            function moveTooltip(evt) {
-                const pad = 14, w = tooltip.offsetWidth, h = tooltip.offsetHeight;
-                let x = evt.clientX + pad, y = evt.clientY + pad;
-                if (x + w > window.innerWidth) x = evt.clientX - w - pad;
-                if (y + h > window.innerHeight) y = evt.clientY - h - pad;
-                tooltip.style.left = x + "px";
-                tooltip.style.top = y + "px";
-            }
-            function hideTooltip() { tooltip.hidden = true; }
 
             // ── Sort / group / render ───────────────────────────────────────
             function compare(a, b, sortKey) {
@@ -586,11 +582,11 @@
                 }
             });
             canvas.addEventListener("mousemove", e => {
-                if (e.target.closest(".wb-row")) moveTooltip(e);
+                if (e.target.closest(".wb-row")) tt.move(e);
             });
             canvas.addEventListener("mouseout", e => {
                 const rowEl = e.target.closest(".wb-row");
-                if (rowEl && !rowEl.contains(e.relatedTarget)) hideTooltip();
+                if (rowEl && !rowEl.contains(e.relatedTarget)) tt.hide();
             });
             canvas.addEventListener("click", e => {
                 const nameEl = e.target.closest(".wb-name");
@@ -598,7 +594,7 @@
                 e.preventDefault();
                 const rowEl = nameEl.closest(".wb-row");
                 const row = rowByKey.get(rowEl.dataset.key);
-                if (row) { hideTooltip(); BirdDetail.open(row); }
+                if (row) { tt.hide(); BirdDetail.open(row); }
             });
 
             // ── Tabs (Weight Ranges ⇄ Sexual Dimorphism) ──────────────────────
@@ -668,9 +664,14 @@
                     document.body.style.overflow = "hidden";
                 }
 
+                let autoLoadOnClose = true;
                 function closeHelp() {
                     modal.hidden = true;
                     document.body.style.overflow = "";
+                    if (autoLoadOnClose) {
+                        autoLoadOnClose = false;
+                        loadData();
+                    }
                 }
 
                 btn.addEventListener("click", openHelp);
@@ -680,13 +681,7 @@
                     if (e.key === "Escape" && !modal.hidden) closeHelp();
                 });
 
-                const KEY = "sowi:weights_of_birds:seen_help_v1";
-                if (!sessionStorage.getItem(KEY)) {
-                    openHelp();
-                    try {
-                        sessionStorage.setItem(KEY, "1");
-                    } catch {}
-                }
+                openHelp();
             })();
         </script>
     </body>

@@ -135,7 +135,8 @@
             #dh-line-tip[hidden] {
                 display: none;
             }
-            #dh-bird-tip img {
+            #dh-bird-tip img,
+            #dh-line-tip img {
                 display: block;
                 width: 100%;
                 height: 130px;
@@ -145,7 +146,8 @@
                 margin-bottom: 0.35rem;
                 background: #f2ede0;
             }
-            .dh-tip-name {
+            .dh-tip-name,
+            .ht-mini-name {
                 font-family: "Inter", sans-serif;
                 font-weight: 700;
                 color: var(--dark);
@@ -376,6 +378,12 @@
         <div id="dh-bird-tip" hidden></div>
         <div id="dhs-tip" hidden></div>
 
+        <button id="scroll-top-btn" class="scroll-top-btn" type="button" aria-label="Scroll to top">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
         <ul class="mobile-nav" role="navigation" aria-label="Main navigation">
             <li><a href="/#about">About Us</a></li>
             <li><a href="/#projects">Our Projects</a></li>
@@ -401,10 +409,10 @@
                     <section class="lm-section">
                         <h3>How to use it</h3>
                         <p>
-                            Click <strong>Load Data</strong>, then switch
-                            between the <strong>Parallel Coordinates</strong>
-                            and <strong>Habitat &harr; Diet Flow</strong>
-                            tabs.
+                            The dataset loads automatically once you close
+                            this panel &mdash; then switch between the
+                            <strong>Parallel Coordinates</strong> and
+                            <strong>Habitat &harr; Diet Flow</strong> tabs.
                         </p>
                         <p>
                             <strong>Parallel Coordinates</strong> draws every
@@ -415,14 +423,17 @@
                             watching a line's path across those three
                             right-hand axes shows the formula resolve in real
                             time. Lines are colored by IUCN conservation
-                            status. <strong>Drag</strong> up or down on any
-                            axis to brush a range on it &mdash; only species
-                            that fall within the range on <em>every</em>
-                            currently-brushed axis stay visible, and the
-                            table below filters to match. Click an axis
-                            without dragging to clear just that axis's brush,
-                            or use <strong>Clear all selections</strong> to
-                            reset everything at once.
+                            status. <strong>Hover</strong> a line to see that
+                            species' photo, name, and its values across all
+                            four axes. <strong>Drag</strong> up or down on
+                            any axis to brush a range on it &mdash; only
+                            species that fall within the range on
+                            <em>every</em> currently-brushed axis stay
+                            visible, and the table below filters to match.
+                            Click an axis without dragging to clear just that
+                            axis's brush, or use
+                            <strong>Clear all selections</strong> to reset
+                            everything at once.
                         </p>
                         <p>
                             <strong>Habitat &harr; Diet Flow</strong> is a
@@ -485,24 +496,15 @@
 
         <script src="base_res/bird_data.js"></script>
         <script src="base_res/bird_detail.js"></script>
+        <script src="base_res/hover_tooltip.js"></script>
+        <script src="base_res/scroll_top.js"></script>
         <script>
             // ── Shared helpers ────────────────────────────────────────────────
             const num = (v) =>
                 v === null || v === undefined || v === "" || isNaN(+v)
                     ? null
                     : +v;
-            function esc(s) {
-                return String(s ?? "").replace(
-                    /[&<>"]/g,
-                    (c) =>
-                        ({
-                            "&": "&amp;",
-                            "<": "&lt;",
-                            ">": "&gt;",
-                            '"': "&quot;",
-                        })[c],
-                );
-            }
+            const esc = HoverTooltip.esc;
             function rowKey(row) {
                 return row.GENUS && row.SPECIES
                     ? `${row.GENUS}_${row.SPECIES}`
@@ -762,7 +764,10 @@
             // ── Load Data ─────────────────────────────────────────────────
             const statusEl = document.getElementById("bbd-status");
             async function loadData() {
-                document.getElementById("bbd-load-btn").classList.remove("btn--pulse");
+                const loadBtn = document.getElementById("bbd-load-btn");
+                loadBtn.classList.remove("btn--pulse");
+                loadBtn.classList.add("btn--loading");
+                loadBtn.disabled = true;
                 statusEl.textContent = "Loading…";
                 try {
                     const rows = await BirdData.load();
@@ -813,7 +818,10 @@
                     loadSankey(rows);
                 } catch (err) {
                     statusEl.textContent = `Error: ${err.message}`;
-                    document.getElementById("bbd-load-btn").classList.add("btn--pulse");
+                    loadBtn.classList.add("btn--pulse");
+                } finally {
+                    loadBtn.classList.remove("btn--loading");
+                    loadBtn.disabled = false;
                 }
             }
             document
@@ -1118,9 +1126,12 @@
             }
 
             // ── Tooltips ──────────────────────────────────────────────────
+            const lineTip = HoverTooltip.create("dh-line-tip");
             function showLineTip(p, evt) {
-                const tip = document.getElementById("dh-line-tip");
-                tip.innerHTML =
+                const genericSrc = HoverTooltip.birdImgSrc({});
+                const html =
+                    `<img src="${esc(HoverTooltip.birdImgSrc(p.row))}" alt="" ` +
+                    `onerror="this.onerror=null;this.src='${esc(genericSrc)}'">` +
                     `<div class="dh-tip-name">${esc(p.name)}</div>` +
                     `<dl>` +
                     `<dt>Mass</dt><dd>${fmtMass(p.vals[0])}</dd>` +
@@ -1129,51 +1140,18 @@
                     `<dt>ESI</dt><dd>${fmtNum(p.vals[3])}</dd>` +
                     `<dt>Status</dt><dd>${esc(STATUS_LABELS[p.row.RED_LIST] || p.row.RED_LIST || "—")}</dd>` +
                     `</dl>`;
-                tip.hidden = false;
-                moveLineTip(evt);
+                lineTip.show(html, evt);
             }
-            function moveLineTip(evt) {
-                const tip = document.getElementById("dh-line-tip");
-                const pad = 14,
-                    w = tip.offsetWidth,
-                    h = tip.offsetHeight;
-                let x = evt.clientX + pad,
-                    y = evt.clientY + pad;
-                if (x + w > window.innerWidth) x = evt.clientX - w - pad;
-                if (y + h > window.innerHeight) y = evt.clientY - h - pad;
-                tip.style.left = x + "px";
-                tip.style.top = y + "px";
-            }
-            function hideLineTip() {
-                document.getElementById("dh-line-tip").hidden = true;
-            }
+            function moveLineTip(evt) { lineTip.move(evt); }
+            function hideLineTip() { lineTip.hide(); }
 
+            const birdTip = HoverTooltip.create("dh-bird-tip");
             function showBirdTip(p, evt) {
                 if (!p) return;
-                const tip = document.getElementById("dh-bird-tip");
-                const imgSrc =
-                    p.row.GENUS && p.row.SPECIES
-                        ? `base_res/img/birds/${p.row.GENUS}_${p.row.SPECIES}.jpg`
-                        : "base_res/img/birds/_generic.jpg";
-                tip.innerHTML =
-                    `<img src="${esc(imgSrc)}" onerror="this.onerror=null;this.src='base_res/img/birds/_generic.jpg'" alt="">` +
-                    `<div class="dh-tip-name">${esc(p.name)}</div>`;
-                tip.hidden = false;
-                moveBirdTip(evt);
+                birdTip.show(HoverTooltip.birdMiniHTML(p.row), evt);
             }
-            function moveBirdTip(evt) {
-                const tip = document.getElementById("dh-bird-tip");
-                const pad = 14;
-                let x = evt.clientX + pad,
-                    y = evt.clientY + pad;
-                if (x + 200 > window.innerWidth) x = evt.clientX - 200 - pad;
-                if (y + 160 > window.innerHeight) y = evt.clientY - 160 - pad;
-                tip.style.left = x + "px";
-                tip.style.top = y + "px";
-            }
-            function hideBirdTip() {
-                document.getElementById("dh-bird-tip").hidden = true;
-            }
+            function moveBirdTip(evt) { birdTip.move(evt); }
+            function hideBirdTip() { birdTip.hide(); }
 
             // ── Table ─────────────────────────────────────────────────────
             const tbody = document.getElementById("dh-tbody");
@@ -1721,8 +1699,8 @@
                     `</div>`
                 );
             }
+            const dhsTip = HoverTooltip.create("dhs-tip");
             function showDhsTip(sel, evt) {
-                const tip = document.getElementById("dhs-tip");
                 let html;
                 if (sel.type === "pair") {
                     const p = dhsPairByKey.get(sel.hab + "|" + sel.diet);
@@ -1748,26 +1726,10 @@
                         `<dl><dt>Species</dt><dd>${n.count}</dd></dl>` +
                         statusBarHTML(n.species);
                 }
-                tip.innerHTML = html;
-                tip.hidden = false;
-                moveDhsTip(evt);
+                dhsTip.show(html, evt);
             }
-            function moveDhsTip(evt) {
-                const tip = document.getElementById("dhs-tip");
-                if (tip.hidden) return;
-                const pad = 14,
-                    w = tip.offsetWidth,
-                    h = tip.offsetHeight;
-                let x = evt.clientX + pad,
-                    y = evt.clientY + pad;
-                if (x + w > window.innerWidth) x = evt.clientX - w - pad;
-                if (y + h > window.innerHeight) y = evt.clientY - h - pad;
-                tip.style.left = x + "px";
-                tip.style.top = y + "px";
-            }
-            function hideDhsTip() {
-                document.getElementById("dhs-tip").hidden = true;
-            }
+            function moveDhsTip(evt) { dhsTip.move(evt); }
+            function hideDhsTip() { dhsTip.hide(); }
 
             // ── Table ─────────────────────────────────────────────────────
             const DHS_TH_LABELS = {
@@ -1920,9 +1882,14 @@
                     modal.hidden = false;
                     document.body.style.overflow = "hidden";
                 }
+                let autoLoadOnClose = true;
                 function closeHelp() {
                     modal.hidden = true;
                     document.body.style.overflow = "";
+                    if (autoLoadOnClose) {
+                        autoLoadOnClose = false;
+                        loadData();
+                    }
                 }
 
                 btn.addEventListener("click", openHelp);
@@ -1932,13 +1899,7 @@
                     if (e.key === "Escape" && !modal.hidden) closeHelp();
                 });
 
-                const KEY = "sowi:diet_habitat_parallel_coords:seen_help_v1";
-                if (!sessionStorage.getItem(KEY)) {
-                    openHelp();
-                    try {
-                        sessionStorage.setItem(KEY, "1");
-                    } catch {}
-                }
+                openHelp();
             })();
         </script>
     </body>
